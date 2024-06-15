@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Result};
 use clap::builder::styling::{AnsiColor, Effects, Styles};
-use clap::{command, ArgAction, Args, Parser, Subcommand, ValueEnum};
+use clap::{command, ArgAction, Parser, Subcommand, ValueEnum};
 
 use crate::util::Address;
 
