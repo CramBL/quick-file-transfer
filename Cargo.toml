@@ -1,0 +1,23 @@
+[package]
+name = "fast-file-transfer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+clap = { version = "4.5.7", features = ["derive", "env"] }
+log = "0.4.21"
+stderrlog = "0.6.0"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
+temp-dir = "0.1.11"
+assert_fs = "1.0.13"
+assert_cmd = "2.0.11"
+predicates = "3.0.3"
+testresult = "0.4.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = 'abort'
