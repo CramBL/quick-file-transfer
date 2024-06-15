@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{Result};
+use anyhow::Result;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{command, ArgAction, Parser, Subcommand, ValueEnum};
 

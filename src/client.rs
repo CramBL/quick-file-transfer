@@ -36,28 +36,14 @@ pub fn run_client(cfg: Config) -> Result<()> {
         }
     };
 
-    if let Some(file) = cfg.file() {
-        log::info!(
-            "Sending {file:?} with compression={}",
-            cfg.compression().unwrap_or_default()
-        );
-        match cfg.compression().unwrap_or_default() {
-            config::Compression::Lz4 => {
-                //
-                use lz4_flex::frame::FrameEncoder;
-                let mut lz4_writer = FrameEncoder::new(&tcp_stream);
-                io::copy(bufreader, &mut lz4_writer).expect("I/O operation failed");
-                lz4_writer.finish()?;
-            }
-            config::Compression::Gzip => todo!(),
-            config::Compression::Bzip2 => todo!(),
-            config::Compression::Xz => todo!(),
-            config::Compression::None => {
-                let len = copy_all_to_tcp_stream(&tcp_stream, bufreader)?;
-                log::info!("Wrote {len} to stream");
-            }
-        }
-    }
+    let transferred_bytes = match cfg.compression().unwrap_or_default() {
+        config::Compression::Lz4 => lz4_copy_all_to_tcp_stream(&tcp_stream, bufreader)?,
+        config::Compression::Gzip => todo!(),
+        config::Compression::Bzip2 => todo!(),
+        config::Compression::Xz => todo!(),
+        config::Compression::None => copy_all_to_tcp_stream(&tcp_stream, bufreader)?,
+    };
+    log::info!("Wrote {transferred_bytes} to stream");
 
     tcp_stream.shutdown(std::net::Shutdown::Write)?;
     Ok(())
@@ -82,5 +68,13 @@ pub fn tcp_bufwriter(socket: &TcpStream) -> BufWriter<&TcpStream> {
 pub fn copy_all_to_tcp_stream(socket: &TcpStream, reader: &mut dyn io::Read) -> Result<u64> {
     let mut writer = tcp_bufwriter(socket);
     let len = io::copy(reader, &mut writer)?;
+    Ok(len)
+}
+
+pub fn lz4_copy_all_to_tcp_stream(socket: &TcpStream, reader: &mut dyn io::Read) -> Result<u64> {
+    use lz4_flex::frame::FrameEncoder;
+    let mut lz4_writer = FrameEncoder::new(socket);
+    let len = io::copy(reader, &mut lz4_writer)?;
+    lz4_writer.finish()?;
     Ok(len)
 }
