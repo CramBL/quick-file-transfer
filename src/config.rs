@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use anyhow::{Context, Result};
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{command, ArgAction, Args, Parser, Subcommand, ValueEnum};
@@ -14,8 +16,8 @@ pub fn cli_styles() -> Styles {
 }
 
 #[derive(Debug, Parser)]
-#[command(name = "Fast File Transfer", version, styles = cli_styles())]
-#[command(bin_name = "fft")]
+#[command(name = "Quick File Transfer", version, styles = cli_styles())]
+#[command(bin_name = "qft")]
 pub struct Config {
     /// Accepted subcommands, e.g. `version`
     #[clap(subcommand)]
@@ -29,18 +31,28 @@ pub struct Config {
     pub verbose: u8,
 
     /// Silence all output
-    #[clap(short, long,action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "FFT_QUIET")]
+    #[clap(short, long,action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
+    /// e.g. 127.0.0.1
     #[arg(short, long)]
     ip: String,
 
+    /// e.g. 8080
     #[arg(short, long)]
     port: u16,
 
     /// Send a message to the server
     #[arg(short, long)]
     message: Option<String>,
+
+    /// Supply a file for I/O (if none: use stdio)
+    #[arg(short, long)]
+    file: Option<PathBuf>,
+
+    /// Compression format
+    #[arg(short, long)]
+    compression: Option<Compression>,
 }
 
 impl Config {
@@ -70,6 +82,14 @@ impl Config {
     pub fn message(&self) -> Option<&str> {
         self.message.as_deref()
     }
+
+    pub fn file(&self) -> Option<&Path> {
+        self.file.as_deref()
+    }
+
+    pub fn compression(&self) -> Option<Compression> {
+        self.compression
+    }
 }
 
 #[derive(ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
@@ -91,9 +111,18 @@ impl std::fmt::Display for ColorWhen {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Run in listen (server) mode
-    #[command(arg_required_else_help = true)]
     Listen,
     /// Run in Connect (client) mode
-    #[command(arg_required_else_help = true)]
     Connect,
+}
+
+use strum_macros::Display;
+#[derive(Debug, Default, ValueEnum, Clone, Copy, Display)]
+pub enum Compression {
+    Gzip,
+    Bzip2,
+    Xz,
+    Lz4,
+    #[default]
+    None,
 }
