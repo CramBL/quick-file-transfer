@@ -15,9 +15,10 @@ stderrlog = "0.6.0"
 lz4_flex = "0.11"
 strum = "0.26.2"
 strum_macros = "0.26.4"
+memmap2 = "0.9.4"
 # For performance: (unsafe)
 #lz4_flex = { version = "0.11", default-features = false }
-
+flate2 = "1.0.30"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"

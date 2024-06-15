@@ -31,7 +31,7 @@ pub struct Config {
     pub verbose: u8,
 
     /// Silence all output
-    #[clap(short, long,action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
+    #[clap(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
     /// e.g. 127.0.0.1
@@ -53,6 +53,10 @@ pub struct Config {
     /// Compression format
     #[arg(short, long)]
     compression: Option<Compression>,
+
+    /// Use memory mapping mode
+    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
+    mmap: bool,
 }
 
 impl Config {
@@ -89,6 +93,10 @@ impl Config {
 
     pub fn compression(&self) -> Option<Compression> {
         self.compression
+    }
+
+    pub fn use_mmap(&self) -> bool {
+        self.mmap
     }
 }
 

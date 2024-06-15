@@ -1,14 +1,16 @@
+use flate2::read::GzDecoder;
 use lz4_flex::frame::FrameDecoder;
 use std::{
     fs::{self, File},
-    io::{self, BufReader, BufWriter, StdoutLock},
+    io::{self, BufReader, BufWriter, Read, StdoutLock},
     net::TcpStream,
     path::Path,
 };
 
 use crate::{
     config::{self, Config},
-    util::tcp_listen,
+    util::{format_data_size, tcp_listen},
+    TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 
@@ -38,15 +40,37 @@ pub fn run_server(cfg: Config) -> Result<()> {
             match cfg.compression().unwrap_or_default() {
                 config::Compression::Lz4 => {
                     let mut reader = FrameDecoder::new(&socket);
-                    let len = io::copy(&mut reader, bufwriter)?;
-                    log::info!("Received: {len}");
+                    let mut buf = [0; TCP_STREAM_BUFSIZE];
+                    let mut total_read = 0;
+                    loop {
+                        let bytes_read = reader.read(&mut buf)?;
+                        if bytes_read == 0 {
+                            break;
+                        }
+                        total_read += bytes_read;
+                        bufwriter.write(&buf[..bytes_read])?;
+                    }
+                    log::info!("Received: {}", format_data_size(total_read as u64));
                 }
-                config::Compression::Gzip => todo!("Not implemented"),
+                config::Compression::Gzip => {
+                    let mut gz = GzDecoder::new(&socket);
+                    let mut buf = [0; TCP_STREAM_BUFSIZE];
+                    let mut total_read = 0;
+                    loop {
+                        let bytes_read = gz.read(&mut buf)?;
+                        if bytes_read == 0 {
+                            break;
+                        }
+                        total_read += bytes_read;
+                        bufwriter.write(&buf[..bytes_read])?;
+                    }
+                    log::info!("Received: {}", format_data_size(total_read as u64));
+                }
                 config::Compression::Bzip2 => todo!("Not implemented"),
                 config::Compression::Xz => todo!("Not implemented"),
                 config::Compression::None => {
                     let len = copy_all_from_tcp_stream(socket, bufwriter)?;
-                    log::info!("Received: {len} bytes");
+                    log::info!("Received: {}", format_data_size(len));
                 }
             }
         }
