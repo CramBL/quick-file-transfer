@@ -32,7 +32,7 @@ pub fn run_server(cfg: &Config) -> Result<()> {
 
     match listener.accept() {
         Ok((socket, addr)) => {
-            println!("new client: {addr:?}");
+            log::info!("Client accepted at: {addr:?}");
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
 
             let len = match cfg.compression().unwrap_or_default() {
