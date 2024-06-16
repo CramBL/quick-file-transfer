@@ -61,7 +61,6 @@ pub fn run_client(cfg: &Config) -> Result<()> {
     };
     log::info!("Wrote {} to stream", format_data_size(transferred_bytes));
 
-    tcp_stream.shutdown(std::net::Shutdown::Write)?;
     Ok(())
 }
 
