@@ -83,8 +83,9 @@ pub fn incremental_rw<const BUFSIZE: usize>(
 pub fn create_file_with_len(path: &Path, len: u64) -> Result<()> {
     let file = fs::OpenOptions::new()
         .create(true)
+        .truncate(true)
         .write(true)
-        .open(&path)?;
+        .open(path)?;
     file.set_len(len)?;
     Ok(())
 }
