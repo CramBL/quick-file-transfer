@@ -37,6 +37,10 @@ pub fn run_server(cfg: &Config) -> Result<()> {
                 let mut size_buffer = [0u8; 8];
                 socket.read_exact(&mut size_buffer)?;
                 let file_size = u64::from_be_bytes(size_buffer);
+                log::debug!(
+                    "Preallocating file of size {} [{file_size} B]",
+                    format_data_size(file_size)
+                );
                 create_file_with_len(cfg.file().unwrap(), file_size)?;
             }
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
@@ -56,12 +60,12 @@ pub fn run_server(cfg: &Config) -> Result<()> {
                     incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut buf_tcp_reader)?
                 }
             };
-            log::info!("Received: {}", format_data_size(len));
+            log::info!("Received: {} [{len} B]", format_data_size(len));
         }
         Err(e) => println!("Failed accepting connection to client: {e:?}"),
     }
 
-    log::info!("Server closing...");
+    log::debug!("Server exiting...");
     Ok(())
 }
 

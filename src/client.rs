@@ -18,6 +18,10 @@ pub fn run_client(cfg: &Config) -> Result<()> {
     let mut tcp_stream = connect_tcp_stream(cfg.address())?;
     if cfg.prealloc() {
         let file_size = File::open(cfg.file().unwrap())?.metadata()?.len();
+        log::debug!(
+            "Requesting preallocation of file of size {} [{file_size} B]",
+            format_data_size(file_size)
+        );
         tcp_stream.write_all(&file_size.to_be_bytes())?;
     }
     let mut buf_tcp_stream = tcp_bufwriter(&tcp_stream);
@@ -33,19 +37,24 @@ pub fn run_client(cfg: &Config) -> Result<()> {
     let (mut stdin_read, mut file_read, mut mmap_read);
     let bufreader: &mut dyn io::Read = match cfg.file() {
         Some(p) if cfg.use_mmap() => {
+            log::debug!("Opening file in memory map mode");
             mmap_read = MemoryMappedReader::new(p)?;
             &mut mmap_read
         }
         Some(p) => {
+            log::debug!("Opening file in buffered reading mode");
             file_read = file_with_bufreader(p)?;
             &mut file_read
         }
         None => {
+            log::debug!("Reading from stdin");
             stdin_read = stdin_bufreader();
             &mut stdin_read
         }
     };
 
+    let compression_mode = cfg.compression().unwrap_or_default();
+    log::debug!("Compression mode: {compression_mode}");
     let transferred_bytes = match cfg.compression().unwrap_or_default() {
         config::Compression::Lz4 => {
             let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut buf_tcp_stream);
@@ -63,7 +72,10 @@ pub fn run_client(cfg: &Config) -> Result<()> {
             incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?
         }
     };
-    log::info!("Wrote {} to stream", format_data_size(transferred_bytes));
+    log::info!(
+        "Sent {} [{transferred_bytes} B]",
+        format_data_size(transferred_bytes)
+    );
 
     Ok(())
 }

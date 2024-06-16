@@ -25,6 +25,7 @@ pub const BUFFERED_RW_BUFSIZE: usize = 32 * 1024;
 fn main() -> Result<()> {
     let cfg = Config::init()?;
 
+    log::trace!("{cfg:?}");
     log::debug!("{:?}", cfg.address());
 
     match cfg.command {
