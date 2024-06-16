@@ -1,8 +1,8 @@
 use anyhow::{Ok, Result};
-use std::fmt;
 use std::net::{TcpListener, TcpStream};
+use std::{fmt, io};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Address<'cfg> {
     pub ip: &'cfg str,
     pub port: u16,
@@ -20,12 +20,12 @@ impl<'cfg> fmt::Display for Address<'cfg> {
     }
 }
 
-pub fn tcp_stream(addr: Address) -> Result<TcpStream> {
-    let streamer = TcpStream::connect(addr.to_string())?;
-    Ok(streamer)
+pub fn connect_tcp_stream(addr: Address) -> Result<TcpStream> {
+    let stream = TcpStream::connect(addr.to_string())?;
+    Ok(stream)
 }
 
-pub fn tcp_listen(addr: Address) -> Result<TcpListener> {
+pub fn bind_tcp_listener(addr: Address) -> Result<TcpListener> {
     let listener = TcpListener::bind(addr.to_string())?;
     Ok(listener)
 }
@@ -55,4 +55,26 @@ pub fn format_data_size(size_bytes: u64) -> String {
             format!("{gib_bytes:.2} GiB")
         }
     }
+}
+
+pub fn incremental_rw<const BUFSIZE: usize>(
+    stream_writer: &mut dyn io::Write,
+    reader: &mut dyn io::Read,
+) -> Result<u64> {
+    let mut buf = [0; BUFSIZE];
+    let mut total_read = 0;
+    loop {
+        let bytes_read = reader.read(&mut buf)?;
+        if bytes_read == 0 {
+            break;
+        }
+        total_read += bytes_read;
+
+        let written_bytes = stream_writer.write(&buf[..bytes_read])?;
+        debug_assert_eq!(
+            bytes_read, written_bytes,
+            "Mismatch between bytes read/written, read={bytes_read}, written={written_bytes}"
+        );
+    }
+    Ok(total_read as u64)
 }
