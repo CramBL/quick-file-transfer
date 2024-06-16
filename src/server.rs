@@ -2,13 +2,13 @@ use flate2::read::GzDecoder;
 use lz4_flex::frame::FrameDecoder;
 use std::{
     fs::{self, File},
-    io::{self, BufReader, BufWriter, StdoutLock},
+    io::{self, BufReader, BufWriter, Read, StdoutLock},
     path::Path,
 };
 
 use crate::{
     config::{self, Config},
-    util::{bind_tcp_listener, format_data_size, incremental_rw},
+    util::{bind_tcp_listener, create_file_with_len, format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
@@ -31,8 +31,14 @@ pub fn run_server(cfg: &Config) -> Result<()> {
     };
 
     match listener.accept() {
-        Ok((socket, addr)) => {
+        Ok((mut socket, addr)) => {
             log::info!("Client accepted at: {addr:?}");
+            if cfg.prealloc() {
+                let mut size_buffer = [0u8; 8];
+                socket.read_exact(&mut size_buffer)?;
+                let file_size = u64::from_be_bytes(size_buffer);
+                create_file_with_len(cfg.file().unwrap(), file_size)?;
+            }
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
 
             let len = match cfg.compression().unwrap_or_default() {

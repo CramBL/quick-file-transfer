@@ -1,6 +1,7 @@
 use anyhow::{Ok, Result};
 use std::net::{TcpListener, TcpStream};
-use std::{fmt, io};
+use std::path::Path;
+use std::{fmt, fs, io};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Address<'cfg> {
@@ -77,4 +78,13 @@ pub fn incremental_rw<const BUFSIZE: usize>(
         );
     }
     Ok(total_read as u64)
+}
+
+pub fn create_file_with_len(path: &Path, len: u64) -> Result<()> {
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .open(&path)?;
+    file.set_len(len)?;
+    Ok(())
 }

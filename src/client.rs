@@ -15,7 +15,11 @@ use anyhow::Result;
 use flate2::{read::GzEncoder, Compression};
 
 pub fn run_client(cfg: &Config) -> Result<()> {
-    let tcp_stream = connect_tcp_stream(cfg.address())?;
+    let mut tcp_stream = connect_tcp_stream(cfg.address())?;
+    if cfg.prealloc() {
+        let file_size = File::open(cfg.file().unwrap())?.metadata()?.len();
+        tcp_stream.write_all(&file_size.to_be_bytes())?;
+    }
     let mut buf_tcp_stream = tcp_bufwriter(&tcp_stream);
 
     log::info!("Connection to: {}", cfg.address());

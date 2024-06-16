@@ -178,3 +178,59 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
 
     Ok(())
 }
+
+#[test]
+pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
+    let dir = TempDir::new()?;
+    let file_to_transfer = dir.child("f1.txt");
+    let file_to_receive = dir.child("f2.txt");
+
+    const TRANSFERED_CONTENTS: &str = "contents";
+    fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
+
+    let port = get_free_port(IP).unwrap();
+    let client_thread = spawn_client_thread(
+        file_to_transfer.path(),
+        false,
+        [
+            "--ip",
+            IP,
+            "--port",
+            port.as_str(),
+            "-vv",
+            "--prealloc",
+            "connect",
+        ],
+    );
+
+    let server_thread = spawn_server_thread(
+        Some(file_to_receive.path()),
+        [
+            "--ip",
+            IP,
+            "--port",
+            port.as_str(),
+            "-vv",
+            "--prealloc",
+            "listen",
+        ],
+    );
+
+    let (
+        ServerOutput {
+            server_stdout: _,
+            server_stderr: _,
+        },
+        ClientOutput {
+            client_stdout: _,
+            client_stderr: _,
+        },
+    ) = join_server_and_client_get_outputs(
+        ServerHandle(server_thread),
+        ClientHandle(client_thread),
+    )?;
+
+    pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
+
+    Ok(())
+}

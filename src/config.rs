@@ -57,6 +57,10 @@ pub struct Config {
     /// Use memory mapping mode
     #[arg(long, action = ArgAction::SetTrue, requires = "file")]
     mmap: bool,
+
+    /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
+    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
+    prealloc: bool,
 }
 
 impl Config {
@@ -97,6 +101,10 @@ impl Config {
 
     pub fn use_mmap(&self) -> bool {
         self.mmap
+    }
+
+    pub fn prealloc(&self) -> bool {
+        self.prealloc
     }
 }
 
