@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_imports)]
 
-use std::{net::IpAddr, thread::JoinHandle, time::Duration};
+use std::{net::IpAddr, path::PathBuf, thread::JoinHandle, time::Duration};
 /// Re-export some common utilities for system tests
 pub use {
     anyhow::Result,
@@ -88,7 +88,14 @@ pub fn join_thread_and_get_output(
 }
 
 /// Spawn the client thread that transfers content to the server
-pub fn spawn_client_thread<I, S>(file_for_transfer: &Path, args: I) -> JoinHandle<Result<Output>>
+///
+/// If `stdin_pipe_file` is `true`, the file contents will be piped into the process via stdin
+/// instead of passing the path of the file to the binary
+pub fn spawn_client_thread<I, S>(
+    file_for_transfer: &Path,
+    stdin_pipe_file: bool,
+    args: I,
+) -> JoinHandle<Result<Output>>
 where
     I: IntoIterator<Item = S> + Send + 'static,
     S: ToOwned + AsRef<std::ffi::OsStr>,
@@ -98,6 +105,7 @@ where
         Some(file_for_transfer),
         args,
         Some(Duration::from_millis(200)),
+        stdin_pipe_file,
     )
 }
 
@@ -108,7 +116,7 @@ where
     I: IntoIterator<Item = S> + Send + 'static,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
-    spawn_thread("qft server", receive_file, args, None)
+    spawn_thread("qft server", receive_file, args, None, false)
 }
 
 /// Generic spawn a thread to execute the binary, optionally make the thread sleep before executing the command
@@ -117,6 +125,7 @@ pub fn spawn_thread<I, S>(
     file: Option<&Path>,
     args: I,
     sleep: Option<Duration>,
+    stdin_pipe_file: bool,
 ) -> JoinHandle<Result<Output>>
 where
     I: IntoIterator<Item = S> + Send + 'static,
@@ -127,21 +136,25 @@ where
         .spawn({
             let fpath: Option<String> = file.map(|f| f.to_str().unwrap().to_owned());
             move || {
-                let mut cmd_server = Command::cargo_bin(BIN_NAME).unwrap();
+                let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
                 if let Some(fpath) = fpath {
-                    cmd_server.args(["--file", &fpath]);
+                    if stdin_pipe_file {
+                        cmd.pipe_stdin(PathBuf::from(&fpath))?;
+                    } else {
+                        cmd.args(["--file", &fpath]);
+                    }
                 }
-                cmd_server.args(args);
+                cmd.args(args);
 
                 if let Some(sleep_duration) = sleep {
                     std::thread::sleep(sleep_duration);
                 }
 
-                let out = cmd_server.output()?;
+                let out = cmd.output()?;
                 Ok(out)
             }
         })
-        .expect("Failed spawning server thread");
+        .expect(&format!("Failed spawning {thread_name} thread"));
 
     handle
 }
