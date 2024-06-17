@@ -9,15 +9,16 @@ mod client;
 
 pub fn handle_send_cmd(cmd: SendCommand, cfg: &Config) -> Result<()> {
     match cmd {
-        SendCommand::Ip(SendIpArgs { ip }) => run_client(ip.parse()?, cfg)?,
+        SendCommand::Ip(SendIpArgs { ip, port }) => run_client(ip.parse()?, port, cfg)?,
         SendCommand::Mdns(SendMdnsArgs {
             hostname,
             timeout_ms,
             ip_version,
+            port,
         }) => {
             if let Some(resolved_info) = resolve_mdns_hostname(&hostname, timeout_ms)? {
                 if let Some(ip) = resolved_info.get_ip(ip_version) {
-                    run_client(*ip, cfg)?;
+                    run_client(*ip, port, cfg)?;
                 }
             }
         }

@@ -32,11 +32,6 @@ pub struct Config {
     #[arg(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
-    /// e.g. 8080
-    /// TODO: default port? and/or option to retrieve a randomly generated free port
-    #[arg(short, long)]
-    port: Option<u16>,
-
     /// Send a message to the server
     #[arg(short, long)]
     message: Option<String>,
@@ -76,10 +71,6 @@ impl Config {
             .init()?;
 
         Ok(cfg)
-    }
-
-    pub fn port(&self) -> Option<u16> {
-        self.port
     }
 
     pub fn message(&self) -> Option<&str> {
@@ -137,6 +128,9 @@ pub struct ListenArgs {
     /// Host IP e.g. `127.0.0.1`
     #[arg(long, default_value_t  = String::from("0.0.0.0"))]
     pub ip: String,
+    /// e.g. 30301
+    #[arg(short, long, default_value_t = 12993)]
+    pub port: u16,
 }
 
 /// Holds the Send subcommands
@@ -157,7 +151,6 @@ pub enum SendCommand {
 #[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct SendMdnsArgs {
     /// mDNS hostname e.g. `foo.local`
-    #[arg(long)]
     pub hostname: String,
     /// Maximum time (ms) to attempt to resolve IP of mDNS hostname
     #[arg(long, default_value_t = 5000)]
@@ -165,14 +158,19 @@ pub struct SendMdnsArgs {
     /// Preferred IP version (attempts to fall back to another variant if the preferred version is not found)
     #[arg(long, default_value_t = IpVersion::V4)]
     pub ip_version: IpVersion,
+    /// e.g. 12005
+    #[arg(short, long, default_value_t = 12993)]
+    pub port: u16,
 }
 
 #[derive(Debug, Args, Clone)]
 #[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct SendIpArgs {
     /// IP to send to e.g. `192.0.0.1`
-    #[arg(long)]
     pub ip: String,
+    /// e.g. 12005
+    #[arg(short, long, default_value_t = 12993)]
+    pub port: u16,
 }
 
 /// Holds the mDNS subcommands

@@ -14,8 +14,7 @@ use crate::{
 use anyhow::Result;
 use flate2::{read::GzEncoder, Compression};
 
-pub fn run_client(ip: IpAddr, cfg: &Config) -> Result<()> {
-    let port = cfg.port().unwrap();
+pub fn run_client(ip: IpAddr, port: u16, cfg: &Config) -> Result<()> {
     let socket_addr = (ip, port);
     let mut tcp_stream = TcpStream::connect(socket_addr)?;
     if cfg.prealloc() {

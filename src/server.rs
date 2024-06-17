@@ -3,21 +3,22 @@ use lz4_flex::frame::FrameDecoder;
 use std::{
     fs::{self, File},
     io::{self, BufReader, BufWriter, Read, StdoutLock},
+    net::TcpListener,
     path::Path,
 };
 
 use crate::{
     config::{self, Config},
-    util::{bind_tcp_listener, create_file_with_len, format_data_size, incremental_rw, Address},
+    util::{create_file_with_len, format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 
-pub fn run_server(ip: &str, cfg: &Config) -> Result<()> {
-    let addr = Address::new(ip, cfg.port().unwrap());
-    let listener = bind_tcp_listener(addr)?;
+pub fn run_server(ip: &str, port: u16, cfg: &Config) -> Result<()> {
+    let socket_addr = (ip, port);
+    let listener = TcpListener::bind(socket_addr)?;
 
-    log::info!("Listening on: {addr}");
+    log::info!("Listening on: {ip}:{port}");
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
     let bufwriter: &mut dyn io::Write = match cfg.file() {

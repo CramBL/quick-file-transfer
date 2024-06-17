@@ -206,8 +206,7 @@ pub fn resolve_mdns_hostname(hostname: &str, timeout_ms: u64) -> Result<Option<M
                 }
             }
             stopflag.store(true, Ordering::Relaxed);
-            let info = hostname.map(|hn| MdnsServiceInfo::new(hn, None, None, ip_set));
-            info
+            hostname.map(|hn| MdnsServiceInfo::new(hn, None, None, ip_set))
         });
         let _resolver_watchdog = s.spawn(|| {
             // Wait for the timeout duration or until stopflag is set
