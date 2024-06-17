@@ -2,10 +2,11 @@
 
 - [Quick File Transfer (qft)](#quick-file-transfer-qft)
   - [Purpose](#purpose)
-  - [Example](#example)
+  - [Usage](#usage)
+  - [Example (outdated)](#example-outdated)
     - [Host #1](#host-1)
     - [Host #2](#host-2)
-  - [Example CI script](#example-ci-script)
+  - [Example CI script (outdated)](#example-ci-script-outdated)
   - [Supported compression formats](#supported-compression-formats)
 
 ## Purpose
@@ -18,7 +19,31 @@ To accomplish this, `qft` acts as a server/client that transfers data over TCP. 
 
 If you are worried about a man-in-the-middle, you can simply check your data on the receiving end before continuing. There should be no additional security concerns (if you disagree, please create an issue highlighting the concern).
 
-## Example
+## Usage
+
+```markdown
+$ qft -h
+Usage: qft [OPTIONS] <COMMAND>
+
+Commands:
+  listen  Run in listen (server) mode
+  send    Run in Connect (client) mode
+  mdns    Use mDNS utilities
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -v, --verbose...                 Pass many times for more log output
+  -q, --quiet                      Silence all output [env: QFT_QUIET=]
+  -m, --message <MESSAGE>          Send a message to the server
+  -f, --file <FILE>                Supply a file for I/O (if none: use stdio)
+  -c, --compression <COMPRESSION>  Compression format [possible values: gzip, bzip2, xz, lz4, none]
+      --mmap                       Use memory mapping mode
+      --prealloc                   Client will send the size of the file to the server allowing the server to preallocate for the expected size
+  -h, --help                       Print help (see more with '--help')
+  -V, --version                    Print version
+```
+
+## Example (outdated)
 
 In a CI script Host #2 could simply ssh into Host #1 and launch the `qft listen` command as a background process before invoking `qft connect`.
 
@@ -38,7 +63,7 @@ Transfer a file to **Host #1**.
 qft --ip <HOST-1-IP> --port 1234 --file transfer.data connect
 ```
 
-## Example CI script
+## Example CI script (outdated)
 
 Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.
 
