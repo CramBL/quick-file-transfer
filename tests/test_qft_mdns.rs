@@ -46,12 +46,12 @@ fn test_qft_mdns_discover_register() -> TestResult {
     let StdoutStderr {
         stdout: _reg_service_stdout,
         stderr: _reg_service_stderr,
-    } = process_output_to_stdio(reg_service_handle.join().unwrap()?)?;
+    } = process_output_to_stdio(reg_service_handle?.join().unwrap()?)?;
 
     let StdoutStderr {
         stdout: resolve_hostname_stdout,
         stderr: resolve_hostname_stderr,
-    } = process_output_to_stdio(resolve_hostname_handle.join().unwrap()?)?;
+    } = process_output_to_stdio(resolve_hostname_handle?.join().unwrap()?)?;
 
     eprintln!("{resolve_hostname_stdout}");
     eprintln!("{resolve_hostname_stderr}");

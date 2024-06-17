@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_imports)]
 
-use std::{net::IpAddr, path::PathBuf, thread::JoinHandle, time::Duration};
+use std::{fmt::Debug, net::IpAddr, path::PathBuf, thread::JoinHandle, time::Duration};
 /// Re-export some common utilities for system tests
 pub use {
     anyhow::Result,
@@ -37,15 +37,15 @@ pub fn join_server_and_client_get_outputs(
     server_thread: ServerHandle,
     client_handle: ClientHandle,
 ) -> Result<(ServerOutput, ClientOutput)> {
-    let StdoutStderr { stdout, stderr } = join_thread_and_get_output(server_thread.0)?;
-    let server_output = ServerOutput {
-        server_stdout: stdout,
-        server_stderr: stderr,
-    };
     let StdoutStderr { stdout, stderr } = join_thread_and_get_output(client_handle.0)?;
     let client_output = ClientOutput {
         client_stdout: stdout,
         client_stderr: stderr,
+    };
+    let StdoutStderr { stdout, stderr } = join_thread_and_get_output(server_thread.0)?;
+    let server_output = ServerOutput {
+        server_stdout: stdout,
+        server_stderr: stderr,
     };
     Ok((server_output, client_output))
 }
@@ -83,7 +83,7 @@ pub fn process_output_to_stdio(output: Output) -> Result<StdoutStderr> {
 pub fn join_thread_and_get_output(
     thread_handle: JoinHandle<Result<Output>>,
 ) -> Result<StdoutStderr> {
-    let output = thread_handle.join().unwrap()?;
+    let output = thread_handle.join().expect("Failed joining thread")?;
     process_output_to_stdio(output)
 }
 
@@ -95,9 +95,9 @@ pub fn spawn_client_thread<I, S>(
     file_for_transfer: &Path,
     stdin_pipe_file: bool,
     args: I,
-) -> JoinHandle<Result<Output>>
+) -> Result<JoinHandle<Result<Output>>>
 where
-    I: IntoIterator<Item = S> + Send + 'static,
+    I: IntoIterator<Item = S> + Send + 'static + Debug,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
     spawn_thread_qft_file_transfer(
@@ -111,9 +111,12 @@ where
 
 /// Spawn the server thread that receives content from the client
 /// If no receive_file is specified, prints contents to stdout
-pub fn spawn_server_thread<I, S>(receive_file: Option<&Path>, args: I) -> JoinHandle<Result<Output>>
+pub fn spawn_server_thread<I, S>(
+    receive_file: Option<&Path>,
+    args: I,
+) -> Result<JoinHandle<Result<Output>>>
 where
-    I: IntoIterator<Item = S> + Send + 'static,
+    I: IntoIterator<Item = S> + Send + 'static + Debug,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
     spawn_thread_qft_file_transfer("qft server", receive_file, args, None, false)
@@ -127,9 +130,9 @@ pub fn spawn_thread_qft_file_transfer<I, S>(
     args: I,
     sleep: Option<Duration>,
     stdin_pipe_file: bool,
-) -> JoinHandle<Result<Output>>
+) -> Result<JoinHandle<Result<Output>>>
 where
-    I: IntoIterator<Item = S> + Send + 'static,
+    I: IntoIterator<Item = S> + Send + 'static + Debug,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
     let sender_thread = std::thread::Builder::new().name(thread_name.to_string());
@@ -146,7 +149,9 @@ where
                     }
                 }
                 cmd.args(args);
+                cmd.timeout(Duration::from_secs(5));
 
+                eprintln!("Command: {cmd:?}");
                 if let Some(sleep_duration) = sleep {
                     std::thread::sleep(sleep_duration);
                 }
@@ -155,7 +160,7 @@ where
                 Ok(out)
             }
         })
-        .expect(&format!("Failed spawning {thread_name} thread"));
+        .context(format!("Failed spawning {thread_name} thread"));
 
     handle
 }
@@ -166,7 +171,7 @@ pub fn spawn_thread_qft<I, S>(
     thread_name: &str,
     args: I,
     sleep: Option<Duration>,
-) -> JoinHandle<Result<Output>>
+) -> Result<JoinHandle<Result<Output>>>
 where
     I: IntoIterator<Item = S> + Send + 'static,
     S: ToOwned + AsRef<std::ffi::OsStr>,
@@ -185,11 +190,12 @@ where
                 Ok(out)
             }
         })
-        .expect(&format!("Failed spawning {thread_name} thread"));
+        .context(format!("Failed spawning {thread_name} thread"));
 
     handle
 }
 
+use anyhow::Context;
 pub use thread_safe_port_distributor::{get_free_port, PortGuard};
 /// Implements utility to safely get a free port for a given IP in parallel from a large number of threads.
 ///
