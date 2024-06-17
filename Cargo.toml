@@ -19,6 +19,8 @@ memmap2 = "0.9.4"
 # For performance: (unsafe)
 #lz4_flex = { version = "0.11", default-features = false }
 flate2 = "1.0.30"
+mdns-sd = "0.11.1"
+
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
@@ -31,4 +33,5 @@ testresult = "0.4.0"
 [profile.release]
 lto = true
 codegen-units = 1
-panic = 'abort'
+panic = "abort"
+overflow-checks = false

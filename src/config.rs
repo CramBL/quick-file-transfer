@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
-use clap::{command, ArgAction, Parser, Subcommand, ValueEnum};
+use clap::{command, ArgAction, Args, Parser, Subcommand, ValueEnum};
 
 use crate::util::Address;
 
@@ -31,16 +31,17 @@ pub struct Config {
     pub verbose: u8,
 
     /// Silence all output
-    #[clap(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
+    #[arg(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
     /// e.g. 127.0.0.1
-    #[arg(short, long)]
-    ip: String,
+    #[arg(short, long, group = "network-address", global(true))]
+    ip: Option<String>,
 
     /// e.g. 8080
+    /// TODO: default port? and/or option to retrieve a randomly generated free port
     #[arg(short, long)]
-    port: u16,
+    port: Option<u16>,
 
     /// Send a message to the server
     #[arg(short, long)]
@@ -61,6 +62,15 @@ pub struct Config {
     /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
     #[arg(long, action = ArgAction::SetTrue, requires = "file")]
     prealloc: bool,
+
+    /// Use mDNS instead of an IP
+    #[arg(
+        long,
+        conflicts_with("ip"),
+        requires = "port",
+        group = "network-address"
+    )]
+    mdns: Option<String>,
 }
 
 impl Config {
@@ -84,7 +94,11 @@ impl Config {
     }
 
     pub fn address(&self) -> Address {
-        Address::new(&self.ip, self.port)
+        if let Some(ip) = self.ip.as_deref() {
+            Address::new(ip, self.port.unwrap())
+        } else {
+            todo!("Convert mDNS hostname to IP")
+        }
     }
 
     pub fn message(&self) -> Option<&str> {
@@ -130,6 +144,47 @@ pub enum Command {
     Listen,
     /// Run in Connect (client) mode
     Connect,
+    /// Use mDNS utilities
+    Mdns(MdnsArgs),
+}
+
+/// Holds the mDNS subcommands
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true)]
+#[command(arg_required_else_help = true)]
+pub struct MdnsArgs {
+    #[command(subcommand)]
+    pub subcmd: MdnsCommand,
+}
+
+#[derive(Subcommand, Clone, Debug)]
+pub enum MdnsCommand {
+    /// Discover mDNS
+    Discover(MdnsDiscoverArgs),
+    /// Resolve mDNS hostname
+    Resolve(MdnsResolveArgs),
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true)]
+#[command(flatten_help = true)]
+pub struct MdnsDiscoverArgs {
+    /// Service to discover e.g. '_googlecast._tcp.local.'
+    pub service: String,
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true)]
+#[command(flatten_help = true)]
+pub struct MdnsResolveArgs {
+    /// mDNS hostname to discover e.g. 'foo.local'
+    pub hostname: String,
+    /// Sets a timeout in milliseconds (default 10s)
+    #[arg(long, default_value_t = 10000)]
+    pub timeout_ms: u64,
+    /// Whether to exit on the first resolution or to continue
+    #[arg(long, default_value_t = true)]
+    pub oneshot: bool,
 }
 
 use strum_macros::Display;

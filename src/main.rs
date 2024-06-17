@@ -10,11 +10,13 @@
 
 use anyhow::Result;
 use client::run_client;
-use config::Config;
+use config::{Command, Config, MdnsCommand, MdnsDiscoverArgs, MdnsResolveArgs};
+use mdns::{resolve_hostname, resolve_mdns};
 use server::run_server;
 
 pub mod client;
 pub mod config;
+pub mod mdns;
 pub mod mmap_reader;
 pub mod server;
 pub mod util;
@@ -29,8 +31,16 @@ fn main() -> Result<()> {
     log::debug!("{:?}", cfg.address());
 
     match cfg.command {
-        config::Command::Listen => run_server(&cfg)?,
-        config::Command::Connect => run_client(&cfg)?,
+        Command::Listen => run_server(&cfg)?,
+        Command::Connect => run_client(&cfg)?,
+        Command::Mdns(cmd) => match cmd.subcmd {
+            MdnsCommand::Discover(MdnsDiscoverArgs { service }) => resolve_mdns(service),
+            MdnsCommand::Resolve(MdnsResolveArgs {
+                hostname,
+                timeout_ms,
+                oneshot,
+            }) => resolve_hostname(hostname, timeout_ms, oneshot)?,
+        },
     }
 
     Ok(())
