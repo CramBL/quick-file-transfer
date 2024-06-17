@@ -10,8 +10,8 @@
 
 use anyhow::Result;
 use client::run_client;
-use config::{Command, Config, MdnsCommand, MdnsDiscoverArgs, MdnsResolveArgs};
-use mdns::{resolve_hostname, resolve_mdns};
+use config::{Command, Config, MdnsCommand, MdnsDiscoverArgs, MdnsRegisterArgs, MdnsResolveArgs};
+use mdns::{handle_mdns_command, resolve_hostname, resolve_mdns, start_mdns_service};
 use server::run_server;
 
 pub mod client;
@@ -28,20 +28,11 @@ fn main() -> Result<()> {
     let cfg = Config::init()?;
 
     log::trace!("{cfg:?}");
-    log::debug!("{:?}", cfg.address());
+    //log::debug!("{:?}", cfg.address());
 
     match cfg.command {
-        Command::Listen => run_server(&cfg)?,
-        Command::Connect => run_client(&cfg)?,
-        Command::Mdns(cmd) => match cmd.subcmd {
-            MdnsCommand::Discover(MdnsDiscoverArgs { service }) => resolve_mdns(service),
-            MdnsCommand::Resolve(MdnsResolveArgs {
-                hostname,
-                timeout_ms,
-                oneshot,
-            }) => resolve_hostname(hostname, timeout_ms, oneshot)?,
-        },
+        Command::Listen => run_server(&cfg),
+        Command::Connect => run_client(&cfg),
+        Command::Mdns(cmd) => handle_mdns_command(cmd.subcmd),
     }
-
-    Ok(())
 }

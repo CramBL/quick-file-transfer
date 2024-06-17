@@ -163,28 +163,54 @@ pub enum MdnsCommand {
     Discover(MdnsDiscoverArgs),
     /// Resolve mDNS hostname
     Resolve(MdnsResolveArgs),
+    /// Register a temporary service (for testing)
+    Register(MdnsRegisterArgs),
 }
 
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true)]
-#[command(flatten_help = true)]
+#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct MdnsDiscoverArgs {
-    /// Service to discover e.g. '_googlecast._tcp.local.'
-    pub service: String,
+    /// Service label e.g. `foo` -> `_foo._<service_protocol>.local.`
+    #[arg(short('l'), long)]
+    pub service_label: String,
+    /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
+    #[arg(long, visible_alias("proto"))]
+    pub service_protocol: String,
 }
 
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true)]
-#[command(flatten_help = true)]
+#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct MdnsResolveArgs {
-    /// mDNS hostname to discover e.g. 'foo.local'
+    /// mDNS hostname to resolve e.g. `foo` (translates to `foo.local.`)
     pub hostname: String,
     /// Sets a timeout in milliseconds (default 10s)
     #[arg(long, default_value_t = 10000)]
     pub timeout_ms: u64,
-    /// Whether to exit on the first resolution or to continue
-    #[arg(long, default_value_t = true)]
-    pub oneshot: bool,
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+pub struct MdnsRegisterArgs {
+    /// Service name to register e.g. `foo` (translates to `foo.local.`)
+    #[arg(short('n'), long, default_value_t = String::from("test_name"))]
+    pub hostname: String,
+    /// Service label e.g. `foo` -> `_foo._<service_protocol>.local.`
+    #[arg(short('l'), long, default_value_t = String::from("test_label"))]
+    pub service_label: String,
+    /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
+    #[arg(short('t'), long, default_value_t = String::from("udp"), visible_alias = "proto")]
+    pub service_protocol: String,
+    #[arg(short, long, default_value_t = String::from("test_inst"))]
+    pub instance_name: String,
+    /// How long to keep it alive in ms
+    #[arg(long, default_value_t = 600000)]
+    pub keep_alice_ms: u64,
+    /// Service IP, if none provided -> Use auto adressing
+    #[arg(long)]
+    pub ip: Option<String>,
+    /// Service port
+    #[arg(long, default_value_t = 11542)]
+    pub port: u16,
 }
 
 use strum_macros::Display;
