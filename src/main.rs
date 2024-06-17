@@ -10,8 +10,8 @@
 
 use anyhow::Result;
 use client::run_client;
-use config::{Command, Config, MdnsCommand, MdnsDiscoverArgs, MdnsRegisterArgs, MdnsResolveArgs};
-use mdns::{handle_mdns_command, resolve_hostname, resolve_mdns, start_mdns_service};
+use config::{Command, Config};
+use mdns::{handle_mdns_command};
 use server::run_server;
 
 pub mod client;

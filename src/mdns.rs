@@ -11,13 +11,17 @@ use std::{
     thread,
     time::Duration,
 };
+use util::MdnsServiceInfo;
+
+mod util;
 
 pub fn handle_mdns_command(cmd: MdnsCommand) -> Result<()> {
     match cmd {
         MdnsCommand::Discover(MdnsDiscoverArgs {
             service_label,
             service_protocol,
-        }) => resolve_mdns(service_label, service_protocol),
+            timeout_ms,
+        }) => resolve_mdns(&service_label, &service_protocol, timeout_ms),
         MdnsCommand::Resolve(MdnsResolveArgs {
             hostname,
             timeout_ms,
@@ -27,7 +31,7 @@ pub fn handle_mdns_command(cmd: MdnsCommand) -> Result<()> {
             service_label,
             service_protocol,
             instance_name,
-            keep_alice_ms,
+            keep_alive_ms,
             ip,
             port,
         }) => start_mdns_service(
@@ -35,60 +39,84 @@ pub fn handle_mdns_command(cmd: MdnsCommand) -> Result<()> {
             &service_label,
             &service_protocol,
             &instance_name,
-            keep_alice_ms,
+            keep_alive_ms,
             ip,
             port,
         ),
     }
 }
 
-pub fn resolve_mdns(service_label: String, service_protocol: String) -> Result<()> {
-    // Create a daemon
-    let mdns = ServiceDaemon::new().expect("Failed to create daemon");
+pub fn resolve_mdns(service_label: &str, service_protocol: &str, timeout_ms: u64) -> Result<()> {
+    let stopflag = Arc::new(AtomicBool::new(false));
+    let stopflag_child = Arc::clone(&stopflag);
+
+    let mdns = ServiceDaemon::new()?;
 
     // Browse for a service type.
     let service_type = format!("_{service_label}._{service_protocol}.local.");
     log::info!("Browsing for {service_type}");
-    let receiver = mdns.browse(&service_type).expect("Failed to browse");
+    let receiver = mdns.browse(&service_type)?;
 
-    // Receive the browse events in sync
-    let mdns_t = mdns.clone();
     std::thread::spawn(move || {
-        while let Ok(event) = receiver.recv() {
-            match event {
-                ServiceEvent::ServiceResolved(info) => {
-                    log::info!("Resolved a new service: {}", info.get_fullname());
-                    log::info!("Hostname: {}", info.get_hostname());
-                    let receiver = mdns_t
-                        .resolve_hostname(info.get_hostname(), Some(4))
-                        .unwrap();
-                    while let Ok(hostname_resolution_event) = receiver.recv() {
-                        match hostname_resolution_event {
-                            mdns_sd::HostnameResolutionEvent::SearchStarted(s) => {
-                                log::info!("Search started: {s}")
-                            }
-                            mdns_sd::HostnameResolutionEvent::AddressesFound(s, ip_set) => {
-                                log::info!("Hostname found! {s}: {ip_set:?}")
-                            }
-                            _ => log::debug!("{hostname_resolution_event:?}"),
+        let mut discovered_services: Vec<MdnsServiceInfo> = vec![];
+        loop {
+            if stopflag_child.load(Ordering::Relaxed) {
+                break;
+            }
+            while let Ok(event) = receiver.try_recv() {
+                match event {
+                    ServiceEvent::ServiceResolved(info) => {
+                        log::info!("Resolved a new service: {}", info.get_fullname());
+                        log::debug!("Hostname: {}", info.get_hostname());
+                        log::debug!("IP: {:?}", info.get_addresses());
+                        if let Some(service_info) = discovered_services
+                            .iter_mut()
+                            .find(|s| s.hostname() == info.get_hostname())
+                        {
+                            service_info.add_ips(info.get_addresses());
+                        } else {
+                            discovered_services.push(info.into());
                         }
                     }
-                }
-                other_event => {
-                    log::info!("Received other event: {:?}", &other_event);
+                    other_event => {
+                        log::debug!("Received other event: {:?}", &other_event);
+                    }
                 }
             }
         }
+        log::info!(
+            "Discovered {} service{}!",
+            discovered_services.len(),
+            if discovered_services.len() == 1 {
+                ""
+            } else {
+                "s"
+            }
+        );
+        for discovered_service in discovered_services.iter() {
+            println!("{discovered_service}");
+        }
+        stopflag_child.store(true, Ordering::Relaxed);
     });
 
-    // Gracefully shutdown the daemon.
-    std::thread::sleep(std::time::Duration::from_secs(10));
+    // Wait for the timeout duration or until stopflag is set
+    let start_time = std::time::Instant::now();
+    while !stopflag.load(Ordering::Relaxed) {
+        if start_time.elapsed() >= Duration::from_millis(timeout_ms) {
+            stopflag.store(true, Ordering::Relaxed);
+            thread::sleep(Duration::from_millis(200));
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
     mdns.shutdown()?;
     Ok(())
 }
 
 pub fn resolve_hostname(hostname: &str, timeout_ms: u64) -> Result<()> {
     let stopflag = Arc::new(AtomicBool::new(false));
+    let stopflag_child = Arc::clone(&stopflag);
+    let thread_timeout = timeout_ms + 10;
 
     let mdns = ServiceDaemon::new()?;
     let mut hostname = hostname.to_owned();
@@ -96,8 +124,6 @@ pub fn resolve_hostname(hostname: &str, timeout_ms: u64) -> Result<()> {
     log::info!("Browsing for {hostname}");
     let receiver = mdns.resolve_hostname(&hostname, Some(timeout_ms))?;
 
-    let stopflag_other = Arc::clone(&stopflag);
-    let thread_timeout = timeout_ms + 10;
     // Receive the events
     std::thread::spawn(move || {
         let mut hostname = None;
@@ -119,20 +145,15 @@ pub fn resolve_hostname(hostname: &str, timeout_ms: u64) -> Result<()> {
                 _ => log::debug!("{hostname_resolution_event:?}"),
             }
         }
-        println!("Hostname: {}", hostname.unwrap_or_default());
-        let ip_count = ip_set.len();
-        for (idx, ip) in ip_set.iter().enumerate() {
-            if idx == 0 {
-                if ip_count == 1 {
-                    println!("IP: {ip}");
-                } else {
-                    println!("IP(s): {ip}");
-                }
-            } else {
-                println!("       {ip}");
-            }
-        }
-        stopflag_other.store(true, Ordering::Relaxed);
+
+        let info = MdnsServiceInfo::new(
+            hostname.as_deref().unwrap_or_default().to_owned(),
+            None,
+            None,
+            ip_set,
+        );
+        println!("{info}");
+        stopflag_child.store(true, Ordering::Relaxed);
     });
 
     // Wait for the timeout duration or until stopflag is set
@@ -169,7 +190,7 @@ pub fn start_mdns_service(
     let hostname = format!("{hostname}.local.");
 
     let mut new_service =
-        ServiceInfo::new(&service_type, instance_name, &hostname, &ip_str, port, None)?;
+        ServiceInfo::new(&service_type, instance_name, &hostname, ip_str, port, None)?;
 
     if no_ip_provided {
         new_service = new_service.enable_addr_auto();

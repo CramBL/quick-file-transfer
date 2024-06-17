@@ -176,12 +176,16 @@ pub struct MdnsDiscoverArgs {
     /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
     #[arg(long, visible_alias("proto"))]
     pub service_protocol: String,
+    /// How long in ms to attempt to discover services before shutdown
+    #[arg(long, default_value_t = 5000)]
+    pub timeout_ms: u64,
 }
 
 #[derive(Debug, Args, Clone)]
 #[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct MdnsResolveArgs {
     /// mDNS hostname to resolve e.g. `foo` (translates to `foo.local.`)
+    #[arg(short('n'), long)]
     pub hostname: String,
     /// Sets a timeout in milliseconds (default 10s)
     #[arg(long, default_value_t = 10000)]
@@ -204,7 +208,7 @@ pub struct MdnsRegisterArgs {
     pub instance_name: String,
     /// How long to keep it alive in ms
     #[arg(long, default_value_t = 600000)]
-    pub keep_alice_ms: u64,
+    pub keep_alive_ms: u64,
     /// Service IP, if none provided -> Use auto adressing
     #[arg(long)]
     pub ip: Option<String>,
