@@ -8,15 +8,16 @@ use std::{
 
 use crate::{
     config::{self, Config},
-    util::{bind_tcp_listener, create_file_with_len, format_data_size, incremental_rw},
+    util::{bind_tcp_listener, create_file_with_len, format_data_size, incremental_rw, Address},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 
-pub fn run_server(cfg: &Config) -> Result<()> {
-    let listener = bind_tcp_listener(cfg.address())?;
+pub fn run_server(ip: &str, cfg: &Config) -> Result<()> {
+    let addr = Address::new(ip, cfg.port().unwrap());
+    let listener = bind_tcp_listener(addr)?;
 
-    log::info!("Listening on: {}", cfg.address());
+    log::info!("Listening on: {addr}");
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
     let bufwriter: &mut dyn io::Write = match cfg.file() {

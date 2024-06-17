@@ -8,14 +8,15 @@ use std::{
 use crate::{
     config::{self, Config},
     mmap_reader::MemoryMappedReader,
-    util::{connect_tcp_stream, format_data_size, incremental_rw},
+    util::{connect_tcp_stream, format_data_size, incremental_rw, Address},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 use flate2::{read::GzEncoder, Compression};
 
-pub fn run_client(cfg: &Config) -> Result<()> {
-    let mut tcp_stream = connect_tcp_stream(cfg.address())?;
+pub fn run_client(ip: &str, cfg: &Config) -> Result<()> {
+    let addr = Address::new(ip, cfg.port().unwrap());
+    let mut tcp_stream = connect_tcp_stream(addr)?;
     if cfg.prealloc() {
         let file_size = File::open(cfg.file().unwrap())?.metadata()?.len();
         log::debug!(
@@ -26,7 +27,7 @@ pub fn run_client(cfg: &Config) -> Result<()> {
     }
     let mut buf_tcp_stream = tcp_bufwriter(&tcp_stream);
 
-    log::info!("Connection to: {}", cfg.address());
+    log::info!("Connecting to: {addr}");
     if let Some(msg) = cfg.message() {
         let res = buf_tcp_stream.write_all(msg.as_bytes());
         log::debug!("Wrote message: {msg}");

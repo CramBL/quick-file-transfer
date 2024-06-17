@@ -4,8 +4,6 @@ use anyhow::Result;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{command, ArgAction, Args, Parser, Subcommand, ValueEnum};
 
-use crate::util::Address;
-
 /// Styling for the `help` terminal output
 pub fn cli_styles() -> Styles {
     Styles::styled()
@@ -34,10 +32,6 @@ pub struct Config {
     #[arg(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
-    /// e.g. 127.0.0.1
-    #[arg(short, long, group = "network-address", global(true))]
-    ip: Option<String>,
-
     /// e.g. 8080
     /// TODO: default port? and/or option to retrieve a randomly generated free port
     #[arg(short, long)]
@@ -62,15 +56,6 @@ pub struct Config {
     /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
     #[arg(long, action = ArgAction::SetTrue, requires = "file")]
     prealloc: bool,
-
-    /// Use mDNS instead of an IP
-    #[arg(
-        long,
-        conflicts_with("ip"),
-        requires = "port",
-        group = "network-address"
-    )]
-    mdns: Option<String>,
 }
 
 impl Config {
@@ -93,12 +78,8 @@ impl Config {
         Ok(cfg)
     }
 
-    pub fn address(&self) -> Address {
-        if let Some(ip) = self.ip.as_deref() {
-            Address::new(ip, self.port.unwrap())
-        } else {
-            todo!("Convert mDNS hostname to IP")
-        }
+    pub fn port(&self) -> Option<u16> {
+        self.port
     }
 
     pub fn message(&self) -> Option<&str> {
@@ -138,20 +119,59 @@ impl std::fmt::Display for ColorWhen {
     }
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Clone)]
 pub enum Command {
     /// Run in listen (server) mode
-    Listen,
+    Listen(ListenArgs),
     /// Run in Connect (client) mode
-    Connect,
+    Send(SendArgs),
     /// Use mDNS utilities
     Mdns(MdnsArgs),
 }
 
+/// Holds the Listen subcommands
+
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+pub struct ListenArgs {
+    /// Host IP e.g. `127.0.0.1`
+    #[arg(long, default_value_t  = String::from("0.0.0.0"))]
+    pub ip: String,
+}
+
+/// Holds the Send subcommands
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
+pub struct SendArgs {
+    #[command(subcommand)]
+    pub subcmd: SendCommand,
+}
+
+#[derive(Subcommand, Clone, Debug)]
+pub enum SendCommand {
+    Ip(SendIpArgs),
+    Mdns(SendMdnsArgs),
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+pub struct SendMdnsArgs {
+    /// mDNS hostname e.g. `foo.local`
+    #[arg(long)]
+    pub hostname: String,
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+pub struct SendIpArgs {
+    /// IP to send to e.g. `192.0.0.1`
+    #[arg(long)]
+    pub ip: String,
+}
+
 /// Holds the mDNS subcommands
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true)]
-#[command(arg_required_else_help = true)]
+#[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
 pub struct MdnsArgs {
     #[command(subcommand)]
     pub subcmd: MdnsCommand,

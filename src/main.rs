@@ -10,7 +10,7 @@
 
 use anyhow::Result;
 use client::run_client;
-use config::{Command, Config};
+use config::{Command, Config, ListenArgs, SendArgs, SendCommand, SendIpArgs, SendMdnsArgs};
 use mdns::handle_mdns_command;
 use server::run_server;
 
@@ -30,9 +30,19 @@ fn main() -> Result<()> {
     log::trace!("{cfg:?}");
     //log::debug!("{:?}", cfg.address());
 
-    match cfg.command {
-        Command::Listen => run_server(&cfg),
-        Command::Connect => run_client(&cfg),
+    match cfg.command.clone() {
+        Command::Listen(ListenArgs { ip }) => run_server(&ip, &cfg),
+        Command::Send(cmd) => handle_send_cmd(cmd.subcmd, &cfg),
         Command::Mdns(cmd) => handle_mdns_command(cmd.subcmd),
+    }
+}
+
+pub fn handle_send_cmd(cmd: SendCommand, cfg: &Config) -> Result<()> {
+    match cmd {
+        SendCommand::Ip(SendIpArgs { ip }) => run_client(&ip, cfg),
+        SendCommand::Mdns(SendMdnsArgs { hostname }) => {
+            todo!("Resolve hostname to ip");
+            //run_client(&ip, cfg)
+        }
     }
 }
