@@ -119,55 +119,64 @@ pub fn discover_service_type(
 }
 
 pub fn resolve_hostname(hostname: &str, timeout_ms: u64) -> Result<()> {
-    let stopflag = Arc::new(AtomicBool::new(false));
-    let stopflag_child = Arc::clone(&stopflag);
+    let stopflag = AtomicBool::new(false);
     let thread_timeout = timeout_ms + 10;
 
     let mdns = ServiceDaemon::new()?;
     let mut hostname = hostname.to_owned();
     hostname.push_str(".local.");
-    log::info!("Browsing for {hostname}");
+    log::info!("Resolving address for {hostname}");
     let receiver = mdns.resolve_hostname(&hostname, Some(timeout_ms))?;
 
+    let mut resolved_info: Option<MdnsServiceInfo> = None;
     // Receive the events
-    std::thread::spawn(move || {
-        let mut hostname = None;
-        let mut ip_set = HashSet::<IpAddr>::new();
-        while let Ok(hostname_resolution_event) = receiver.recv() {
-            match hostname_resolution_event {
-                mdns_sd::HostnameResolutionEvent::SearchStarted(s) => {
-                    log::debug!("Search started: {s}")
-                }
-                mdns_sd::HostnameResolutionEvent::AddressesFound(s, recv_ip_set) => {
-                    log::debug!("Hostname found! {s}: {recv_ip_set:?}");
-                    if let Some(h) = hostname.as_deref() {
-                        debug_assert_eq!(h, s);
-                    } else {
-                        hostname = Some(s);
+    std::thread::scope(|s| {
+        let _resolver_receiver = s.spawn(|| {
+            let mut hostname = None;
+            let mut ip_set = HashSet::<IpAddr>::new();
+            while let Ok(hostname_resolution_event) = receiver.recv() {
+                match hostname_resolution_event {
+                    mdns_sd::HostnameResolutionEvent::SearchStarted(s) => {
+                        log::debug!("Search started: {s}")
                     }
-                    ip_set.extend(recv_ip_set);
+                    mdns_sd::HostnameResolutionEvent::AddressesFound(s, recv_ip_set) => {
+                        log::debug!("Hostname found! {s}: {recv_ip_set:?}");
+                        if let Some(h) = hostname.as_deref() {
+                            debug_assert_eq!(h, s);
+                        } else {
+                            hostname = Some(s);
+                        }
+                        ip_set.extend(recv_ip_set);
+                    }
+                    _ => log::debug!("{hostname_resolution_event:?}"),
                 }
-                _ => log::debug!("{hostname_resolution_event:?}"),
             }
-        }
 
-        let info = MdnsServiceInfo::new(
-            hostname.as_deref().unwrap_or_default().to_owned(),
-            None,
-            None,
-            ip_set,
-        );
-        println!("{info}");
-        stopflag_child.store(true, Ordering::Relaxed);
+            let info = MdnsServiceInfo::new(
+                hostname.as_deref().unwrap_or_default().to_owned(),
+                None,
+                None,
+                ip_set,
+            );
+            println!("{info}");
+            resolved_info = Some(info);
+            stopflag.store(true, Ordering::Relaxed);
+        });
+        let _resolver_watchdog = s.spawn(|| {
+            // Wait for the timeout duration or until stopflag is set
+            let start_time = std::time::Instant::now();
+            while !stopflag.load(Ordering::Relaxed) {
+                if start_time.elapsed() >= Duration::from_millis(thread_timeout) {
+                    break;
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+        });
     });
-
-    // Wait for the timeout duration or until stopflag is set
-    let start_time = std::time::Instant::now();
-    while !stopflag.load(Ordering::Relaxed) {
-        if start_time.elapsed() >= Duration::from_millis(thread_timeout) {
-            break;
-        }
-        thread::sleep(Duration::from_millis(10));
+    if let Some(resolved_info) = resolved_info {
+        println!("{resolved_info}");
+    } else {
+        log::error!("Failed resolving {hostname}");
     }
     mdns.shutdown()?;
     Ok(())
