@@ -100,7 +100,7 @@ where
     I: IntoIterator<Item = S> + Send + 'static,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
-    spawn_thread(
+    spawn_thread_qft_file_transfer(
         "qft client",
         Some(file_for_transfer),
         args,
@@ -116,11 +116,12 @@ where
     I: IntoIterator<Item = S> + Send + 'static,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
-    spawn_thread("qft server", receive_file, args, None, false)
+    spawn_thread_qft_file_transfer("qft server", receive_file, args, None, false)
 }
 
-/// Generic spawn a thread to execute the binary, optionally make the thread sleep before executing the command
-pub fn spawn_thread<I, S>(
+/// Generic spawn a thread to execute the binary in the server/client file-transfer mode.
+/// optionally have the thread sleep before executing the command
+pub fn spawn_thread_qft_file_transfer<I, S>(
     thread_name: &str,
     file: Option<&Path>,
     args: I,
@@ -146,6 +147,36 @@ where
                 }
                 cmd.args(args);
 
+                if let Some(sleep_duration) = sleep {
+                    std::thread::sleep(sleep_duration);
+                }
+
+                let out = cmd.output()?;
+                Ok(out)
+            }
+        })
+        .expect(&format!("Failed spawning {thread_name} thread"));
+
+    handle
+}
+
+/// Generic spawn a thread to execute the binary with the given args.
+/// Optionally have the thread sleep before executing the command
+pub fn spawn_thread_qft<I, S>(
+    thread_name: &str,
+    args: I,
+    sleep: Option<Duration>,
+) -> JoinHandle<Result<Output>>
+where
+    I: IntoIterator<Item = S> + Send + 'static,
+    S: ToOwned + AsRef<std::ffi::OsStr>,
+{
+    let sender_thread = std::thread::Builder::new().name(thread_name.to_string());
+    let handle = sender_thread
+        .spawn({
+            move || {
+                let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
+                cmd.args(args);
                 if let Some(sleep_duration) = sleep {
                     std::thread::sleep(sleep_duration);
                 }
