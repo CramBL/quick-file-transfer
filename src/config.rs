@@ -159,6 +159,12 @@ pub struct SendMdnsArgs {
     /// mDNS hostname e.g. `foo.local`
     #[arg(long)]
     pub hostname: String,
+    /// Maximum time (ms) to attempt to resolve IP of mDNS hostname
+    #[arg(long, default_value_t = 5000)]
+    pub timeout_ms: u64,
+    /// Preferred IP version (attempts to fall back to another variant if the preferred version is not found)
+    #[arg(long, default_value_t = IpVersion::V4)]
+    pub ip_version: IpVersion,
 }
 
 #[derive(Debug, Args, Clone)]
@@ -246,4 +252,11 @@ pub enum Compression {
     Lz4,
     #[default]
     None,
+}
+
+#[derive(Debug, Default, ValueEnum, Clone, Copy, Display)]
+pub enum IpVersion {
+    #[default]
+    V4,
+    V6,
 }

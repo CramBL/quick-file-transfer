@@ -2,6 +2,8 @@ use std::{collections::HashSet, fmt, net::IpAddr};
 
 use mdns_sd::ServiceInfo;
 
+use crate::config::IpVersion;
+
 #[derive(Debug, PartialEq)]
 pub struct MdnsServiceInfo {
     hostname: String,
@@ -31,6 +33,25 @@ impl MdnsServiceInfo {
 
     pub fn hostname(&self) -> &str {
         &self.hostname
+    }
+
+    pub fn ips(&self) -> &HashSet<IpAddr> {
+        &self.ips
+    }
+
+    pub fn any_ipv4(&self) -> Option<&IpAddr> {
+        self.ips.iter().find(|a| a.is_ipv4())
+    }
+
+    pub fn any_ipv6(&self) -> Option<&IpAddr> {
+        self.ips.iter().find(|a| a.is_ipv6())
+    }
+
+    pub fn get_ip(&self, preferred_version: IpVersion) -> Option<&IpAddr> {
+        match preferred_version {
+            IpVersion::V4 => self.any_ipv4().or(self.any_ipv6()),
+            IpVersion::V6 => self.any_ipv6().or(self.any_ipv4()),
+        }
     }
 }
 

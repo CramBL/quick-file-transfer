@@ -9,15 +9,15 @@
 )]
 
 use anyhow::Result;
-use client::run_client;
-use config::{Command, Config, ListenArgs, SendArgs, SendCommand, SendIpArgs, SendMdnsArgs};
+use config::{Command, Config, ListenArgs};
 use mdns::handle_mdns_command;
+use send::handle_send_cmd;
 use server::run_server;
 
-pub mod client;
 pub mod config;
 pub mod mdns;
 pub mod mmap_reader;
+pub mod send;
 pub mod server;
 pub mod util;
 
@@ -28,21 +28,10 @@ fn main() -> Result<()> {
     let cfg = Config::init()?;
 
     log::trace!("{cfg:?}");
-    //log::debug!("{:?}", cfg.address());
 
     match cfg.command.clone() {
         Command::Listen(ListenArgs { ip }) => run_server(&ip, &cfg),
         Command::Send(cmd) => handle_send_cmd(cmd.subcmd, &cfg),
         Command::Mdns(cmd) => handle_mdns_command(cmd.subcmd),
-    }
-}
-
-pub fn handle_send_cmd(cmd: SendCommand, cfg: &Config) -> Result<()> {
-    match cmd {
-        SendCommand::Ip(SendIpArgs { ip }) => run_client(&ip, cfg),
-        SendCommand::Mdns(SendMdnsArgs { hostname }) => {
-            todo!("Resolve hostname to ip");
-            //run_client(&ip, cfg)
-        }
     }
 }

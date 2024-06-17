@@ -1,22 +1,23 @@
 use std::{
     fs::{self, File},
     io::{self, BufReader, BufWriter, StdinLock, Write},
-    net::TcpStream,
+    net::{IpAddr, TcpStream},
     path::Path,
 };
 
 use crate::{
     config::{self, Config},
     mmap_reader::MemoryMappedReader,
-    util::{connect_tcp_stream, format_data_size, incremental_rw, Address},
+    util::{format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 use flate2::{read::GzEncoder, Compression};
 
-pub fn run_client(ip: &str, cfg: &Config) -> Result<()> {
-    let addr = Address::new(ip, cfg.port().unwrap());
-    let mut tcp_stream = connect_tcp_stream(addr)?;
+pub fn run_client(ip: IpAddr, cfg: &Config) -> Result<()> {
+    let port = cfg.port().unwrap();
+    let socket_addr = (ip, port);
+    let mut tcp_stream = TcpStream::connect(socket_addr)?;
     if cfg.prealloc() {
         let file_size = File::open(cfg.file().unwrap())?.metadata()?.len();
         log::debug!(
@@ -27,7 +28,7 @@ pub fn run_client(ip: &str, cfg: &Config) -> Result<()> {
     }
     let mut buf_tcp_stream = tcp_bufwriter(&tcp_stream);
 
-    log::info!("Connecting to: {addr}");
+    log::info!("Connecting to: {ip}:{port}");
     if let Some(msg) = cfg.message() {
         let res = buf_tcp_stream.write_all(msg.as_bytes());
         log::debug!("Wrote message: {msg}");

@@ -182,7 +182,7 @@ pub fn start_mdns_service(
 pub fn resolve_mdns_hostname(hostname: &str, timeout_ms: u64) -> Result<Option<MdnsServiceInfo>> {
     let stopflag = AtomicBool::new(false);
     let mdns = ServiceDaemon::new()?;
-    let receiver = mdns.resolve_hostname(&hostname, Some(timeout_ms))?;
+    let receiver = mdns.resolve_hostname(hostname, Some(timeout_ms))?;
 
     let resolved_info = std::thread::scope(|s| {
         let resolver_receiver = s.spawn(|| {
@@ -205,13 +205,8 @@ pub fn resolve_mdns_hostname(hostname: &str, timeout_ms: u64) -> Result<Option<M
                     _ => log::trace!("{hostname_resolution_event:?}"),
                 }
             }
-            let info = if let Some(hn) = hostname {
-                Some(MdnsServiceInfo::new(hn, None, None, ip_set))
-            } else {
-                None
-            };
-
             stopflag.store(true, Ordering::Relaxed);
+            let info = hostname.map(|hn| MdnsServiceInfo::new(hn, None, None, ip_set));
             info
         });
         let _resolver_watchdog = s.spawn(|| {
