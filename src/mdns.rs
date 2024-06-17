@@ -21,7 +21,7 @@ pub fn handle_mdns_command(cmd: MdnsCommand) -> Result<()> {
             service_label,
             service_protocol,
             timeout_ms,
-        }) => resolve_mdns(&service_label, &service_protocol, timeout_ms),
+        }) => discover_service_type(&service_label, &service_protocol, timeout_ms),
         MdnsCommand::Resolve(MdnsResolveArgs {
             hostname,
             timeout_ms,
@@ -46,7 +46,11 @@ pub fn handle_mdns_command(cmd: MdnsCommand) -> Result<()> {
     }
 }
 
-pub fn resolve_mdns(service_label: &str, service_protocol: &str, timeout_ms: u64) -> Result<()> {
+pub fn discover_service_type(
+    service_label: &str,
+    service_protocol: &str,
+    timeout_ms: u64,
+) -> Result<()> {
     let stopflag = Arc::new(AtomicBool::new(false));
     let stopflag_child = Arc::clone(&stopflag);
 
@@ -55,6 +59,7 @@ pub fn resolve_mdns(service_label: &str, service_protocol: &str, timeout_ms: u64
     // Browse for a service type.
     let service_type = format!("_{service_label}._{service_protocol}.local.");
     log::info!("Browsing for {service_type}");
+
     let receiver = mdns.browse(&service_type)?;
 
     std::thread::spawn(move || {

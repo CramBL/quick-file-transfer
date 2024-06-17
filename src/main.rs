@@ -11,7 +11,7 @@
 use anyhow::Result;
 use client::run_client;
 use config::{Command, Config};
-use mdns::{handle_mdns_command};
+use mdns::handle_mdns_command;
 use server::run_server;
 
 pub mod client;
