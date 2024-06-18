@@ -20,8 +20,16 @@ lint *ARGS="-- -D warnings --no-deps":
 
 # Run pre-commit on all files
 [no-exit-message]
-run-pre-commit:
+run-pre-commit-all:
     pre-commit run --all-files
+
+# Run pre-commit and formatting/linting
+pre-commit: && check-version
+    pre-commit run
+    cargo fmt
+    cargo check
+    cargo clippy
+    cargo doc
 
 # Format the code
 [no-exit-message]
