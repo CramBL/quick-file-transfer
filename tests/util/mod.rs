@@ -141,6 +141,7 @@ where
             let fpath: Option<String> = file.map(|f| f.to_str().unwrap().to_owned());
             move || {
                 let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
+                cmd.args(args);
                 if let Some(fpath) = fpath {
                     if stdin_pipe_file {
                         cmd.pipe_stdin(PathBuf::from(&fpath))?;
@@ -148,7 +149,6 @@ where
                         cmd.args(["--file", &fpath]);
                     }
                 }
-                cmd.args(args);
                 cmd.timeout(Duration::from_secs(5));
 
                 eprintln!("Command: {cmd:?}");

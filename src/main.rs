@@ -30,8 +30,12 @@ fn main() -> Result<()> {
     log::trace!("{cfg:?}");
 
     match cfg.command.clone() {
-        Command::Listen(ListenArgs { ip, port }) => run_server(&ip, port, &cfg),
-        Command::Send(cmd) => handle_send_cmd(cmd.subcmd, &cfg),
+        Command::Listen(ListenArgs {
+            ref ip,
+            port,
+            ref content_transfer_args,
+        }) => run_server(ip, port, &cfg, content_transfer_args),
+        Command::Send(ref cmd) => handle_send_cmd(cmd, &cfg),
         Command::Mdns(cmd) => handle_mdns_command(cmd.subcmd),
     }
 }

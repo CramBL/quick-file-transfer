@@ -111,7 +111,7 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
         false,
-        ["--mmap", "send", "ip", IP, "--port", port.as_str(), "-vv"],
+        ["send", "ip", "--mmap", IP, "--port", port.as_str(), "-vv"],
     );
 
     let server_thread =
@@ -187,9 +187,9 @@ pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
         file_to_transfer.path(),
         false,
         [
-            "--prealloc",
             "send",
             "ip",
+            "--prealloc",
             IP,
             "--port",
             port.as_str(),
@@ -200,8 +200,8 @@ pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
         [
-            "--prealloc",
             "listen",
+            "--prealloc",
             "--ip",
             IP,
             "--port",

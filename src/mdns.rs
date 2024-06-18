@@ -18,26 +18,24 @@ mod util;
 pub fn handle_mdns_command(cmd: MdnsCommand) -> Result<()> {
     match cmd {
         MdnsCommand::Discover(MdnsDiscoverArgs {
-            service_label,
-            service_protocol,
             timeout_ms,
-        }) => discover_service_type(&service_label, &service_protocol, timeout_ms),
+            service_type,
+        }) => discover_service_type(&service_type.label, &service_type.protocol, timeout_ms),
         MdnsCommand::Resolve(MdnsResolveArgs {
             hostname,
             timeout_ms,
         }) => resolve_hostname_print_stdout(&hostname, timeout_ms),
         MdnsCommand::Register(MdnsRegisterArgs {
             hostname,
-            service_label,
-            service_protocol,
             instance_name,
             keep_alive_ms,
             ip,
             port,
+            service_type,
         }) => start_mdns_service(
             &hostname,
-            &service_label,
-            &service_protocol,
+            &service_type.label,
+            &service_type.protocol,
             &instance_name,
             keep_alive_ms,
             ip,

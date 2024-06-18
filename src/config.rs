@@ -31,26 +31,6 @@ pub struct Config {
     /// Silence all output
     #[arg(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
-
-    /// Send a message to the server
-    #[arg(short, long)]
-    message: Option<String>,
-
-    /// Supply a file for I/O (if none: use stdio)
-    #[arg(short, long)]
-    file: Option<PathBuf>,
-
-    /// Compression format
-    #[arg(short, long)]
-    compression: Option<Compression>,
-
-    /// Use memory mapping mode
-    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
-    mmap: bool,
-
-    /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
-    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
-    prealloc: bool,
 }
 
 impl Config {
@@ -72,26 +52,6 @@ impl Config {
 
         Ok(cfg)
     }
-
-    pub fn message(&self) -> Option<&str> {
-        self.message.as_deref()
-    }
-
-    pub fn file(&self) -> Option<&Path> {
-        self.file.as_deref()
-    }
-
-    pub fn compression(&self) -> Option<Compression> {
-        self.compression
-    }
-
-    pub fn use_mmap(&self) -> bool {
-        self.mmap
-    }
-
-    pub fn prealloc(&self) -> bool {
-        self.prealloc
-    }
 }
 
 #[derive(ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
@@ -107,6 +67,33 @@ impl std::fmt::Display for ColorWhen {
             .expect("no values are skipped")
             .get_name()
             .fmt(f)
+    }
+}
+
+#[derive(Debug, Args, Clone)]
+pub struct ContentTransferArgs {
+    /// Compression format
+    #[arg(short, long)]
+    compression: Option<Compression>,
+
+    /// Supply a file for I/O (if none: use stdio)
+    #[arg(short, long)]
+    file: Option<PathBuf>,
+
+    /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
+    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
+    prealloc: bool,
+}
+
+impl ContentTransferArgs {
+    pub fn compression(&self) -> Option<Compression> {
+        self.compression
+    }
+    pub fn file(&self) -> Option<&Path> {
+        self.file.as_deref()
+    }
+    pub fn prealloc(&self) -> bool {
+        self.prealloc
     }
 }
 
@@ -131,6 +118,8 @@ pub struct ListenArgs {
     /// e.g. 30301
     #[arg(short, long, default_value_t = 12993)]
     pub port: u16,
+    #[command(flatten)]
+    pub content_transfer_args: ContentTransferArgs,
 }
 
 /// Holds the Send subcommands
@@ -143,8 +132,28 @@ pub struct SendArgs {
 
 #[derive(Subcommand, Clone, Debug)]
 pub enum SendCommand {
+    /// Send to target by specifying IP e.g. `192.1.1.1`
     Ip(SendIpArgs),
+    /// Send to target by specifying mDNS hostname e.g. `foo.local`
     Mdns(SendMdnsArgs),
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+pub struct SendIpArgs {
+    /// IP to send to e.g. `192.0.0.1`
+    pub ip: String,
+    /// e.g. 12005
+    #[arg(short, long, default_value_t = 12993, value_parser = clap::value_parser!(u16).range(1..))]
+    pub port: u16,
+    /// Send a message to the server
+    #[arg(short, long)]
+    pub message: Option<String>,
+    #[command(flatten)]
+    pub content_transfer_args: ContentTransferArgs,
+    /// Use memory mapping mode
+    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
+    pub mmap: bool,
 }
 
 #[derive(Debug, Args, Clone)]
@@ -161,16 +170,14 @@ pub struct SendMdnsArgs {
     /// e.g. 12005
     #[arg(short, long, default_value_t = 12993)]
     pub port: u16,
-}
-
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
-pub struct SendIpArgs {
-    /// IP to send to e.g. `192.0.0.1`
-    pub ip: String,
-    /// e.g. 12005
-    #[arg(short, long, default_value_t = 12993)]
-    pub port: u16,
+    /// Send a message to the server
+    #[arg(short, long)]
+    pub message: Option<String>,
+    #[command(flatten)]
+    pub content_transfer_args: ContentTransferArgs,
+    /// Use memory mapping mode
+    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
+    pub mmap: bool,
 }
 
 /// Holds the mDNS subcommands
@@ -192,14 +199,20 @@ pub enum MdnsCommand {
 }
 
 #[derive(Debug, Args, Clone)]
+pub struct ServiceTypeArgs {
+    /// Service label e.g. `foo` -> `_foo._<service_protocol>.local.`
+    #[arg(name("service-label"), short('l'), long)]
+    pub label: String,
+    /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
+    #[arg(name = "service-protocol", long, visible_alias("proto"))]
+    pub protocol: String,
+}
+
+#[derive(Debug, Args, Clone)]
 #[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct MdnsDiscoverArgs {
-    /// Service label e.g. `foo` -> `_foo._<service_protocol>.local.`
-    #[arg(short('l'), long)]
-    pub service_label: String,
-    /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
-    #[arg(long, visible_alias("proto"))]
-    pub service_protocol: String,
+    #[command(flatten)]
+    pub service_type: ServiceTypeArgs,
     /// How long in ms to attempt to discover services before shutdown
     #[arg(long, default_value_t = 5000)]
     pub timeout_ms: u64,
@@ -222,12 +235,8 @@ pub struct MdnsRegisterArgs {
     /// Service name to register e.g. `foo` (translates to `foo.local.`)
     #[arg(short('n'), long, default_value_t = String::from("test_name"))]
     pub hostname: String,
-    /// Service label e.g. `foo` -> `_foo._<service_protocol>.local.`
-    #[arg(short('l'), long, default_value_t = String::from("test_label"))]
-    pub service_label: String,
-    /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
-    #[arg(short('t'), long, default_value_t = String::from("udp"), visible_alias = "proto")]
-    pub service_protocol: String,
+    #[command(flatten)]
+    pub service_type: ServiceTypeArgs,
     #[arg(short, long, default_value_t = String::from("test_inst"))]
     pub instance_name: String,
     /// How long to keep it alive in ms

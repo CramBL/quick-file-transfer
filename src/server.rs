@@ -8,20 +8,25 @@ use std::{
 };
 
 use crate::{
-    config::{self, Config},
+    config::{self, Config, ContentTransferArgs},
     util::{create_file_with_len, format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 
-pub fn run_server(ip: &str, port: u16, cfg: &Config) -> Result<()> {
+pub fn run_server(
+    ip: &str,
+    port: u16,
+    _cfg: &Config,
+    content_transfer_args: &ContentTransferArgs,
+) -> Result<()> {
     let socket_addr = (ip, port);
     let listener = TcpListener::bind(socket_addr)?;
 
     log::info!("Listening on: {ip}:{port}");
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
-    let bufwriter: &mut dyn io::Write = match cfg.file() {
+    let bufwriter: &mut dyn io::Write = match content_transfer_args.file() {
         Some(p) => {
             file_write = file_with_bufwriter(p)?;
             &mut file_write
@@ -35,7 +40,7 @@ pub fn run_server(ip: &str, port: u16, cfg: &Config) -> Result<()> {
     match listener.accept() {
         Ok((mut socket, addr)) => {
             log::info!("Client accepted at: {addr:?}");
-            if cfg.prealloc() {
+            if content_transfer_args.prealloc() {
                 let mut size_buffer = [0u8; 8];
                 socket.read_exact(&mut size_buffer)?;
                 let file_size = u64::from_be_bytes(size_buffer);
@@ -43,11 +48,11 @@ pub fn run_server(ip: &str, port: u16, cfg: &Config) -> Result<()> {
                     "Preallocating file of size {} [{file_size} B]",
                     format_data_size(file_size)
                 );
-                create_file_with_len(cfg.file().unwrap(), file_size)?;
+                create_file_with_len(content_transfer_args.file().unwrap(), file_size)?;
             }
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
 
-            let len = match cfg.compression().unwrap_or_default() {
+            let len = match content_transfer_args.compression().unwrap_or_default() {
                 config::Compression::Lz4 => {
                     let mut tcp_decoder = FrameDecoder::new(buf_tcp_reader);
                     incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
