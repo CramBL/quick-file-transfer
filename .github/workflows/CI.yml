@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  JUST_VERBOSE: 1
+  RUSTFLAGS: "-Dwarnings" # Fail on all warnings
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: extractions/setup-just@v2
+
+    - name: Lint
+      run: just ci-lint
+    
+    - name: Build
+      run: cargo build --verbose
+    
+    - name: Run tests
+      run: cargo test --verbose
+
+    - name: Audit
+      run: |
+        cargo install cargo-audit
+        just audit
