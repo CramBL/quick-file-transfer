@@ -1,6 +1,6 @@
 name: Release
 
-# Adapted from: https://github.com/casey/just/blob/71b72c4a5378cdf198ba4273e8ff536f9dfa015f/.github/workflows/release.yaml 
+# Adapted from: https://github.com/casey/just/blob/71b72c4a5378cdf198ba4273e8ff536f9dfa015f/.github/workflows/release.yaml
 
 on:
   push:
@@ -92,3 +92,15 @@ jobs:
         files: CHANGELOG.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-crates-io:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - uses: extractions/setup-just@v2
+            - name: Check version
+              run: just --verbose check-version
+            - name: Publish
+              run: cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}
