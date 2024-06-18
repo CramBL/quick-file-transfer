@@ -223,7 +223,6 @@ pub struct MdnsDiscoverArgs {
 #[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct MdnsResolveArgs {
     /// mDNS hostname to resolve e.g. `foo` (translates to `foo.local.`)
-    #[arg(short('n'), long)]
     pub hostname: String,
     /// Sets a timeout in milliseconds (default 10s)
     #[arg(long, default_value_t = 10000)]

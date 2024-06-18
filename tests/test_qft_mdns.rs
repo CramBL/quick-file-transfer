@@ -33,13 +33,7 @@ fn test_qft_mdns_discover_register() -> TestResult {
 
     let resolve_hostname_handle = spawn_thread_qft(
         "resolve hostname thread",
-        [
-            "mdns",
-            "resolve",
-            "--hostname",
-            SERVICE_HOSTNAME,
-            "--timeout-ms=100",
-        ],
+        ["mdns", "resolve", SERVICE_HOSTNAME, "--timeout-ms=100"],
         Some(Duration::from_millis(100)),
     );
 

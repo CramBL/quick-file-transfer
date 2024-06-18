@@ -118,7 +118,9 @@ pub fn discover_service_type(
 
 pub fn resolve_hostname_print_stdout(hostname: &str, timeout_ms: u64) -> Result<()> {
     let mut hostname = hostname.to_owned();
-    hostname.push_str(".local.");
+    if !hostname.ends_with(".local") && !hostname.ends_with(".local.") {
+        hostname.push_str(".local.");
+    }
     log::info!("Resolving address for {hostname}");
     if let Some(resolved_info) = resolve_mdns_hostname(&hostname, timeout_ms)? {
         println!("{resolved_info}");
