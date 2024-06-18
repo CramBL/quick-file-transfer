@@ -8,6 +8,8 @@
     - [Host #2](#host-2)
   - [Example CI script (outdated)](#example-ci-script-outdated)
   - [Supported compression formats](#supported-compression-formats)
+  - [Install](#install)
+    - [Prebuilt binaries](#prebuilt-binaries)
 
 ## Purpose
 
@@ -85,3 +87,18 @@ ssh user@${HOST1_IP} -t "rauc install ${FIRMWARE}"
 - [x] gzip
 - [x] lz4
 - [ ] xz
+
+
+## Install
+
+```shell
+cargo install quick-file-transfer
+```
+
+### Prebuilt binaries
+
+```shell
+curl -L -H "Accept: application/vnd.github.v3.raw" \
+        https://api.github.com/repos/CramBL/quick-file-transfer/contents/scripts/install.sh \
+        | bash -s -- --to ~/bin
+```
