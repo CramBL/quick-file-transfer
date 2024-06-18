@@ -77,9 +77,7 @@ pub fn run_client(
         config::Compression::Bzip2 => todo!(),
         config::Compression::Xz => {
             let mut compressor = xz2::read::XzEncoder::new(bufreader, 9);
-            let total_read =
-                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?;
-            total_read
+            incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?
         }
         config::Compression::None => {
             incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?
