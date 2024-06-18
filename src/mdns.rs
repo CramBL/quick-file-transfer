@@ -178,6 +178,22 @@ pub fn start_mdns_service(
 }
 
 pub fn resolve_mdns_hostname(hostname: &str, timeout_ms: u64) -> Result<Option<MdnsServiceInfo>> {
+    let mut hostname = hostname;
+
+    // If the supplied hostname does not end in a dot e.g. `foo.local`, try adding a dot and continuing
+    // This is simply to fix the 'convenience case' where the ending dot is omitted from the hostname.
+    // The dot-ending is a fully qualified path that DNS resolvers typically add if it is not present.
+    let dot_corrected_hostname = if hostname.chars().last().unwrap_or_default() != '.' {
+        let mut hostname_try_fix = hostname.to_owned();
+        hostname_try_fix.push('.');
+        hostname_try_fix
+    } else {
+        String::with_capacity(0)
+    };
+    if !dot_corrected_hostname.is_empty() {
+        hostname = dot_corrected_hostname.as_str()
+    }
+
     let stopflag = AtomicBool::new(false);
     let mdns = ServiceDaemon::new()?;
     let receiver = mdns.resolve_hostname(hostname, Some(timeout_ms))?;
