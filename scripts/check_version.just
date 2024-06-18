@@ -6,7 +6,7 @@ check-version:
     cargo_ver=$( just _get_cargo_toml_version )
     git_tag_ver=$( just _latest_git_tag )
     if [[ ${cargo_ver} != ${git_tag_ver} ]]; then
-        {{ERROR}} red "Mismatch between Cargo.toml and git tag version ${cargo_ver} != ${git_tag_ver}"
+        {{ERROR}} "Mismatch between Cargo.toml and git tag version ${cargo_ver} != ${git_tag_ver}"
     fi
 
 # Get the version as specified in Cargo.toml
@@ -15,9 +15,9 @@ _get_cargo_toml_version:
 
 # Get the semver described by the latest tag
 _latest_git_tag:
-    #!/usr/bin/env bash
-    if ! git describe --tags &> /dev/null; then
-        echo "0.1.0"
-        exit 0
-    fi
-    git describe --tags --abbrev=0 | grep --perl-regexp --only-matching "(?<=v).*"
+	#!/usr/bin/env bash
+	if ! git describe --tags &> /dev/null; then
+		echo "0.1.0"
+		exit 0
+	fi
+	git describe --tags --abbrev=0 | grep --perl-regexp --only-matching "^[0-9]+\.[0-9]+\.[0-9]+.*"
