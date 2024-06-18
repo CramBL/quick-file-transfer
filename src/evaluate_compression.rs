@@ -38,8 +38,8 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
     let mut bufreader = file_with_bufreader(&input_file)?;
 
     let start = Instant::now();
-    let mut test_contents = String::new();
-    bufreader.read_to_string(&mut test_contents)?;
+    let mut test_contents = Vec::new();
+    bufreader.read_to_end(&mut test_contents)?;
     let elapsed = start.elapsed();
     let test_contents_len = test_contents.len();
     if test_contents_len == 0 {
@@ -47,9 +47,10 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
     }
     eprintln!("Buffered reading {test_contents_len} B contents in {elapsed:?}",);
     let mut compression_results: Vec<CompressionResult> = Vec::new();
-    let mut test_contents_reader =
-        BufReader::with_capacity(BUFFERED_RW_BUFSIZE, test_contents.as_bytes());
+
     for compr in evaluate_compressions.iter() {
+        let mut test_contents_reader =
+            BufReader::with_capacity(BUFFERED_RW_BUFSIZE, test_contents.as_slice());
         test_compress(
             *compr,
             &mut test_contents_reader,
@@ -171,7 +172,7 @@ fn test_compress(
     let res = match compression_ut {
         Compression::Gzip => black_box(test_compress_gzip(test_contents_reader, test_contents_len)),
         Compression::Bzip2 => todo!(),
-        Compression::Xz => todo!(),
+        Compression::Xz => black_box(test_compress_xz(test_contents_reader, test_contents_len)),
         Compression::Lz4 => black_box(test_compress_lz4(test_contents_reader, test_contents_len)),
         Compression::None => unreachable!("nonsense"),
     }?;
@@ -187,14 +188,13 @@ fn test_compress_gzip(
 ) -> Result<CompressionResult> {
     use flate2::read::GzEncoder;
     let mut compressed_data: Vec<u8> = Vec::new();
-    // Start the timer
     let start = Instant::now();
-    // Compress the input
+
+    // Compress
     let mut gz = GzEncoder::new(test_contents, flate2::Compression::default());
     let _total_read = incremental_rw::<TCP_STREAM_BUFSIZE>(&mut compressed_data, &mut gz)?;
-    let duration = start.elapsed();
 
-    // Create the result
+    let duration = start.elapsed();
     let result = CompressionResult::new(
         Compression::Gzip,
         duration,
@@ -210,17 +210,37 @@ fn test_compress_lz4(
     test_contents_len: usize,
 ) -> Result<CompressionResult> {
     let mut compressed_data: Vec<u8> = Vec::new();
-    // Start the timer
     let start = Instant::now();
-    // Compress the input
+
+    // Compress
     let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut compressed_data);
     let _total_read = incremental_rw::<TCP_STREAM_BUFSIZE>(&mut lz4_writer, test_contents)?;
     lz4_writer.finish()?;
-    let duration = start.elapsed();
 
-    // Create the result
+    let duration = start.elapsed();
     let result = CompressionResult::new(
         Compression::Lz4,
+        duration,
+        compressed_data.len(),
+        test_contents_len,
+    );
+
+    Ok(result)
+}
+
+fn test_compress_xz(
+    test_contents: &mut dyn io::Read,
+    test_contents_len: usize,
+) -> Result<CompressionResult> {
+    let mut compressed_data: Vec<u8> = Vec::new();
+    let start = Instant::now();
+    // Compress
+    let mut compressor = xz2::read::XzEncoder::new(test_contents, 9);
+    let _total_read = incremental_rw::<TCP_STREAM_BUFSIZE>(&mut compressed_data, &mut compressor)?;
+
+    let duration = start.elapsed();
+    let result = CompressionResult::new(
+        Compression::Xz,
         duration,
         compressed_data.len(),
         test_contents_len,
