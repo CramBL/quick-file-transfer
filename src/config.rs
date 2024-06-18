@@ -99,9 +99,9 @@ impl ContentTransferArgs {
 
 #[derive(Debug, Subcommand, Clone)]
 pub enum Command {
-    /// Run in listen (server) mode
+    /// Run in Listen (server) mode
     Listen(ListenArgs),
-    /// Run in Connect (client) mode
+    /// Run in Send (client) mode
     Send(SendArgs),
     /// Use mDNS utilities
     Mdns(MdnsArgs),
