@@ -1,3 +1,4 @@
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -261,9 +262,18 @@ pub enum Compression {
     None,
 }
 
-#[derive(Debug, Default, ValueEnum, Clone, Copy, Display)]
+#[derive(Debug, Default, ValueEnum, Clone, Copy)]
 pub enum IpVersion {
     #[default]
     V4,
     V6,
+}
+
+impl fmt::Display for IpVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IpVersion::V4 => write!(f, "v4"),
+            IpVersion::V6 => write!(f, "v6"),
+        }
+    }
 }
