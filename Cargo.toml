@@ -1,5 +1,6 @@
 [package]
 name = "quick-file-transfer"
+description = "Transfer files quickly, safely, and painlessly between hosts on a local network"
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
