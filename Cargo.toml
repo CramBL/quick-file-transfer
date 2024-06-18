@@ -27,6 +27,7 @@ memmap2 = "0.9.4"
 #lz4_flex = { version = "0.11", default-features = false }
 flate2 = "1.0.30"
 mdns-sd = "0.11.1"
+xz2 = "0.1.7"
 
 
 [dev-dependencies]
