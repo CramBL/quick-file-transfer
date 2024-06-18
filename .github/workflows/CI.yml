@@ -58,6 +58,5 @@ jobs:
 
     - name: Test install.sh
       run: |
-        echo TODO
         bash scripts/install.sh --to /tmp --tag 0.2.0
         /tmp/qft --version
