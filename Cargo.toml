@@ -2,6 +2,12 @@
 name = "quick-file-transfer"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+
+license = "MIT"
+authors = ["Marc Beck König <mbkj@tutamail.com>"]
+repository = "https://github.com/CramBL/quick-file-transfer"
+keywords = ["file-transfer", "mdns", "dnssd", "command-line"]
 
 [[bin]]
 name = "qft"
