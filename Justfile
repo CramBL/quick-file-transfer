@@ -18,11 +18,6 @@ env:
 lint *ARGS="-- -D warnings --no-deps":
     cargo clippy {{ ARGS }}
 
-# Run pre-commit on all files
-[no-exit-message]
-run-pre-commit-all:
-    pre-commit run --all-files
-
 # Run pre-commit and formatting/linting
 pre-commit: && check-version
     pre-commit run

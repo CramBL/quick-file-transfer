@@ -89,4 +89,3 @@ print_rgb_interpolated R G B TEXT V0="" V1="" V2="" V3="" V4="" V5="" V6="" V7="
 		TEXT=${TEXT//"%${idx}"/${replacement}}
 	done
 	printf "%b%b%b" "${PREFIX}" "${TEXT}" "{{ANSI_ESC_CLR}}"
-
