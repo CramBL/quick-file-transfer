@@ -3,10 +3,15 @@
 - [Quick File Transfer (qft)](#quick-file-transfer-qft)
   - [Purpose](#purpose)
   - [Usage](#usage)
-  - [Example (outdated)](#example-outdated)
+  - [Examples](#examples)
+    - [File transfer](#file-transfer)
     - [Host #1](#host-1)
     - [Host #2](#host-2)
-  - [Example CI script (outdated)](#example-ci-script-outdated)
+  - [Example CI scrip](#example-ci-scrip)
+    - [mDNS utilities](#mdns-utilities)
+      - [Discover services](#discover-services)
+      - [Resolve mDNS hostname](#resolve-mdns-hostname)
+      - [Register mDNS service (for testing)](#register-mdns-service-for-testing)
   - [Supported compression formats](#supported-compression-formats)
   - [Install](#install)
     - [Prebuilt binaries](#prebuilt-binaries)
@@ -45,16 +50,18 @@ Options:
   -V, --version                    Print version
 ```
 
-## Example (outdated)
+## Examples
 
-In a CI script Host #2 could simply ssh into Host #1 and launch the `qft listen` command as a background process before invoking `qft connect`.
+### File transfer
+
+In a CI script Host #2 could simply ssh into Host #1 and launch the `qft listen` command as a background process before invoking `qft send`.
 
 ### Host #1
 
 Listen on port `1234`.
 
 ```shell
-qft --ip 0.0.0.0 --port 1234 --file received.data listen
+qft listen --ip 0.0.0.0 --port 12345 --file received.data
 ```
 
 ### Host #2
@@ -62,24 +69,87 @@ qft --ip 0.0.0.0 --port 1234 --file received.data listen
 Transfer a file to **Host #1**.
 
 ```shell
-qft --ip <HOST-1-IP> --port 1234 --file transfer.data connect
+qft send ip <HOST-1-IP> --port 12345 --file transfer.data
 ```
 
-## Example CI script (outdated)
+## Example CI scrip
 
 Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.
 
 ```bash
 #!/usr/bin/env bash
 set -eu
-HOST1_IP="x.x.x.x"
-PORT=1234
+HOST1_HOSTNAME="foo.local."
 FIRMWARE="fw.raucb"
-ssh -f user@${HOST1_IP} "sh -c 'nohup qft --ip ${HOST1_IP} --port ${PORT} --file ${FIRMWARE} listen > qft_listen.log 2>&1 &'"
-qft --ip ${HOST1_IP} --port ${PORT} --file ${FIRMWARE} connect
-ssh user@${HOST1_IP} -t "rauc install ${FIRMWARE}"
+ssh -f user@${HOST1_HOSTNAME} "sh -c 'nohup qft listen --file ${FIRMWARE} > qft_listen.log 2>&1 &'"
+qft send mdns ${HOST1_HOSTNAME} --file ${FIRMWARE} --prealloc
+ssh user@${HOST1_HOSTNAME} -t "rauc install ${FIRMWARE}"
 ...
 ```
+
+It is also possible to ad-hoc register a service with `qft mdns register` AND run the `qft listen` side-by-side and then send to the listening process by addressing the registered hostname from a remote host.
+
+### mDNS utilities
+
+The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and much slower than e.g. `avahi` is.
+
+#### Discover services
+
+```shell
+qft mdns discover --service-label googlecast --service-protocol tcp
+```
+
+Example Output
+
+```text
+INFO Browsing for _googlecast._tcp.local.
+INFO Resolved a new service: uie4027lgu-0b9b5630aa2b87f6945638a0128bfedd._googlecast._tcp.local.
+INFO Discovered 1 service!
+Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+Type Name: _googlecast._tcp.local.
+Full Name: uie4027lgu-0b9b5670aa2b87d6945638a0128bfedd._googlecast._tcp.local.
+IP(s): fe80::d912:463a:8c88:deca
+       192.168.121.21
+```
+
+#### Resolve mDNS hostname
+
+```shell
+qft mdns resolve --hostname
+```
+
+Example output
+
+```text 0b9b5670-aa2b-87d6-9456-38a0128bfedd
+INFO Resolving address for 0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+IP(s): fe80::d912:463a:8c88:deca
+       192.168.121.21
+```
+
+#### Register mDNS service (for testing)
+
+```shell
+qft mdns register --hostname foo-name --service-label bar-label --service-protocol tcp --keep-alive-ms 123456
+```
+
+```text
+INFO Registering:
+    Hostname:  foo-name.local.
+    Type:      _bar-label._tcp.local.
+    Full Name: test_inst._bar-label._tcp.local.
+
+INFO Keeping alive for: 123.456s
+```
+
+You can the find it using the `qft mdns` subcommands or e.g. with `avah-resolve`:
+
+```shell
+avahi-resolve --name foo-name.local
+# foo-name.local  172.17.0.1
+```
+
+But that only outputs the first received address. Using `qft mdns resolve` will always output all the associated IPs. If you need speed, `avahi` is a much better choice though.
 
 ## Supported compression formats
 
@@ -87,7 +157,6 @@ ssh user@${HOST1_IP} -t "rauc install ${FIRMWARE}"
 - [x] gzip
 - [x] lz4
 - [ ] xz
-
 
 ## Install
 
