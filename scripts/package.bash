@@ -32,7 +32,7 @@ fi
 
 echo "Copying release files..."
 mkdir dist
-cp --verbose -r \
+cp -r \
     "$EXECUTABLE" \
     Cargo.lock \
     Cargo.toml \
