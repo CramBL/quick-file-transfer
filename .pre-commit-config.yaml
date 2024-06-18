@@ -1,0 +1,14 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0 # use `pre-commit autoupdate` to get the latest rev!
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      # basic checks for custom yaml syntax (gitlab !reference)
+      - id: check-yaml
+        name: Check YAML (unsafe)
+        args: [--unsafe]
+        files: .gitlab-ci.yml
+      # check other yaml files normally
+      - id: check-yaml
+        exclude: .gitlab-ci.yml

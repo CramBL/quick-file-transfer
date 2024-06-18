@@ -236,7 +236,7 @@ pub mod thread_safe_port_distributor {
     /// ```ignore
     /// let port = get_free_port("127.0.0.1").unwrap();
     /// println!("{}", port.as_str()); // "8080" (for example)
-    /// ```  
+    /// ```
     pub fn get_free_port(ip: &str) -> Option<PortGuard> {
         let ip: Ipv4Addr = ip
             .parse()
