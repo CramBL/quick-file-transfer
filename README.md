@@ -112,9 +112,9 @@ IP(s): fe80::d912:463a:8c88:deca
 Resolves hostname IP(s), all of the following forms are valid.
 
 ```shell
-qft mdns resolve --hostname foo
-qft mdns resolve --hostname foo.local
-qft mdns resolve --hostname foo.local.
+qft mdns resolve foo
+qft mdns resolve foo.local
+qft mdns resolve foo.local.
 ```
 
 Example output
