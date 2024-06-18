@@ -33,21 +33,16 @@ $ qft -h
 Usage: qft [OPTIONS] <COMMAND>
 
 Commands:
-  listen  Run in listen (server) mode
-  send    Run in Connect (client) mode
+  listen  Run in Listen (server) mode
+  send    Run in Send (client) mode
   mdns    Use mDNS utilities
   help    Print this message or the help of the given subcommand(s)
 
 Options:
-  -v, --verbose...                 Pass many times for more log output
-  -q, --quiet                      Silence all output [env: QFT_QUIET=]
-  -m, --message <MESSAGE>          Send a message to the server
-  -f, --file <FILE>                Supply a file for I/O (if none: use stdio)
-  -c, --compression <COMPRESSION>  Compression format [possible values: gzip, bzip2, xz, lz4, none]
-      --mmap                       Use memory mapping mode
-      --prealloc                   Client will send the size of the file to the server allowing the server to preallocate for the expected size
-  -h, --help                       Print help (see more with '--help')
-  -V, --version                    Print version
+  -v, --verbose...  Pass many times for more log output
+  -q, --quiet       Silence all output [env: QFT_QUIET=]
+  -h, --help        Print help (see more with '--help')
+  -V, --version     Print version
 ```
 
 ## Examples
@@ -142,7 +137,7 @@ INFO Registering:
 INFO Keeping alive for: 123.456s
 ```
 
-You can the find it using the `qft mdns` subcommands or e.g. with `avah-resolve`:
+You can the find it using the `qft mdns` subcommands or e.g. with `avahi`:
 
 ```shell
 avahi-resolve --name foo-name.local
