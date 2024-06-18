@@ -12,23 +12,38 @@ env:
   RUSTFLAGS: "-Dwarnings" # Fail on all warnings
 
 jobs:
-  build:
+  Checks:
     runs-on: ubuntu-latest
+    env: 
+      CARGO_TERM_VERBOSE: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+      - name: Check
+        run: cargo check
+      - name: Clippy
+        run: cargo clippy -- --no-deps
+      - name: Check Format
+        run: cargo fmt -- --check
+      - name: Check docs
+        run: cargo doc --no-deps
+      - name: Audit
+        run: cargo audit
+      
+
+  Test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
     - uses: extractions/setup-just@v2
-
-    - name: Lint
-      run: just ci-lint
     
     - name: Build
       run: cargo build --verbose
     
     - name: Run tests
       run: cargo test --verbose
-
-    - name: Audit
-      run: |
-        cargo install cargo-audit
-        just audit
+      
