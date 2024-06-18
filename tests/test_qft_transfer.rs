@@ -2,7 +2,6 @@ use crate::util::*;
 mod util;
 
 pub const IP: &str = "127.0.0.1";
-pub const PORT: &str = "1234";
 
 #[test]
 pub fn test_get_version() -> TestResult {
