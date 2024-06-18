@@ -23,6 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: extractions/setup-just@v2
+      - name: run pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
       - name: Check
         run: cargo check
       - name: Clippy
