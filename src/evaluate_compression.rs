@@ -64,12 +64,10 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
         //let mmap_read = MemoryMappedReader::new(iinput_file)?;
     }
 
-    eprintln!("=== Results ===");
     let mut fastest: Option<&CompressionResult> = None;
     let mut best_ratio: Option<&CompressionResult> = None;
     let results_count = compression_results.len();
     for r in compression_results.iter() {
-        eprintln!("{}", r.summarize());
         if fastest.is_none() && results_count > 1 {
             fastest = Some(r);
             best_ratio = Some(r);
@@ -97,12 +95,18 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
             eprintln!("{}", br.summarize());
         } else {
             eprintln!(
-                "Best ratio: {} {:.2}:1 ({:.2}% of original) {:?}",
-                br.compression, br.compression_ratio, br.percentage_of_original, br.time
+                "Best ratio: {:<4} {:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
+                format!("{:?}", br.compression),
+                br.time,
+                br.compression_ratio,
+                br.percentage_of_original
             );
             eprintln!(
-                "Best time:  {} {:?} {:.2}:1 ({:.2}% of original)",
-                f.compression, f.time, f.compression_ratio, f.percentage_of_original
+                "Best time:  {:<4} {:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
+                format!("{:?}", f.compression),
+                f.time,
+                f.compression_ratio,
+                f.percentage_of_original
             );
         }
     }
@@ -145,7 +149,7 @@ impl CompressionResult {
         let mut summary = self.compression.to_string();
         summary.push('\n');
         summary.push_str(&format!("    Ratio: {:.2}:1\n", self.compression_ratio));
-        summary.push_str(&format!("    Time:  {:?}\n", self.time));
+        summary.push_str(&format!("    Time:  {:.2?}\n", self.time));
         summary.push_str("    Size:  ");
         summary.push_str(&format_data_size(self.compressed_size as u64));
         if self.compressed_size > 1024 {
@@ -177,6 +181,7 @@ fn test_compress(
         Compression::None => unreachable!("nonsense"),
     }?;
 
+    eprintln!("{}", res.summarize());
     compression_results.push(res);
 
     Ok(())
