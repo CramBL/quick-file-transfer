@@ -1,9 +1,8 @@
-use std::fmt;
-use std::path::{Path, PathBuf};
-
 use anyhow::Result;
-use clap::builder::styling::{AnsiColor, Effects, Styles};
-use clap::{command, ArgAction, Args, Parser, Subcommand, ValueEnum};
+mod util;
+use evaluate_compression::EvaluateCompressionArgs;
+use util::*;
+pub mod evaluate_compression;
 
 /// Styling for the `help` terminal output
 pub fn cli_styles() -> Styles {
@@ -106,10 +105,11 @@ pub enum Command {
     Send(SendArgs),
     /// Use mDNS utilities
     Mdns(MdnsArgs),
+    /// Evaluate which compression works best for some content
+    EvaluateCompression(EvaluateCompressionArgs),
 }
 
 /// Holds the Listen subcommands
-
 #[derive(Debug, Args, Clone)]
 #[command(args_conflicts_with_subcommands = true, flatten_help = true)]
 pub struct ListenArgs {
@@ -250,8 +250,7 @@ pub struct MdnsRegisterArgs {
     pub port: u16,
 }
 
-use strum_macros::Display;
-#[derive(Debug, Default, ValueEnum, Clone, Copy, Display)]
+#[derive(Debug, Default, ValueEnum, Clone, Copy, Display, EnumIter, PartialEq)]
 pub enum Compression {
     Gzip,
     Bzip2,
