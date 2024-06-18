@@ -1,15 +1,15 @@
 use std::{
-    fs::{self, File},
-    io::{self, BufReader, BufWriter, StdinLock, Write},
+    fs::File,
+    io::{self, Write},
     net::{IpAddr, TcpStream},
-    path::Path,
 };
 
 use crate::{
     config::{self, ContentTransferArgs},
     mmap_reader::MemoryMappedReader,
+    send::util::{file_with_bufreader, stdin_bufreader, tcp_bufwriter},
     util::{format_data_size, incremental_rw},
-    BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
+    TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 use flate2::{read::GzEncoder, Compression};
@@ -87,19 +87,4 @@ pub fn run_client(
     );
 
     Ok(())
-}
-
-pub fn file_with_bufreader(path: &Path) -> Result<BufReader<File>> {
-    let f = fs::File::open(path)?;
-    let reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, f);
-    Ok(reader)
-}
-
-pub fn stdin_bufreader() -> BufReader<StdinLock<'static>> {
-    let stdin = io::stdin().lock();
-    BufReader::with_capacity(BUFFERED_RW_BUFSIZE, stdin)
-}
-
-pub fn tcp_bufwriter(socket: &TcpStream) -> BufWriter<&TcpStream> {
-    BufWriter::with_capacity(BUFFERED_RW_BUFSIZE, socket)
 }
