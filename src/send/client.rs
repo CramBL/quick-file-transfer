@@ -12,7 +12,6 @@ use crate::{
     TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
-use flate2::{read::GzEncoder, Compression};
 
 pub fn run_client(
     ip: IpAddr,
@@ -72,11 +71,16 @@ pub fn run_client(
             total_read
         }
         config::Compression::Gzip => {
-            let mut encoder = GzEncoder::new(bufreader, Compression::fast());
+            let mut encoder = flate2::read::GzEncoder::new(bufreader, flate2::Compression::fast());
             incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
         }
         config::Compression::Bzip2 => todo!(),
-        config::Compression::Xz => todo!(),
+        config::Compression::Xz => {
+            let mut compressor = xz2::read::XzEncoder::new(bufreader, 9);
+            let total_read =
+                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?;
+            total_read
+        }
         config::Compression::None => {
             incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?
         }
