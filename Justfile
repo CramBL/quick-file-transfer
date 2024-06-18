@@ -38,11 +38,13 @@ check *ARGS:
 test *ARGS:
     cargo test {{ ARGS }}
 
-    # Build the application
+# Build the application
+[no-exit-message]
 build *ARGS:
     cargo build {{ ARGS }}
 
 # Run the application (use `--` to pass arguments to the application)
+[no-exit-message]
 run ARGS:
     cargo run {{ ARGS }}
 
@@ -51,10 +53,12 @@ clean:
     cargo clean
 
 # Build the documentation (use `--open` to open in the browser)
+[no-exit-message]
 doc *ARGS:
     cargo doc {{ ARGS }}
 
 # Publish the crate
+[no-exit-message]
 publish:
     cargo publish
 
