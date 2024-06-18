@@ -15,7 +15,10 @@ impl<'file> MemoryMappedReader<'file> {
     pub fn new(path: &'file Path) -> Result<Self> {
         let file = File::open(path)?;
         let mmap = unsafe { Mmap::map(&file)? };
+
+        #[cfg(linux)]
         mmap.advise(memmap2::Advice::PopulateRead)?;
+
         let cursor = Cursor::new(unsafe { std::slice::from_raw_parts(mmap.as_ptr(), mmap.len()) });
         Ok(Self {
             _mmap: mmap,
