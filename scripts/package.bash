@@ -21,7 +21,7 @@ if [[ $TARGET == aarch64-unknown-linux-musl ]]; then
     export CC=aarch64-linux-gnu-gcc
 fi
 
-if [[ $TARGET == armv7-unknown-linux-musleabihf ]]; then
+if [[ $TARGET == armv7-unknown-linux-musleabihf ]] || [[ $TARGET == arm-unknown-linux-musleabihf ]]; then
     export CC=arm-linux-musleabihf-gcc
 fi
 
