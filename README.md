@@ -8,7 +8,8 @@
     - [File transfer](#file-transfer)
     - [Host #1](#host-1)
     - [Host #2](#host-2)
-  - [Example CI scrip](#example-ci-scrip)
+    - [CI script](#ci-script)
+    - [Evaluate compression](#evaluate-compression)
     - [mDNS utilities](#mdns-utilities)
       - [Discover services](#discover-services)
       - [Resolve mDNS hostname](#resolve-mdns-hostname)
@@ -75,7 +76,7 @@ Transfer a file to **Host #1**.
 qft send ip <HOST-1-IP> --port 12345 --file transfer.data
 ```
 
-## Example CI scrip
+### CI script
 
 Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.
 
@@ -91,6 +92,69 @@ ssh user@${HOST1_HOSTNAME} -t "rauc install ${FIRMWARE}"
 ```
 
 It is also possible to ad-hoc register a service with `qft mdns register` AND run the `qft listen` side-by-side and then send to the listening process by addressing the registered hostname from a remote host.
+
+### Evaluate compression
+
+```markdown
+Evaluate which compression works best for file content
+
+Usage: qft evaluate-compression [OPTIONS] --input-file <INPUT_FILE> [OMIT]...
+
+Arguments:
+  [OMIT]...  List of compression formats to omit from evaluation [possible values: gzip, bzip2, xz, lz4]
+
+Options:
+  -i, --input-file <INPUT_FILE>
+      --test-mmap                Also test with memory mapping
+  -v, --verbose...               Pass many times for more log output
+  -q, --quiet                    Silence all output [env: QFT_QUIET=]
+  -h, --help                     Print help (see more with '--help')
+```
+
+Evaluate compression of `Cargo.lock`.
+
+```shell
+qft evaluate-compression --input-file Cargo.lock`
+```
+
+Example output:
+
+```shell
+evaluating: Gzip
+evaluating: Bzip2
+evaluating: Xz
+evaluating: Lz4
+Buffered reading 30970 B contents in 17.771µs
+Gzip
+    Ratio: 3.82:1
+    Compression Time:    556.61µs
+    Decompression Time:  123.52µs
+    Size:  7.91 KiB [8097 B] (26.14% of original)
+
+Bzip2
+    Ratio: 4.52:1
+    Compression Time:    2.17ms
+    Decompression Time:  588.87µs
+    Size:  6.69 KiB [6848 B] (22.11% of original)
+
+Xz
+    Ratio: 4.27:1
+    Compression Time:    8.36ms
+    Decompression Time:  493.73µs
+    Size:  7.08 KiB [7252 B] (23.42% of original)
+
+Lz4
+    Ratio: 2.42:1
+    Compression Time:    44.65µs
+    Decompression Time:  20.10µs
+    Size:  12.49 KiB [12791 B] (41.30% of original)
+
+===> Summary
+Best Compression Ratio:   Bzip2 Compression/Decompression:     2.17ms/  588.87µs   4.52:1 (22.11% of original)
+Best Compression Time:    Lz4   Compression/Decompression:    44.65µs/   20.10µs   2.42:1 (41.30% of original)
+Best Decompression Time:  Lz4   Compression/Decompression:    44.65µs/   20.10µs   2.42:1 (41.30% of original)
+
+```
 
 ### mDNS utilities
 
