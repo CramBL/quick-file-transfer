@@ -5,7 +5,7 @@ use super::{util::*, Compression};
 pub struct EvaluateCompressionArgs {
     #[arg(short, long)]
     pub input_file: PathBuf,
-    /// List of compression formats to omit from evalation
+    /// List of compression formats to omit from evaluation
     pub omit: Vec<Compression>,
 
     /// Also test with memory mapping
