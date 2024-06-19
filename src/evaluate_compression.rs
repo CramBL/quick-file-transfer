@@ -106,7 +106,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
             eprintln!("{}", br.summarize());
         } else {
             eprintln!(
-                "Best Compression Ratio:   {:<4} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
+                "Best Compression Ratio:   {:<5} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{:?}", br.compression),
                 br.compression_time,
                 br.decompression_time,
@@ -114,7 +114,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
                 br.percentage_of_original
             );
             eprintln!(
-                "Best Compression Time:    {:<4} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
+                "Best Compression Time:    {:<5} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{:?}", f_compr.compression),
                 f_compr.compression_time,
                 f_compr.decompression_time,
@@ -122,7 +122,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
                 f_compr.percentage_of_original
             );
             eprintln!(
-                "Best Decompression Time:  {:<4} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
+                "Best Decompression Time:  {:<5} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{:?}", f_decompr.compression),
                 f_decompr.compression_time,
                 f_decompr.decompression_time,
@@ -206,7 +206,9 @@ fn test_compress(
 ) -> Result<()> {
     let res = match compression_ut {
         Compression::Gzip => black_box(test_compress_gzip(test_contents_reader, test_contents_len)),
-        Compression::Bzip2 => todo!(),
+        Compression::Bzip2 => {
+            black_box(test_compress_bzip2(test_contents_reader, test_contents_len))
+        }
         Compression::Xz => black_box(test_compress_xz(test_contents_reader, test_contents_len)),
         Compression::Lz4 => black_box(test_compress_lz4(test_contents_reader, test_contents_len)),
         Compression::None => unreachable!("nonsense"),
@@ -305,6 +307,40 @@ fn test_compress_xz(
 
     let result = CompressionResult::new(
         Compression::Xz,
+        compress_duration,
+        decompress_duration,
+        compressed_data.len(),
+        test_contents_len,
+    );
+
+    Ok(result)
+}
+
+fn test_compress_bzip2(
+    test_contents: &mut dyn io::Read,
+    test_contents_len: usize,
+) -> Result<CompressionResult> {
+    use bzip2::read::{BzDecoder, BzEncoder};
+
+    let mut compressed_data: Vec<u8> = Vec::new();
+
+    // Compress
+    let start = Instant::now();
+    let mut bzip2_encoder = BzEncoder::new(test_contents, bzip2::Compression::best());
+    let _total_read =
+        incremental_rw::<TCP_STREAM_BUFSIZE>(&mut compressed_data, &mut bzip2_encoder)?;
+    let compress_duration = start.elapsed();
+
+    // Decompress
+    let mut decompressed_data = Vec::new();
+    let start = Instant::now();
+    let mut bzip2_decoder = BzDecoder::new(compressed_data.as_slice());
+    let _total_read =
+        incremental_rw::<TCP_STREAM_BUFSIZE>(&mut decompressed_data, &mut bzip2_decoder)?;
+    let decompress_duration = start.elapsed();
+
+    let result = CompressionResult::new(
+        Compression::Bzip2,
         compress_duration,
         decompress_duration,
         compressed_data.len(),
