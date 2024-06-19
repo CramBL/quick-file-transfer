@@ -152,10 +152,10 @@ But that only outputs the first received address. Using `qft mdns resolve` will 
 
 ## Supported compression formats
 
-- [ ] bz2
+- [x] bz2
 - [x] gzip
 - [x] lz4
-- [ ] xz
+- [x] xz
 
 ## Install
 
