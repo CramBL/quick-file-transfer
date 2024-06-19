@@ -22,7 +22,7 @@ if [[ $TARGET == aarch64-unknown-linux-musl ]]; then
 fi
 
 if [[ $TARGET == armv7-unknown-linux-musleabihf ]] || [[ $TARGET == arm-unknown-linux-musleabihf ]]; then
-    export CC=arm-linux-musleabihf-gcc
+    export CC=arm-linux-gnueabihf-gcc
 fi
 
 echo "Building ${BIN}..."
