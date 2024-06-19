@@ -74,7 +74,10 @@ pub fn run_client(
             let mut encoder = flate2::read::GzEncoder::new(bufreader, flate2::Compression::fast());
             incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
         }
-        config::Compression::Bzip2 => todo!(),
+        config::Compression::Bzip2 => {
+            let mut encoder = bzip2::read::BzEncoder::new(bufreader, bzip2::Compression::best());
+            incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
+        }
         config::Compression::Xz => {
             let mut compressor = xz2::read::XzEncoder::new(bufreader, 9);
             incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?

@@ -61,7 +61,10 @@ pub fn run_server(
                     let mut tcp_decoder = GzDecoder::new(buf_tcp_reader);
                     incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                 }
-                config::Compression::Bzip2 => todo!("Not implemented"),
+                config::Compression::Bzip2 => {
+                    let mut tcp_decoder = bzip2::read::BzDecoder::new(buf_tcp_reader);
+                    incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+                }
                 config::Compression::Xz => {
                     let mut tcp_decoder = xz2::read::XzDecoder::new(buf_tcp_reader);
                     incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
