@@ -21,6 +21,10 @@ if [[ $TARGET == aarch64-unknown-linux-musl ]]; then
     export CC=aarch64-linux-gnu-gcc
 fi
 
+if [[ $TARGET == armv7-unknown-linux-musleabihf ]]; then
+    export CC=arm-linux-musleabihf-gcc
+fi
+
 echo "Building ${BIN}..."
 RUSTFLAGS="--deny warnings --codegen target-feature=+crt-static ${TARGET_RUSTFLAGS}" \
     cargo build --bin ${BIN} --target "${TARGET}" --release
