@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## 0.3.0 - 2024-06-19
+
 ### Added
 
 - `qft evaluate-compression` allows passing a file which `qft` will evaluate each compression type on an output the results.
