@@ -5,7 +5,8 @@
 ### Added
 
 - `qft evaluate-compression` allows passing a file which `qft` will evaluate each compression type on an output the results.
-- `xz` compression
+- `xz` support
+- `bzip2` support
 
 ## 0.2.0 - 2024-06-18
 
