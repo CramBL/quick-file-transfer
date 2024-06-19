@@ -2,6 +2,7 @@
 
 - [Quick File Transfer (qft)](#quick-file-transfer-qft)
   - [Purpose](#purpose)
+  - [Features](#features)
   - [Usage](#usage)
   - [Examples](#examples)
     - [File transfer](#file-transfer)
@@ -26,6 +27,12 @@ To accomplish this, `qft` acts as a server/client that transfers data over TCP. 
 
 If you are worried about a man-in-the-middle, you can simply check your data on the receiving end before continuing. There should be no additional security concerns (if you disagree, please create an issue highlighting the concern).
 
+## Features
+
+- [x] Send files via TCP by specifying either IP or mDNS/DNS-SD hostname
+- [x] Evaluate [supported compression formats](#supported-compression-formats) on your input data
+- [x] Discover, resolve, and/or register mDNS/DNS-SD services
+
 ## Usage
 
 ```markdown
@@ -33,10 +40,11 @@ $ qft -h
 Usage: qft [OPTIONS] <COMMAND>
 
 Commands:
-  listen  Run in Listen (server) mode
-  send    Run in Send (client) mode
-  mdns    Use mDNS utilities
-  help    Print this message or the help of the given subcommand(s)
+  listen                Run in Listen (server) mode
+  send                  Run in Send (client) mode
+  mdns                  Use mDNS utilities
+  evaluate-compression  Evaluate which compression works best for file content
+  help                  Print this message or the help of the given subcommand(s)
 
 Options:
   -v, --verbose...  Pass many times for more log output

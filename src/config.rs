@@ -105,7 +105,7 @@ pub enum Command {
     Send(SendArgs),
     /// Use mDNS utilities
     Mdns(MdnsArgs),
-    /// Evaluate which compression works best for some content
+    /// Evaluate which compression works best for file content
     EvaluateCompression(EvaluateCompressionArgs),
 }
 
@@ -250,14 +250,12 @@ pub struct MdnsRegisterArgs {
     pub port: u16,
 }
 
-#[derive(Debug, Default, ValueEnum, Clone, Copy, Display, EnumIter, PartialEq)]
+#[derive(Debug, ValueEnum, Clone, Copy, Display, EnumIter, PartialEq)]
 pub enum Compression {
     Gzip,
     Bzip2,
     Xz,
     Lz4,
-    #[default]
-    None,
 }
 
 #[derive(Debug, Default, ValueEnum, Clone, Copy)]

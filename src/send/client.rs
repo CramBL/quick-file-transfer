@@ -61,30 +61,31 @@ pub fn run_client(
         }
     };
 
-    let compression_mode = content_transfer_args.compression().unwrap_or_default();
-    log::debug!("Compression mode: {compression_mode}");
-    let transferred_bytes = match content_transfer_args.compression().unwrap_or_default() {
-        config::Compression::Lz4 => {
-            let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut buf_tcp_stream);
-            let total_read = incremental_rw::<TCP_STREAM_BUFSIZE>(&mut lz4_writer, bufreader)?;
-            lz4_writer.finish()?;
-            total_read
-        }
-        config::Compression::Gzip => {
-            let mut encoder = flate2::read::GzEncoder::new(bufreader, flate2::Compression::fast());
-            incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
-        }
-        config::Compression::Bzip2 => {
-            let mut encoder = bzip2::read::BzEncoder::new(bufreader, bzip2::Compression::best());
-            incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
-        }
-        config::Compression::Xz => {
-            let mut compressor = xz2::read::XzEncoder::new(bufreader, 9);
-            incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?
-        }
-        config::Compression::None => {
-            incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?
-        }
+    if let Some(compression) = content_transfer_args.compression() {
+        log::debug!("Compression mode: {compression}");
+    };
+    let transferred_bytes = match content_transfer_args.compression() {
+        Some(compression) => match compression {
+            config::Compression::Lz4 => {
+                let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut buf_tcp_stream);
+                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut lz4_writer, bufreader)?
+            }
+            config::Compression::Gzip => {
+                let mut encoder =
+                    flate2::read::GzEncoder::new(bufreader, flate2::Compression::fast());
+                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
+            }
+            config::Compression::Bzip2 => {
+                let mut encoder =
+                    bzip2::read::BzEncoder::new(bufreader, bzip2::Compression::best());
+                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
+            }
+            config::Compression::Xz => {
+                let mut compressor = xz2::read::XzEncoder::new(bufreader, 9);
+                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?
+            }
+        },
+        None => incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?,
     };
     log::info!(
         "Sent {} [{transferred_bytes} B]",

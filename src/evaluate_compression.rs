@@ -211,7 +211,6 @@ fn test_compress(
         }
         Compression::Xz => black_box(test_compress_xz(test_contents_reader, test_contents_len)),
         Compression::Lz4 => black_box(test_compress_lz4(test_contents_reader, test_contents_len)),
-        Compression::None => unreachable!("nonsense"),
     }?;
 
     eprintln!("{}", res.summarize());
