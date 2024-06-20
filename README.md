@@ -225,7 +225,7 @@ But that only outputs the first received address. Using `qft mdns resolve` will 
 
 ## Supported compression formats
 
-- [x] bz2
+- [x] bzip2
 - [x] gzip
 - [x] lz4
 - [x] xz
