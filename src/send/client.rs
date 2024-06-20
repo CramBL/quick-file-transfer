@@ -7,7 +7,7 @@ use std::{
 use crate::{
     config::{
         self,
-        compression::{Bzip2Args, GzipArgs, XzArgs},
+        compression::{Bzip2Args, Compression, GzipArgs, XzArgs},
         transfer::ContentTransferArgs,
     },
     mmap_reader::MemoryMappedReader,
@@ -23,6 +23,7 @@ pub fn run_client(
     message: Option<&str>,
     use_mmap: bool,
     content_transfer_args: &ContentTransferArgs,
+    compression: Option<Compression>,
 ) -> Result<()> {
     let socket_addr = (ip, port);
     let mut tcp_stream = TcpStream::connect(socket_addr)?;
@@ -65,10 +66,10 @@ pub fn run_client(
         }
     };
 
-    if let Some(compression) = content_transfer_args.compression() {
+    if let Some(compression) = compression {
         log::debug!("Compression mode: {compression}");
     };
-    let transferred_bytes = match content_transfer_args.compression() {
+    let transferred_bytes = match compression {
         Some(compression) => match compression {
             config::compression::Compression::Bzip2(Bzip2Args { compression_level }) => {
                 let mut encoder = bzip2::read::BzEncoder::new(

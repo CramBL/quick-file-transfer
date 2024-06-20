@@ -31,6 +31,9 @@ pub struct SendIpArgs {
     pub message: Option<String>,
     #[command(flatten)]
     pub content_transfer_args: ContentTransferArgs,
+    /// Compression format
+    #[command(subcommand)]
+    pub compression: Option<Compression>,
     /// Use memory mapping mode
     #[arg(long, action = ArgAction::SetTrue, requires = "file")]
     pub mmap: bool,
@@ -55,6 +58,9 @@ pub struct SendMdnsArgs {
     pub message: Option<String>,
     #[command(flatten)]
     pub content_transfer_args: ContentTransferArgs,
+    /// Compression format
+    #[command(subcommand)]
+    pub compression: Option<Compression>,
     /// Use memory mapping mode
     #[arg(long, action = ArgAction::SetTrue, requires = "file")]
     pub mmap: bool,

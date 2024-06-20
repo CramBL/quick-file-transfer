@@ -5,10 +5,6 @@ pub mod send;
 
 #[derive(Debug, Args, Clone)]
 pub struct ContentTransferArgs {
-    /// Compression format
-    #[command(subcommand)]
-    compression: Option<Compression>,
-
     /// Supply a file for I/O (if none: use stdio)
     #[arg(short, long)]
     file: Option<PathBuf>,
@@ -19,9 +15,6 @@ pub struct ContentTransferArgs {
 }
 
 impl ContentTransferArgs {
-    pub fn compression(&self) -> Option<Compression> {
-        self.compression
-    }
     pub fn file(&self) -> Option<&Path> {
         self.file.as_deref()
     }

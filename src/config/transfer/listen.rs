@@ -1,4 +1,4 @@
-use crate::config::util::*;
+use crate::config::{compression::CompressionVariant, util::*};
 
 use super::ContentTransferArgs;
 
@@ -14,4 +14,8 @@ pub struct ListenArgs {
     pub port: u16,
     #[command(flatten)]
     pub content_transfer_args: ContentTransferArgs,
+
+    /// Compression format of the received file
+    #[command(subcommand)]
+    pub compression: Option<CompressionVariant>,
 }

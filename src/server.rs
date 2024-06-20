@@ -8,30 +8,30 @@ use std::{
 };
 
 use crate::{
-    config::{self, transfer::ContentTransferArgs, Config},
+    config::{compression::CompressionVariant, transfer::listen::ListenArgs, Config},
     util::{create_file_with_len, format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::Result;
 
-pub fn run_server(
-    ip: &str,
-    port: u16,
-    _cfg: &Config,
-    content_transfer_args: &ContentTransferArgs,
-) -> Result<()> {
-    let socket_addr = (ip, port);
-    let listener = TcpListener::bind(socket_addr)?;
+pub fn run_server(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
+    let ListenArgs {
+        ip,
+        port,
+        content_transfer_args,
+        compression,
+    } = listen_args;
+    let listener = TcpListener::bind(format!("{ip}:{port}"))?;
 
     log::info!(
         "Listening on: {ip}:{port} for a {}",
-        match content_transfer_args.compression() {
+        match compression {
             Some(c) => {
                 match c {
-                    config::compression::Compression::Bzip2(_) => "bzip2 compressed file",
-                    config::compression::Compression::Gzip(_) => "gzip compressed file",
-                    config::compression::Compression::Lz4 => "lz4 compressed file",
-                    config::compression::Compression::Xz(_) => "xz compressed file",
+                    CompressionVariant::Bzip2 => "bzip2 compressed file",
+                    CompressionVariant::Gzip => "gzip compressed file",
+                    CompressionVariant::Lz4 => "lz4 compressed file",
+                    CompressionVariant::Xz => "xz compressed file",
                 }
             }
             None => "raw file",
@@ -65,21 +65,21 @@ pub fn run_server(
             }
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
 
-            let len = match content_transfer_args.compression() {
+            let len = match compression {
                 Some(compr) => match compr {
-                    config::compression::Compression::Bzip2(_) => {
+                    CompressionVariant::Bzip2 => {
                         let mut tcp_decoder = bzip2::read::BzDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }
-                    config::compression::Compression::Gzip(_) => {
+                    CompressionVariant::Gzip => {
                         let mut tcp_decoder = GzDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }
-                    config::compression::Compression::Lz4 => {
+                    CompressionVariant::Lz4 => {
                         let mut tcp_decoder = FrameDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }
-                    config::compression::Compression::Xz(_) => {
+                    CompressionVariant::Xz => {
                         let mut tcp_decoder = xz2::read::XzDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }

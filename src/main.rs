@@ -9,7 +9,7 @@
 )]
 
 use anyhow::Result;
-use config::{transfer::listen::ListenArgs, Command, Config};
+use config::{Command, Config};
 use evaluate_compression::evaluate_compression;
 use mdns::handle_mdns_command;
 use send::handle_send_cmd;
@@ -32,11 +32,7 @@ fn main() -> Result<()> {
     log::trace!("{cfg:?}");
 
     match cfg.command {
-        Command::Listen(ListenArgs {
-            ref ip,
-            port,
-            ref content_transfer_args,
-        }) => run_server(ip, port, &cfg, content_transfer_args),
+        Command::Listen(ref args) => run_server(&cfg, args),
         Command::Send(ref cmd) => handle_send_cmd(cmd, &cfg),
         Command::Mdns(cmd) => handle_mdns_command(cmd.subcmd),
         Command::EvaluateCompression(args) => evaluate_compression(args),

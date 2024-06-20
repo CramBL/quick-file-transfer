@@ -19,12 +19,14 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
             ref message,
             ref content_transfer_args,
             mmap,
+            compression,
         }) => run_client(
             ip.parse()?,
             port,
             message.as_deref(),
             mmap,
             content_transfer_args,
+            compression,
         )?,
         SendCommand::Mdns(SendMdnsArgs {
             ref hostname,
@@ -34,10 +36,18 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
             ref message,
             ref content_transfer_args,
             mmap,
+            compression,
         }) => {
             if let Some(resolved_info) = resolve_mdns_hostname(hostname, timeout_ms, true)? {
                 if let Some(ip) = resolved_info.get_ip(ip_version) {
-                    run_client(*ip, port, message.as_deref(), mmap, content_transfer_args)?;
+                    run_client(
+                        *ip,
+                        port,
+                        message.as_deref(),
+                        mmap,
+                        content_transfer_args,
+                        compression,
+                    )?;
                 }
             }
         }
