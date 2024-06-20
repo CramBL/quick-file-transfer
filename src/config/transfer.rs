@@ -6,7 +6,7 @@ pub mod send;
 #[derive(Debug, Args, Clone)]
 pub struct ContentTransferArgs {
     /// Compression format
-    #[arg(short, long)]
+    #[command(subcommand)]
     compression: Option<Compression>,
 
     /// Supply a file for I/O (if none: use stdio)

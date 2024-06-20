@@ -19,7 +19,7 @@ pub enum SendCommand {
 }
 
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+#[command(flatten_help = true)]
 pub struct SendIpArgs {
     /// IP to send to e.g. `192.0.0.1`
     pub ip: String,
