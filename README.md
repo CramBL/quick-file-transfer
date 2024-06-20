@@ -112,49 +112,54 @@ Options:
   -h, --help                     Print help (see more with '--help')
 ```
 
-Evaluate compression of `Cargo.lock`.
+Evaluate compression of `Cargo.lock`. Omit `gzip` and most compression levels to make this example brief.
 
 ```shell
-qft evaluate-compression --input-file Cargo.lock`
+qft evaluate-compression --input-file Cargo.lock --omit gzip --omit-levels 0 2 3 4 5 6 7 8
 ```
 
 Example output:
 
 ```shell
-evaluating: Gzip
-evaluating: Bzip2
-evaluating: Xz
-evaluating: Lz4
-Buffered reading 30970 B contents in 17.771µs
-Gzip
-    Ratio: 3.82:1
-    Compression Time:    556.61µs
-    Decompression Time:  123.52µs
-    Size:  7.91 KiB [8097 B] (26.14% of original)
 
-Bzip2
-    Ratio: 4.52:1
-    Compression Time:    2.17ms
-    Decompression Time:  588.87µs
-    Size:  6.69 KiB [6848 B] (22.11% of original)
+Omitting:   Gzip
+Evaluating: Bzip2 Lz4 Xz
+Omitting compression levels (where applicable): 0 2 3 4 5 6 7 8
+Buffered reading 30970 B contents in 11.785µs
+Bzip2[1]
+    Ratio: 4.51:1
+    Compression Time:    2.13ms
+    Decompression Time:  595.31µs
+    Size:  6.70 KiB [6862 B] (22.16% of original)
 
-Xz
-    Ratio: 4.27:1
-    Compression Time:    8.36ms
-    Decompression Time:  493.73µs
-    Size:  7.08 KiB [7252 B] (23.42% of original)
+Bzip2[9]
+    Ratio: 4.51:1
+    Compression Time:    2.06ms
+    Decompression Time:  609.22µs
+    Size:  6.70 KiB [6862 B] (22.16% of original)
 
 Lz4
     Ratio: 2.42:1
-    Compression Time:    44.65µs
-    Decompression Time:  20.10µs
-    Size:  12.49 KiB [12791 B] (41.30% of original)
+    Compression Time:    49.35µs
+    Decompression Time:  13.51µs
+    Size:  12.49 KiB [12788 B] (41.29% of original)
+
+Xz[1]
+    Ratio: 3.71:1
+    Compression Time:    2.07ms
+    Decompression Time:  467.05µs
+    Size:  8.16 KiB [8356 B] (26.98% of original)
+
+Xz[9]
+    Ratio: 4.27:1
+    Compression Time:    8.44ms
+    Decompression Time:  485.67µs
+    Size:  7.08 KiB [7248 B] (23.40% of original)
 
 ===> Summary
-Best Compression Ratio:   Bzip2 Compression/Decompression:     2.17ms/  588.87µs   4.52:1 (22.11% of original)
-Best Compression Time:    Lz4   Compression/Decompression:    44.65µs/   20.10µs   2.42:1 (41.30% of original)
-Best Decompression Time:  Lz4   Compression/Decompression:    44.65µs/   20.10µs   2.42:1 (41.30% of original)
-
+Best Compression Ratio:   Bzip2[1] Compression/Decompression:     2.13ms/  595.31µs   4.51:1 (22.16% of original)
+Best Compression Time:    Lz4      Compression/Decompression:    49.35µs/   13.51µs   2.42:1 (41.29% of original)
+Best Decompression Time:  Lz4      Compression/Decompression:    49.35µs/   13.51µs   2.42:1 (41.29% of original)
 ```
 
 ### mDNS utilities
