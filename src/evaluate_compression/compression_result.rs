@@ -74,7 +74,7 @@ impl CompressionResult {
     }
 }
 
-pub fn evaluate_and_printout_results(compression_results: Vec<CompressionResult>) {
+pub fn evaluate_and_printout_results(compression_results: &[CompressionResult]) {
     let mut fastest_compression: Option<&CompressionResult> = None;
     let mut fastest_decompression: Option<&CompressionResult> = None;
     let mut best_ratio: Option<&CompressionResult> = None;

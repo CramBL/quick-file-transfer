@@ -15,8 +15,4 @@ pub struct EvaluateCompressionArgs {
     /// List of compression levels to omit from evaluation
     #[arg(long, num_args(0..9))]
     pub omit_levels: Vec<u8>,
-
-    /// Also test with memory mapping
-    #[arg(long, default_value_t = false)]
-    pub test_mmap: bool,
 }

@@ -23,7 +23,6 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
     let EvaluateCompressionArgs {
         input_file,
         omit,
-        test_mmap,
         mut omit_levels,
     } = args;
 
@@ -82,12 +81,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
         )?;
     }
 
-    if test_mmap {
-        todo!("Implement evaluation for mmapping");
-        //let mmap_read = MemoryMappedReader::new(iinput_file)?;
-    }
-
-    compression_result::evaluate_and_printout_results(compression_results);
+    compression_result::evaluate_and_printout_results(&compression_results);
 
     Ok(())
 }
@@ -110,7 +104,7 @@ fn test_compress(
                 let res = black_box(test_compress_bzip2(
                     &mut test_contents_reader,
                     test_contents_len,
-                    level as u8,
+                    level,
                 ))?;
                 res_vec.push(res);
             }
@@ -126,7 +120,7 @@ fn test_compress(
                 let res = black_box(test_compress_gzip(
                     &mut test_contents_reader,
                     test_contents_len,
-                    level as u8,
+                    level,
                 ))?;
                 res_vec.push(res);
             }
@@ -149,7 +143,7 @@ fn test_compress(
                 let res = black_box(test_compress_xz(
                     &mut test_contents_reader,
                     test_contents_len,
-                    level as u8,
+                    level,
                 ))?;
                 res_vec.push(res);
             }
