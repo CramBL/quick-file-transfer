@@ -1,10 +1,12 @@
 use anyhow::Result;
 use evaluate_compression::EvaluateCompressionArgs;
-use transfer::{send::SendArgs, ContentTransferArgs};
+use mdns::MdnsArgs;
+use transfer::{listen::ListenArgs, send::SendArgs};
 mod util;
 use util::*;
 pub mod compression;
 pub mod evaluate_compression;
+pub mod mdns;
 pub mod transfer;
 
 /// Styling for the `help` terminal output
@@ -85,74 +87,6 @@ pub enum Command {
     EvaluateCompression(EvaluateCompressionArgs),
 }
 
-/// Holds the Listen subcommands
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
-pub struct ListenArgs {
-    /// Host IP e.g. `127.0.0.1`
-    #[arg(long, default_value_t  = String::from("0.0.0.0"))]
-    pub ip: String,
-    /// e.g. 30301
-    #[arg(short, long, default_value_t = 12993)]
-    pub port: u16,
-    #[command(flatten)]
-    pub content_transfer_args: ContentTransferArgs,
-}
-
-#[derive(Debug, Args, Clone)]
-pub struct ServiceTypeArgs {
-    /// Service label e.g. `foo` -> `_foo._<service_protocol>.local.`
-    #[arg(name("service-label"), short('l'), long)]
-    pub label: String,
-    /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
-    #[arg(name = "service-protocol", long, visible_alias("proto"))]
-    pub protocol: String,
-}
-
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
-pub struct MdnsDiscoverArgs {
-    #[command(flatten)]
-    pub service_type: ServiceTypeArgs,
-    /// How long in ms to attempt to discover services before shutdown
-    #[arg(long, default_value_t = 5000)]
-    pub timeout_ms: u64,
-}
-
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
-pub struct MdnsResolveArgs {
-    /// mDNS hostname to resolve e.g. `foo` (translates to `foo.local.`)
-    pub hostname: String,
-    /// Sets a timeout in milliseconds (default 10s)
-    #[arg(long, default_value_t = 10000)]
-    pub timeout_ms: u64,
-    /// Exit as soon as the first IP of the specified hostname has been resolved
-    #[arg(short, long, action = ArgAction::SetTrue)]
-    pub short_circuit: bool,
-}
-
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
-pub struct MdnsRegisterArgs {
-    /// Service name to register e.g. `foo` (translates to `foo.local.`)
-    #[arg(short('n'), long, default_value_t = String::from("test_name"))]
-    pub hostname: String,
-    #[command(flatten)]
-    pub service_type: ServiceTypeArgs,
-    #[arg(short, long, default_value_t = String::from("test_inst"))]
-    pub instance_name: String,
-    /// How long to keep it alive in ms
-    #[arg(long, default_value_t = 600000)]
-    pub keep_alive_ms: u64,
-    /// Service IP, if none provided -> Use auto adressing
-    #[arg(long)]
-    pub ip: Option<String>,
-    /// Service port
-    #[arg(long, default_value_t = 11542)]
-    pub port: u16,
-}
-
 #[derive(Debug, Default, ValueEnum, Clone, Copy)]
 pub enum IpVersion {
     #[default]
@@ -167,22 +101,4 @@ impl fmt::Display for IpVersion {
             IpVersion::V6 => write!(f, "v6"),
         }
     }
-}
-
-/// Holds the mDNS subcommands
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
-pub struct MdnsArgs {
-    #[command(subcommand)]
-    pub subcmd: MdnsCommand,
-}
-
-#[derive(Subcommand, Clone, Debug)]
-pub enum MdnsCommand {
-    /// Discover mDNS
-    Discover(MdnsDiscoverArgs),
-    /// Resolve mDNS hostname
-    Resolve(MdnsResolveArgs),
-    /// Register a temporary service (for testing)
-    Register(MdnsRegisterArgs),
 }

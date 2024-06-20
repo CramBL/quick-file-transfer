@@ -9,7 +9,7 @@
 )]
 
 use anyhow::Result;
-use config::{Command, Config, ListenArgs};
+use config::{transfer::listen::ListenArgs, Command, Config};
 use evaluate_compression::evaluate_compression;
 use mdns::handle_mdns_command;
 use send::handle_send_cmd;

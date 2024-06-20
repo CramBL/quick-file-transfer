@@ -1,5 +1,8 @@
-use crate::config::{MdnsCommand, MdnsDiscoverArgs, MdnsRegisterArgs, MdnsResolveArgs};
 use anyhow::Result;
+
+use crate::config::mdns::{
+    discover::MdnsDiscoverArgs, register::MdnsRegisterArgs, resolve::MdnsResolveArgs, MdnsCommand,
+};
 
 pub mod resolve;
 
