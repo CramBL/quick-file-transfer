@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::HashSet, fmt, net::IpAddr};
 
-use mdns_sd::ServiceInfo;
+use mdns_sd::{DaemonStatus, ServiceDaemon, ServiceInfo};
 
 use crate::config::IpVersion;
 
@@ -119,5 +119,25 @@ fn fully_qualify_hostname(hostname: Cow<'_, str>) -> Cow<'_, str> {
         let mut fully_qualified_hostname = hostname.into_owned();
         fully_qualified_hostname.push_str("local.");
         fully_qualified_hostname.into()
+    }
+}
+
+/// Shutdown the [ServiceDaemon] and receive the [DaemonStatus](DaemonStatus::Shutdown) response while logging relevant steps
+pub fn mdns_daemon_shutdown(mdns: &ServiceDaemon) {
+    let shutdown_res = mdns.shutdown();
+    debug_assert!(shutdown_res.is_ok());
+    match shutdown_res {
+        Ok(re) => {
+            let recv_res = re.recv();
+            debug_assert!(recv_res.is_ok());
+            match recv_res {
+                Ok(resp) => {
+                    log::debug!("Shutdown status: {resp:?}");
+                    debug_assert_eq!(resp, DaemonStatus::Shutdown);
+                }
+                Err(e) => log::error!("{e}"),
+            }
+        }
+        Err(e) => log::error!("{e}"),
     }
 }

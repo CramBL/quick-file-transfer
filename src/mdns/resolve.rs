@@ -1,6 +1,8 @@
 use anyhow::Result;
-use mdns_sd::{DaemonStatus, ServiceDaemon};
+use mdns_sd::ServiceDaemon;
 use std::{collections::HashSet, net::IpAddr, thread};
+
+use crate::mdns::util;
 
 use super::util::{try_clean_hostname, MdnsServiceInfo};
 
@@ -56,19 +58,9 @@ pub fn resolve_mdns_hostname(
                         }
                         ip_set.extend(recv_ip_set);
                         if short_circuit {
-                            match mdns.shutdown() {
-                                Ok(re) => match re.recv() {
-                                    Ok(resp) => {
-                                        log::debug!("Shutdown status: {resp:?}");
-                                        debug_assert_eq!(resp, DaemonStatus::Shutdown);
-                                        // Drain the channel after the daemon is shut down
-                                        while let Ok(more_events) = receiver.recv() {
-                                            log::trace!("Draining channel: {more_events:?}");
-                                        }
-                                    }
-                                    Err(e) => log::error!("{e}"),
-                                },
-                                Err(e) => log::error!("{e}"),
+                            util::mdns_daemon_shutdown(&mdns);
+                            while let Ok(more_events) = receiver.recv() {
+                                log::trace!("Draining channel: {more_events:?}");
                             }
                             break;
                         }
