@@ -1,5 +1,8 @@
 use crate::{
-    config::{Config, SendArgs, SendCommand, SendIpArgs, SendMdnsArgs},
+    config::{
+        transfer::send::{SendArgs, SendCommand, SendIpArgs, SendMdnsArgs},
+        Config,
+    },
     mdns::resolve::resolve_mdns_hostname,
 };
 use anyhow::Result;

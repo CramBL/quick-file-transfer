@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    config::{self, ContentTransferArgs},
+    config::{self, transfer::ContentTransferArgs},
     mmap_reader::MemoryMappedReader,
     send::util::{file_with_bufreader, stdin_bufreader, tcp_bufwriter},
     util::{format_data_size, incremental_rw},
@@ -66,21 +66,21 @@ pub fn run_client(
     };
     let transferred_bytes = match content_transfer_args.compression() {
         Some(compression) => match compression {
-            config::Compression::Lz4 => {
+            config::compression::Compression::Lz4 => {
                 let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut buf_tcp_stream);
                 incremental_rw::<TCP_STREAM_BUFSIZE>(&mut lz4_writer, bufreader)?
             }
-            config::Compression::Gzip => {
+            config::compression::Compression::Gzip => {
                 let mut encoder =
                     flate2::read::GzEncoder::new(bufreader, flate2::Compression::fast());
                 incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
             }
-            config::Compression::Bzip2 => {
+            config::compression::Compression::Bzip2 => {
                 let mut encoder =
                     bzip2::read::BzEncoder::new(bufreader, bzip2::Compression::best());
                 incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
             }
-            config::Compression::Xz => {
+            config::compression::Compression::Xz => {
                 let mut compressor = xz2::read::XzEncoder::new(bufreader, 9);
                 incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?
             }

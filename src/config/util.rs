@@ -1,4 +1,5 @@
 pub use {
+    super::compression::Compression,
     clap::{
         builder::styling::{AnsiColor, Effects, Styles},
         command, ArgAction, Args, Parser, Subcommand, ValueEnum,

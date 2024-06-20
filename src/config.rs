@@ -1,8 +1,11 @@
 use anyhow::Result;
-mod util;
 use evaluate_compression::EvaluateCompressionArgs;
+use transfer::{send::SendArgs, ContentTransferArgs};
+mod util;
 use util::*;
+pub mod compression;
 pub mod evaluate_compression;
+pub mod transfer;
 
 /// Styling for the `help` terminal output
 pub fn cli_styles() -> Styles {
@@ -70,33 +73,6 @@ impl std::fmt::Display for ColorWhen {
     }
 }
 
-#[derive(Debug, Args, Clone)]
-pub struct ContentTransferArgs {
-    /// Compression format
-    #[arg(short, long)]
-    compression: Option<Compression>,
-
-    /// Supply a file for I/O (if none: use stdio)
-    #[arg(short, long)]
-    file: Option<PathBuf>,
-
-    /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
-    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
-    prealloc: bool,
-}
-
-impl ContentTransferArgs {
-    pub fn compression(&self) -> Option<Compression> {
-        self.compression
-    }
-    pub fn file(&self) -> Option<&Path> {
-        self.file.as_deref()
-    }
-    pub fn prealloc(&self) -> bool {
-        self.prealloc
-    }
-}
-
 #[derive(Debug, Subcommand, Clone)]
 pub enum Command {
     /// Run in Listen (server) mode
@@ -121,82 +97,6 @@ pub struct ListenArgs {
     pub port: u16,
     #[command(flatten)]
     pub content_transfer_args: ContentTransferArgs,
-}
-
-/// Holds the Send subcommands
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
-pub struct SendArgs {
-    #[command(subcommand)]
-    pub subcmd: SendCommand,
-}
-
-#[derive(Subcommand, Clone, Debug)]
-pub enum SendCommand {
-    /// Send to target by specifying IP e.g. `192.1.1.1`
-    Ip(SendIpArgs),
-    /// Send to target by specifying mDNS hostname e.g. `foo.local`
-    Mdns(SendMdnsArgs),
-}
-
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
-pub struct SendIpArgs {
-    /// IP to send to e.g. `192.0.0.1`
-    pub ip: String,
-    /// e.g. 12005
-    #[arg(short, long, default_value_t = 12993, value_parser = clap::value_parser!(u16).range(1..))]
-    pub port: u16,
-    /// Send a message to the server
-    #[arg(short, long)]
-    pub message: Option<String>,
-    #[command(flatten)]
-    pub content_transfer_args: ContentTransferArgs,
-    /// Use memory mapping mode
-    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
-    pub mmap: bool,
-}
-
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
-pub struct SendMdnsArgs {
-    /// mDNS hostname e.g. `foo.local`
-    pub hostname: String,
-    /// Maximum time (ms) to attempt to resolve IP of mDNS hostname
-    #[arg(long, default_value_t = 5000)]
-    pub timeout_ms: u64,
-    /// Preferred IP version (attempts to fall back to another variant if the preferred version is not found)
-    #[arg(long, default_value_t = IpVersion::V4)]
-    pub ip_version: IpVersion,
-    /// e.g. 12005
-    #[arg(short, long, default_value_t = 12993)]
-    pub port: u16,
-    /// Send a message to the server
-    #[arg(short, long)]
-    pub message: Option<String>,
-    #[command(flatten)]
-    pub content_transfer_args: ContentTransferArgs,
-    /// Use memory mapping mode
-    #[arg(long, action = ArgAction::SetTrue, requires = "file")]
-    pub mmap: bool,
-}
-
-/// Holds the mDNS subcommands
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
-pub struct MdnsArgs {
-    #[command(subcommand)]
-    pub subcmd: MdnsCommand,
-}
-
-#[derive(Subcommand, Clone, Debug)]
-pub enum MdnsCommand {
-    /// Discover mDNS
-    Discover(MdnsDiscoverArgs),
-    /// Resolve mDNS hostname
-    Resolve(MdnsResolveArgs),
-    /// Register a temporary service (for testing)
-    Register(MdnsRegisterArgs),
 }
 
 #[derive(Debug, Args, Clone)]
@@ -253,14 +153,6 @@ pub struct MdnsRegisterArgs {
     pub port: u16,
 }
 
-#[derive(Debug, ValueEnum, Clone, Copy, Display, EnumIter, PartialEq)]
-pub enum Compression {
-    Gzip,
-    Bzip2,
-    Xz,
-    Lz4,
-}
-
 #[derive(Debug, Default, ValueEnum, Clone, Copy)]
 pub enum IpVersion {
     #[default]
@@ -275,4 +167,22 @@ impl fmt::Display for IpVersion {
             IpVersion::V6 => write!(f, "v6"),
         }
     }
+}
+
+/// Holds the mDNS subcommands
+#[derive(Debug, Args, Clone)]
+#[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
+pub struct MdnsArgs {
+    #[command(subcommand)]
+    pub subcmd: MdnsCommand,
+}
+
+#[derive(Subcommand, Clone, Debug)]
+pub enum MdnsCommand {
+    /// Discover mDNS
+    Discover(MdnsDiscoverArgs),
+    /// Resolve mDNS hostname
+    Resolve(MdnsResolveArgs),
+    /// Register a temporary service (for testing)
+    Register(MdnsRegisterArgs),
 }

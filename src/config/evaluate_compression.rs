@@ -1,4 +1,4 @@
-use super::{util::*, Compression};
+use super::util::*;
 
 #[derive(Debug, Args, Clone)]
 #[command(args_conflicts_with_subcommands = true, flatten_help = true)]

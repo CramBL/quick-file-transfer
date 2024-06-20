@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    config::{evaluate_compression::EvaluateCompressionArgs, Compression},
+    config::{compression::Compression, evaluate_compression::EvaluateCompressionArgs},
     send::util::file_with_bufreader,
     util::{format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,

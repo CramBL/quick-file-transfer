@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    config::{self, Config, ContentTransferArgs},
+    config::{self, transfer::ContentTransferArgs, Config},
     util::{create_file_with_len, format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
@@ -54,19 +54,19 @@ pub fn run_server(
 
             let len = match content_transfer_args.compression() {
                 Some(compression) => match compression {
-                    config::Compression::Lz4 => {
+                    config::compression::Compression::Lz4 => {
                         let mut tcp_decoder = FrameDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }
-                    config::Compression::Gzip => {
+                    config::compression::Compression::Gzip => {
                         let mut tcp_decoder = GzDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }
-                    config::Compression::Bzip2 => {
+                    config::compression::Compression::Bzip2 => {
                         let mut tcp_decoder = bzip2::read::BzDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }
-                    config::Compression::Xz => {
+                    config::compression::Compression::Xz => {
                         let mut tcp_decoder = xz2::read::XzDecoder::new(buf_tcp_reader);
                         incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
                     }
