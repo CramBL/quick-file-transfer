@@ -31,7 +31,7 @@ fn main() -> Result<()> {
 
     log::trace!("{cfg:?}");
 
-    match cfg.command.clone() {
+    match cfg.command {
         Command::Listen(ListenArgs {
             ref ip,
             port,

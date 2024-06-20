@@ -75,7 +75,7 @@ impl std::fmt::Display for ColorWhen {
     }
 }
 
-#[derive(Debug, Subcommand, Clone)]
+#[derive(Debug, Subcommand)]
 pub enum Command {
     /// Run in Listen (server) mode
     Listen(ListenArgs),

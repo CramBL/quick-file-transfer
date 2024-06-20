@@ -3,14 +3,14 @@ use crate::config::{util::*, IpVersion};
 use super::ContentTransferArgs;
 
 /// Holds the Send subcommands
-#[derive(Debug, Args, Clone)]
+#[derive(Debug, Args)]
 #[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
 pub struct SendArgs {
     #[command(subcommand)]
     pub subcmd: SendCommand,
 }
 
-#[derive(Subcommand, Clone, Debug)]
+#[derive(Subcommand, Debug)]
 pub enum SendCommand {
     /// Send to target by specifying IP e.g. `192.1.1.1`
     Ip(SendIpArgs),
@@ -36,8 +36,8 @@ pub struct SendIpArgs {
     pub mmap: bool,
 }
 
-#[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+#[derive(Debug, Args)]
+#[command(flatten_help = true)]
 pub struct SendMdnsArgs {
     /// mDNS hostname e.g. `foo.local`
     pub hostname: String,
