@@ -1,6 +1,6 @@
 use crate::{
     config::{Config, SendArgs, SendCommand, SendIpArgs, SendMdnsArgs},
-    mdns::resolve_mdns_hostname,
+    mdns::resolve::resolve_mdns_hostname,
 };
 use anyhow::Result;
 use client::run_client;
