@@ -17,6 +17,7 @@
   - [Supported compression formats](#supported-compression-formats)
   - [Install](#install)
     - [Prebuilt binaries](#prebuilt-binaries)
+    - [Comparison/Benchmarks](#comparisonbenchmarks)
 
 ## Purpose
 
@@ -242,3 +243,20 @@ curl -L -H "Accept: application/vnd.github.v3.raw" \
         https://api.github.com/repos/CramBL/quick-file-transfer/contents/scripts/install.sh \
         | bash -s -- --to ~/bin
 ```
+
+
+### Comparison/Benchmarks
+
+Simple benchmark comparison with netcat on Ubuntu 22.04 to give an idea about transfer speeds. `f.raucb` is a 430MB file and the `&& sleep 1` allows the servers to spin down/up again after a completed transfer, that second is subtracted from the results table.
+
+```shell
+hyperfine  "qft send ip 127.0.0.1 --file testbundle.raucb && sleep 1" \
+           "qft send ip 127.0.0.2 --prealloc --file testbundle.raucb && sleep 1" \
+           "nc -N 0.0.0.0 1234 < testbundle.raucb && sleep 1"
+```
+
+| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
+|:---|---:|---:|---:|---:|
+| `qft send ip 127.0.0.1 --file f.raucb` | 218 ± 8 | 208 | 231 | 1.04 ± 0.01 |
+| `qft send ip 127.0.0.2 --prealloc --file f.raucb` | 176 ± 4 | 174 | 185 | 1.00 |
+| `nc -N 0.0.0.0 1234 < f.raucb` | 248 ± 4 | 241 | 252 | 1.06 ± 0.00 |
