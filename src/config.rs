@@ -41,12 +41,12 @@ pub struct Config {
         long,
         require_equals = true,
         value_name = "WHEN",
-        num_args = 0..=1,
-        default_value_t = ColorWhen::Auto,
+        default_value_t = clap::ColorChoice::Auto,
         default_missing_value = "always",
-        value_enum
+        value_enum,
+        global = true
     )]
-    pub color: ColorWhen,
+    pub color: clap::ColorChoice,
 }
 
 impl Config {
@@ -61,9 +61,16 @@ impl Config {
             _ => LogLevelNum::Trace,
         };
 
+        let log_color_when: stderrlog::ColorChoice = match cfg.color {
+            clap::ColorChoice::Auto => stderrlog::ColorChoice::Auto,
+            clap::ColorChoice::Always => stderrlog::ColorChoice::Always,
+            clap::ColorChoice::Never => stderrlog::ColorChoice::Never,
+        };
+
         stderrlog::new()
             .verbosity(log_level)
             .quiet(cfg.quiet)
+            .color(log_color_when)
             .init()?;
 
         Ok(cfg)
