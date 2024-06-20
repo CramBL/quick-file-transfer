@@ -88,24 +88,21 @@ pub fn evaluate_and_printout_results(compression_results: &[CompressionResult]) 
         if let Some(f_compr) = fastest_compression {
             if f_compr.compression_time > r.compression_time {
                 fastest_compression = Some(r);
-            } else {
-                fastest_compression = Some(f_compr);
             }
         }
         if let Some(f_decompr) = fastest_decompression {
             if f_decompr.decompression_time > r.decompression_time {
                 fastest_decompression = Some(r);
-            } else {
-                fastest_decompression = Some(f_decompr);
             }
         }
         if let Some(br) = best_ratio {
             if br.compressed_size > r.compressed_size {
                 best_ratio = Some(r);
-            } else {
-                best_ratio = Some(br);
             }
         }
+        debug_assert!(best_ratio.is_some());
+        debug_assert!(fastest_compression.is_some());
+        debug_assert!(fastest_decompression.is_some());
     }
 
     if let (Some(f_compr), Some(f_decompr), Some(br)) =
