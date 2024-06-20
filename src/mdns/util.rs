@@ -96,7 +96,7 @@ impl From<ServiceInfo> for MdnsServiceInfo {
 /// If the supplied hostname does not end in a dot e.g. `foo.local`, try adding a dot and continuing
 /// This is simply to fix the 'convenience case' where the ending dot is omitted from the hostname.
 /// The dot-ending is a fully qualified path that DNS resolvers typically add if it is not present.
-pub fn try_clean_hostname<'a>(hostname: Cow<'a, str>) -> Cow<'a, str> {
+pub fn try_clean_hostname(hostname: Cow<'_, str>) -> Cow<'_, str> {
     let dot_corrected_hostname = if hostname.chars().last().unwrap_or_default() != '.' {
         let mut hostname_try_fix = hostname.into_owned();
         hostname_try_fix.push('.');
@@ -112,7 +112,7 @@ pub fn try_clean_hostname<'a>(hostname: Cow<'a, str>) -> Cow<'a, str> {
 /// # Note
 ///
 /// Expected to be called after [try_clean_hostname] to ensure it ends with a dot.
-fn fully_qualify_hostname<'a>(hostname: Cow<'a, str>) -> Cow<'a, str> {
+fn fully_qualify_hostname(hostname: Cow<'_, str>) -> Cow<'_, str> {
     if hostname.ends_with("local.") {
         hostname
     } else {
