@@ -13,7 +13,7 @@
     - [mDNS utilities](#mdns-utilities)
       - [Discover services](#discover-services)
       - [Resolve mDNS hostname](#resolve-mdns-hostname)
-      - [Register mDNS service (for testing)](#register-mdns-service-for-testing)
+      - [Register mDNS service (for testing or transferring by addressing the registered hostname)](#register-mdns-service-for-testing-or-transferring-by-addressing-the-registered-hostname)
   - [Supported compression formats](#supported-compression-formats)
   - [Install](#install)
     - [Prebuilt binaries](#prebuilt-binaries)
@@ -49,10 +49,11 @@ Commands:
   help                  Print this message or the help of the given subcommand(s)
 
 Options:
-  -v, --verbose...  Pass many times for more log output
-  -q, --quiet       Silence all output [env: QFT_QUIET=]
-  -h, --help        Print help (see more with '--help')
-  -V, --version     Print version
+  -v, --verbose...    Pass many times for more log output
+  -q, --quiet         Silence all output [env: QFT_QUIET=]
+      --color=<WHEN>  [default: auto] [possible values: auto, always, never]
+  -h, --help          Print help (see more with '--help')
+  -V, --version       Print version
 ```
 
 ## Examples
@@ -99,17 +100,16 @@ It is also possible to ad-hoc register a service with `qft mdns register` AND ru
 ```markdown
 Evaluate which compression works best for file content
 
-Usage: qft evaluate-compression [OPTIONS] --input-file <INPUT_FILE> [OMIT]...
-
-Arguments:
-  [OMIT]...  List of compression formats to omit from evaluation [possible values: gzip, bzip2, xz, lz4]
+Usage: qft evaluate-compression [OPTIONS] --input-file <INPUT_FILE>
 
 Options:
   -i, --input-file <INPUT_FILE>
-      --test-mmap                Also test with memory mapping
-  -v, --verbose...               Pass many times for more log output
-  -q, --quiet                    Silence all output [env: QFT_QUIET=]
-  -h, --help                     Print help (see more with '--help')
+      --omit [<OMIT>...]                List of compression formats to omit from evaluation [possible values: bzip2, gzip, lz4, xz]
+      --omit-levels [<OMIT_LEVELS>...]  List of compression levels to omit from evaluation
+  -v, --verbose...                      Pass many times for more log output
+  -q, --quiet                           Silence all output [env: QFT_QUIET=]
+      --color=<WHEN>                    [default: auto] [possible values: auto, always, never]
+  -h, --help                            Print help (see more with '--help')
 ```
 
 Evaluate compression of `Cargo.lock`. Omit `gzip` and most compression levels to make this example brief.
@@ -204,7 +204,7 @@ IP(s): fe80::d912:463a:8c88:deca
        192.168.121.21
 ```
 
-#### Register mDNS service (for testing)
+#### Register mDNS service (for testing or transferring by addressing the registered hostname)
 
 ```shell
 qft mdns register --hostname foo-name --service-label bar-label --service-protocol tcp --keep-alive-ms 123456
@@ -226,7 +226,11 @@ avahi-resolve --name foo-name.local
 # foo-name.local  172.17.0.1
 ```
 
-But that only outputs the first received address. Using `qft mdns resolve` will always output all the associated IPs. If you need speed, `avahi` is a much better choice though.
+But that only outputs the first received address. Using `qft mdns resolve` will output all the associated IPs. If you need speed use the `--short-circuit` flag to return as soon as the first IP associated with the hostname is resolved e.g.
+
+```shell
+qft mdns resolve foo-name[.local.] --short-circuit
+```
 
 ## Supported compression formats
 
