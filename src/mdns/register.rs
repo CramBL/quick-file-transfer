@@ -3,7 +3,7 @@ use std::{net::IpAddr, thread, time::Duration};
 use anyhow::Result;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 
-use crate::mdns::util;
+use crate::mdns::util::{self, mdns_daemon_shutdown};
 
 pub fn start_mdns_service(
     hostname: &str,
@@ -55,6 +55,6 @@ pub fn start_mdns_service(
     let keepalive_dur = Duration::from_millis(keep_alive_ms);
     log::info!("Keeping alive for: {keepalive_dur:?}");
     thread::sleep(keepalive_dur);
-    mdns.shutdown()?;
+    mdns_daemon_shutdown(&mdns);
     Ok(())
 }
