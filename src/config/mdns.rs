@@ -29,9 +29,14 @@ pub enum MdnsCommand {
 #[derive(Debug, Args, Clone)]
 pub struct ServiceTypeArgs {
     /// Service label e.g. `foo` -> `_foo._<service_protocol>.local.`
-    #[arg(name("service-label"), short('l'), long)]
+    #[arg(name("service-label"), short('l'), long, value_name = "SERVICE_LABEL")]
     pub label: String,
     /// Service protocol e.g. `tcp` -> `_<service_label>._tcp.local.`
-    #[arg(name = "service-protocol", long, visible_alias("proto"))]
+    #[arg(
+        name = "service-protocol",
+        long,
+        visible_alias("proto"),
+        value_name = "PROTOCOL"
+    )]
     pub protocol: String,
 }

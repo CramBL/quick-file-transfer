@@ -4,7 +4,7 @@ use super::ContentTransferArgs;
 
 /// Holds the Listen subcommands
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+#[command(flatten_help = true)]
 pub struct ListenArgs {
     /// Host IP e.g. `127.0.0.1`
     #[arg(long, default_value_t  = String::from("0.0.0.0"))]
