@@ -7,6 +7,7 @@
 - `qft dns resolve` --short-circuit flag
 - Configurable compression levels for `bzip2`, `gzip`, and `xz`, also used in `compression-evaluation`.
 - `--color=<WHEN>`  [default: auto] [possible values: auto, always, never] to toggle colors in prints to stderr/stdout.
+- `--omit-levels [<OMIT_LEVELS>...]` List of compression levels to omit from evaluation
 
 ## 0.3.0 - 2024-06-19
 
