@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 0.4.0 - 2024-06-20
+
 ### Added
 
 - `qft dns resolve` --short-circuit flag
