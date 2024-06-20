@@ -7,6 +7,7 @@ alias l := lint
 alias c := check
 alias f := format
 alias t := test
+alias p := pre-commit
 
 # Needs the rust toolchain
 env:
