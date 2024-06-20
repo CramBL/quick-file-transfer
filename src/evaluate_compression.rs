@@ -24,12 +24,18 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
         input_file,
         omit,
         test_mmap,
+        mut omit_levels,
     } = args;
 
+    omit_levels.sort();
     let compression_set: Vec<Compression> = Compression::iter().collect();
 
-    for compr in omit.iter() {
-        eprintln!("Omitting: {compr}");
+    if !omit.is_empty() {
+        let mut print_str = String::from("Omitting:  ");
+        for compr in omit.iter() {
+            print_str.push_str(&format!(" {compr}"));
+        }
+        eprintln!("{print_str}");
     }
 
     let evaluate_compressions: Vec<Compression> = compression_set
@@ -37,8 +43,20 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
         .filter(|c| !omit.contains(c.into()))
         .collect();
 
-    for compr in evaluate_compressions.iter() {
-        eprintln!("evaluating: {compr}");
+    if !evaluate_compressions.is_empty() {
+        let mut print_str = String::from("Evaluating:");
+        for compr in evaluate_compressions.iter() {
+            print_str.push_str(&format!(" {compr}"));
+        }
+        eprintln!("{print_str}");
+    }
+
+    if !omit_levels.is_empty() {
+        let mut print_str = String::from("Omitting compression levels (where applicable):");
+        for compr_lvls in omit_levels.iter() {
+            print_str.push_str(&format!(" {compr_lvls}"));
+        }
+        eprintln!("{print_str}");
     }
 
     let mut bufreader = file_with_bufreader(&input_file)?;
@@ -60,6 +78,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
             &test_contents,
             test_contents_len,
             &mut compression_results,
+            &omit_levels,
         )?;
     }
 
@@ -68,73 +87,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
         //let mmap_read = MemoryMappedReader::new(iinput_file)?;
     }
 
-    let mut fastest_compression: Option<&CompressionResult> = None;
-    let mut fastest_decompression: Option<&CompressionResult> = None;
-    let mut best_ratio: Option<&CompressionResult> = None;
-    let results_count = compression_results.len();
-    for r in compression_results.iter() {
-        if fastest_compression.is_none() && results_count > 1 {
-            fastest_compression = Some(r);
-            fastest_decompression = Some(r);
-            best_ratio = Some(r);
-        }
-        if let Some(f_compr) = fastest_compression {
-            if f_compr.compression_time > r.compression_time {
-                fastest_compression = Some(r);
-            } else {
-                fastest_compression = Some(f_compr);
-            }
-        }
-        if let Some(f_decompr) = fastest_decompression {
-            if f_decompr.decompression_time > r.decompression_time {
-                fastest_decompression = Some(r);
-            } else {
-                fastest_decompression = Some(f_decompr);
-            }
-        }
-        if let Some(br) = best_ratio {
-            if br.compressed_size > r.compressed_size {
-                best_ratio = Some(r);
-            } else {
-                best_ratio = Some(br);
-            }
-        }
-    }
-
-    if let (Some(f_compr), Some(f_decompr), Some(br)) =
-        (fastest_compression, fastest_decompression, best_ratio)
-    {
-        eprintln!("===> Summary");
-        if f_compr.eq(f_decompr) && f_compr.eq(br) {
-            eprintln!("Best in all categories:");
-            eprintln!("{}", br.summarize());
-        } else {
-            eprintln!(
-                "Best Compression Ratio:   {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", br.compression_type()),
-                br.compression_time,
-                br.decompression_time,
-                br.compression_ratio,
-                br.percentage_of_original
-            );
-            eprintln!(
-                "Best Compression Time:    {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", f_compr.compression_type()),
-                f_compr.compression_time,
-                f_compr.decompression_time,
-                f_compr.compression_ratio,
-                f_compr.percentage_of_original
-            );
-            eprintln!(
-                "Best Decompression Time:  {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", f_decompr.compression_type()),
-                f_decompr.compression_time,
-                f_decompr.decompression_time,
-                f_decompr.compression_ratio,
-                f_decompr.percentage_of_original
-            );
-        }
-    }
+    compression_result::evaluate_and_printout_results(compression_results);
 
     Ok(())
 }
@@ -144,11 +97,15 @@ fn test_compress(
     test_contents: &Vec<u8>,
     test_contents_len: usize,
     compression_results: &mut Vec<CompressionResult>,
+    omit_compression_levels: &[u8],
 ) -> Result<()> {
     let res_vec: Vec<CompressionResult> = match compression_ut {
         Compression::Bzip2(_) => {
             let mut res_vec = vec![];
-            for level in Bzip2Args::range() {
+            for level in Bzip2Args::range()
+                .map(|l| l as u8)
+                .filter(|l| !omit_compression_levels.contains(l))
+            {
                 let mut test_contents_reader = new_bufreader(test_contents);
                 let res = black_box(test_compress_bzip2(
                     &mut test_contents_reader,
@@ -161,7 +118,10 @@ fn test_compress(
         }
         Compression::Gzip(_) => {
             let mut res_vec = vec![];
-            for level in GzipArgs::range() {
+            for level in GzipArgs::range()
+                .map(|l| l as u8)
+                .filter(|l| !omit_compression_levels.contains(l))
+            {
                 let mut test_contents_reader = new_bufreader(test_contents);
                 let res = black_box(test_compress_gzip(
                     &mut test_contents_reader,
@@ -181,7 +141,10 @@ fn test_compress(
         }
         Compression::Xz(_) => {
             let mut res_vec = vec![];
-            for level in XzArgs::range() {
+            for level in XzArgs::range()
+                .map(|l| l as u8)
+                .filter(|l| !omit_compression_levels.contains(l))
+            {
                 let mut test_contents_reader = new_bufreader(test_contents);
                 let res = black_box(test_compress_xz(
                     &mut test_contents_reader,
