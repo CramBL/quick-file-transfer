@@ -32,7 +32,7 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
             ref content_transfer_args,
             mmap,
         }) => {
-            if let Some(resolved_info) = resolve_mdns_hostname(hostname, timeout_ms)? {
+            if let Some(resolved_info) = resolve_mdns_hostname(hostname, timeout_ms, true)? {
                 if let Some(ip) = resolved_info.get_ip(ip_version) {
                     run_client(*ip, port, message.as_deref(), mmap, content_transfer_args)?;
                 }

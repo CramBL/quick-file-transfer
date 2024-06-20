@@ -227,6 +227,9 @@ pub struct MdnsResolveArgs {
     /// Sets a timeout in milliseconds (default 10s)
     #[arg(long, default_value_t = 10000)]
     pub timeout_ms: u64,
+    /// Exit as soon as the first IP of the specified hostname has been resolved
+    #[arg(short, long, action = ArgAction::SetTrue)]
+    pub short_circuit: bool,
 }
 
 #[derive(Debug, Args, Clone)]

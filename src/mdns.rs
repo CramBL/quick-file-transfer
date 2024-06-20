@@ -18,7 +18,8 @@ pub fn handle_mdns_command(cmd: MdnsCommand) -> Result<()> {
         MdnsCommand::Resolve(MdnsResolveArgs {
             hostname,
             timeout_ms,
-        }) => resolve::resolve_hostname_print_stdout(&hostname, timeout_ms),
+            short_circuit,
+        }) => resolve::resolve_hostname_print_stdout(&hostname, timeout_ms, short_circuit),
         MdnsCommand::Register(MdnsRegisterArgs {
             hostname,
             instance_name,

@@ -1,33 +1,44 @@
 use anyhow::Result;
-use mdns_sd::ServiceDaemon;
-use std::{
-    collections::HashSet,
-    net::IpAddr,
-    sync::atomic::{AtomicBool, Ordering},
-    thread,
-    time::Duration,
-};
+use mdns_sd::{DaemonStatus, ServiceDaemon};
+use std::{collections::HashSet, net::IpAddr, thread};
 
 use super::util::{try_clean_hostname, MdnsServiceInfo};
 
-pub fn resolve_hostname_print_stdout(hostname: &str, timeout_ms: u64) -> Result<()> {
-    let hostname = try_clean_hostname(hostname.into());
+pub fn resolve_hostname_print_stdout(
+    hostname: &str,
+    timeout_ms: u64,
+    short_circuit: bool,
+) -> Result<()> {
     log::info!("Resolving address for {hostname}");
-    if let Some(resolved_info) = resolve_mdns_hostname(&hostname, timeout_ms)? {
+    if let Some(resolved_info) = resolve_mdns_hostname(
+        &try_clean_hostname(hostname.into()),
+        timeout_ms,
+        short_circuit,
+    )? {
         println!("{resolved_info}");
     } else {
         log::error!("Failed resolving {hostname}");
     }
+
     Ok(())
 }
 
-pub fn resolve_mdns_hostname(hostname: &str, timeout_ms: u64) -> Result<Option<MdnsServiceInfo>> {
+/// Resolve mDNS/DNS-SD hostname to [MdnsServiceInfo] which includes a set of IPs of the given hostname.
+///
+/// # Arguments
+/// - `hostname` the mDNS/DNS-SD hostname to resolve
+/// - `timeout_ms` maximum time before exiting the resolution attempt (still prints out results)
+/// -
+pub fn resolve_mdns_hostname(
+    hostname: &str,
+    timeout_ms: u64,
+    short_circuit: bool,
+) -> Result<Option<MdnsServiceInfo>> {
     let hostname = try_clean_hostname(hostname.into());
-    let stopflag = AtomicBool::new(false);
     let mdns = ServiceDaemon::new()?;
     let receiver = mdns.resolve_hostname(&hostname, Some(timeout_ms))?;
 
-    let resolved_info = std::thread::scope(|s| {
+    let resolved_info = thread::scope(|s| {
         let resolver_receiver = s.spawn(|| {
             let mut hostname = None;
             let mut ip_set = HashSet::<IpAddr>::new();
@@ -44,22 +55,28 @@ pub fn resolve_mdns_hostname(hostname: &str, timeout_ms: u64) -> Result<Option<M
                             hostname = Some(s);
                         }
                         ip_set.extend(recv_ip_set);
+                        if short_circuit {
+                            match mdns.shutdown() {
+                                Ok(re) => match re.recv() {
+                                    Ok(resp) => {
+                                        log::debug!("Shutdown status: {resp:?}");
+                                        debug_assert_eq!(resp, DaemonStatus::Shutdown);
+                                        // Drain the channel after the daemon is shut down
+                                        while let Ok(more_events) = receiver.recv() {
+                                            log::trace!("Draining channel: {more_events:?}");
+                                        }
+                                    }
+                                    Err(e) => log::error!("{e}"),
+                                },
+                                Err(e) => log::error!("{e}"),
+                            }
+                            break;
+                        }
                     }
                     _ => log::trace!("{hostname_resolution_event:?}"),
                 }
             }
-            stopflag.store(true, Ordering::Relaxed);
             hostname.map(|hn| MdnsServiceInfo::new(hn, None, None, ip_set))
-        });
-        let _resolver_watchdog = s.spawn(|| {
-            // Wait for the timeout duration or until stopflag is set
-            let start_time = std::time::Instant::now();
-            while !stopflag.load(Ordering::Relaxed) {
-                if start_time.elapsed() >= Duration::from_millis(timeout_ms) {
-                    break;
-                }
-                thread::sleep(Duration::from_millis(10));
-            }
         });
         resolver_receiver
             .join()
