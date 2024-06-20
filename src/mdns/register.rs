@@ -3,6 +3,8 @@ use std::{net::IpAddr, thread, time::Duration};
 use anyhow::Result;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 
+use crate::mdns::util;
+
 pub fn start_mdns_service(
     hostname: &str,
     service_label: &str,
@@ -15,19 +17,24 @@ pub fn start_mdns_service(
     let mdns = ServiceDaemon::new()?;
 
     let service_type = format!("_{service_label}._{service_protocol}.local.");
-    let no_ip_provided = ip.is_none();
-    let ip_str: String = if let Some(ip) = ip {
+    let ip_str: Option<String> = if let Some(ip) = ip {
         let _ip_addr: IpAddr = ip.parse().expect("Invalid IP address");
-        ip
+        Some(ip)
     } else {
-        "".to_string()
+        None
     };
-    let hostname = format!("{hostname}.local.");
+    let hostname = util::try_clean_hostname(hostname.into());
 
-    let mut new_service =
-        ServiceInfo::new(&service_type, instance_name, &hostname, ip_str, port, None)?;
+    let mut new_service = ServiceInfo::new(
+        &service_type,
+        instance_name,
+        &hostname,
+        ip_str.as_deref().unwrap_or_default(),
+        port,
+        None,
+    )?;
 
-    if no_ip_provided {
+    if ip_str.is_none() {
         new_service = new_service.enable_addr_auto();
     }
 

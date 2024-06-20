@@ -8,13 +8,10 @@ use std::{
     time::Duration,
 };
 
-use super::util::MdnsServiceInfo;
+use super::util::{try_clean_hostname, MdnsServiceInfo};
 
 pub fn resolve_hostname_print_stdout(hostname: &str, timeout_ms: u64) -> Result<()> {
-    let mut hostname = hostname.to_owned();
-    if !hostname.ends_with(".local") && !hostname.ends_with(".local.") {
-        hostname.push_str(".local.");
-    }
+    let hostname = try_clean_hostname(hostname.into());
     log::info!("Resolving address for {hostname}");
     if let Some(resolved_info) = resolve_mdns_hostname(&hostname, timeout_ms)? {
         println!("{resolved_info}");
@@ -25,25 +22,10 @@ pub fn resolve_hostname_print_stdout(hostname: &str, timeout_ms: u64) -> Result<
 }
 
 pub fn resolve_mdns_hostname(hostname: &str, timeout_ms: u64) -> Result<Option<MdnsServiceInfo>> {
-    let mut hostname = hostname;
-
-    // If the supplied hostname does not end in a dot e.g. `foo.local`, try adding a dot and continuing
-    // This is simply to fix the 'convenience case' where the ending dot is omitted from the hostname.
-    // The dot-ending is a fully qualified path that DNS resolvers typically add if it is not present.
-    let dot_corrected_hostname = if hostname.chars().last().unwrap_or_default() != '.' {
-        let mut hostname_try_fix = hostname.to_owned();
-        hostname_try_fix.push('.');
-        hostname_try_fix
-    } else {
-        String::with_capacity(0)
-    };
-    if !dot_corrected_hostname.is_empty() {
-        hostname = dot_corrected_hostname.as_str()
-    }
-
+    let hostname = try_clean_hostname(hostname.into());
     let stopflag = AtomicBool::new(false);
     let mdns = ServiceDaemon::new()?;
-    let receiver = mdns.resolve_hostname(hostname, Some(timeout_ms))?;
+    let receiver = mdns.resolve_hostname(&hostname, Some(timeout_ms))?;
 
     let resolved_info = std::thread::scope(|s| {
         let resolver_receiver = s.spawn(|| {
