@@ -13,8 +13,13 @@ fn test_evaluate_compression_all() -> TestResult {
     eprintln!("{stderr}");
     eprintln!("{stdout}");
 
-    match_count(false, &stderr, "Gzip\\[9\\]", 1)?;
-    match_count(false, &stdout, "Best Compression Ratio:.* Gzip\\[4\\]", 1)?;
+    match_count(true, &stderr, "INFO Gzip", 9)?;
+    match_count(
+        false,
+        &stdout,
+        r"Best Compression Ratio:.* Gzip\[4\] .* 1\.65:1",
+        1,
+    )?;
 
     Ok(())
 }
@@ -70,15 +75,10 @@ fn test_evaluate_compression_omit_compression_levels() -> TestResult {
         1,
     )?;
 
-    // Checks that there's two matches on either Xz[3] or Xz[7] (technically two of the same would pass)
-    match_count(false, &stderr, "Xz\\[[37]\\]", 2)?;
-    // Checks that there's 0 instances of Xz[#] where # is one of the class [1245689]
-    match_count(false, &stderr, "Xz\\[[1245689]\\]", 0)?;
-    match_count(false, &stderr, "Gzip\\[[37]\\]", 2)?;
-    match_count(false, &stderr, "Gzip\\[[1245689]\\]", 0)?;
-    match_count(false, &stderr, "Bzip2\\[[3]\\]", 1)?; // Check specifically for Bzip[3]
-    match_count(false, &stderr, "Bzip2\\[[7]\\]", 1)?; // Check specifically for Bzip[7]
-    match_count(false, &stderr, "Bzip2\\[[1245689]\\]", 0)?;
-
+    match_count(false, &stderr, r"INFO Bzip2", 2)?;
+    match_count(false, &stderr, r"INFO Xz", 2)?;
+    match_count(false, &stderr, r"INFO Gzip", 2)?;
+    match_count(false, &stderr, "Compression level .* 3 ", 3)?;
+    match_count(false, &stderr, "Compression level .* 7 ", 3)?;
     Ok(())
 }
