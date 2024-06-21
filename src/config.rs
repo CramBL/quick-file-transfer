@@ -1,14 +1,16 @@
 use anyhow::Result;
-use evaluate_compression::EvaluateCompressionArgs;
-use mdns::MdnsArgs;
 use stderrlog::LogLevelNum;
 use transfer::{listen::ListenArgs, send::SendArgs};
 mod util;
 use util::*;
+
 pub mod compression;
-pub mod evaluate_compression;
-pub mod mdns;
 pub mod transfer;
+
+#[cfg(feature = "evaluate-compression")]
+pub mod evaluate_compression;
+#[cfg(feature = "mdns")]
+pub mod mdns;
 
 /// Styling for the `help` terminal output
 pub fn cli_styles() -> Styles {
@@ -100,9 +102,11 @@ pub enum Command {
     /// Run in Send (client) mode
     Send(SendArgs),
     /// Use mDNS utilities
-    Mdns(MdnsArgs),
+    #[cfg(feature = "mdns")]
+    Mdns(mdns::MdnsArgs),
     /// Evaluate which compression works best for file content
-    EvaluateCompression(EvaluateCompressionArgs),
+    #[cfg(feature = "evaluate-compression")]
+    EvaluateCompression(evaluate_compression::EvaluateCompressionArgs),
 }
 
 #[derive(Debug, Default, ValueEnum, Clone, Copy)]

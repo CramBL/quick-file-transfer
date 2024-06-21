@@ -10,13 +10,13 @@
 
 use anyhow::Result;
 use config::{Command, Config};
-use evaluate_compression::evaluate_compression;
-use mdns::handle_mdns_command;
 use send::handle_send_cmd;
 use server::listen;
 
 pub mod config;
+#[cfg(feature = "evaluate-compression")]
 pub mod evaluate_compression;
+#[cfg(feature = "mdns")]
 pub mod mdns;
 pub mod mmap_reader;
 pub mod send;
@@ -34,7 +34,11 @@ fn main() -> Result<()> {
     match cfg.command {
         Command::Listen(ref args) => listen(&cfg, args),
         Command::Send(ref cmd) => handle_send_cmd(cmd, &cfg),
-        Command::Mdns(cmd) => handle_mdns_command(cmd.subcmd),
-        Command::EvaluateCompression(args) => evaluate_compression(args),
+
+        #[cfg(feature = "mdns")]
+        Command::Mdns(cmd) => mdns::handle_mdns_command(cmd.subcmd),
+
+        #[cfg(feature = "evaluate-compression")]
+        Command::EvaluateCompression(args) => evaluate_compression::evaluate_compression(args),
     }
 }

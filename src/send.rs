@@ -1,10 +1,10 @@
-use crate::{
-    config::{
-        transfer::send::{SendArgs, SendCommand, SendIpArgs, SendMdnsArgs},
-        Config,
-    },
-    mdns::resolve::resolve_mdns_hostname,
+use crate::config::{
+    transfer::send::{SendArgs, SendCommand, SendIpArgs},
+    Config,
 };
+#[cfg(feature = "mdns")]
+use crate::{config::transfer::send::SendMdnsArgs, mdns::resolve::resolve_mdns_hostname};
+
 use anyhow::Result;
 use client::run_client;
 
@@ -28,6 +28,7 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
             content_transfer_args,
             compression,
         )?,
+        #[cfg(feature = "mdns")]
         SendCommand::Mdns(SendMdnsArgs {
             ref hostname,
             timeout_ms,

@@ -1,6 +1,5 @@
-use crate::config::{util::*, IpVersion};
-
 use super::ContentTransferArgs;
+use crate::config::{util::*, IpVersion};
 
 /// Holds the Send subcommands
 #[derive(Debug, Args)]
@@ -15,6 +14,7 @@ pub enum SendCommand {
     /// Send to target by specifying IP e.g. `192.1.1.1`
     Ip(SendIpArgs),
     /// Send to target by specifying mDNS hostname e.g. `foo.local`
+    #[cfg(feature = "mdns")]
     Mdns(SendMdnsArgs),
 }
 
