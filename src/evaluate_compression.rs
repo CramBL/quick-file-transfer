@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     config::{
-        compression::{Bzip2Args, Compression, GzipArgs, XzArgs},
+        compression::{Bzip2Args, Compression, CompressionRange, GzipArgs, XzArgs},
         evaluate_compression::EvaluateCompressionArgs,
     },
     send::util::file_with_bufreader,
@@ -96,10 +96,7 @@ fn test_compress(
     let res_vec: Vec<CompressionResult> = match compression_ut {
         Compression::Bzip2(_) => {
             let mut res_vec = vec![];
-            for level in Bzip2Args::range()
-                .map(|l| l as u8)
-                .filter(|l| !omit_compression_levels.contains(l))
-            {
+            for level in Bzip2Args::range_u8_with_omit(omit_compression_levels) {
                 let mut test_contents_reader = new_bufreader(test_contents);
                 let res = black_box(test_compress_bzip2(
                     &mut test_contents_reader,
@@ -112,10 +109,7 @@ fn test_compress(
         }
         Compression::Gzip(_) => {
             let mut res_vec = vec![];
-            for level in GzipArgs::range()
-                .map(|l| l as u8)
-                .filter(|l| !omit_compression_levels.contains(l))
-            {
+            for level in GzipArgs::range_u8_with_omit(omit_compression_levels) {
                 let mut test_contents_reader = new_bufreader(test_contents);
                 let res = black_box(test_compress_gzip(
                     &mut test_contents_reader,
@@ -135,7 +129,7 @@ fn test_compress(
         }
         Compression::Xz(_) => {
             let mut res_vec = vec![];
-            for level in XzArgs::range_as_u8().filter(|l| !omit_compression_levels.contains(l)) {
+            for level in XzArgs::range_u8_with_omit(omit_compression_levels) {
                 let mut test_contents_reader = new_bufreader(test_contents);
                 let res = black_box(test_compress_xz(
                     &mut test_contents_reader,
