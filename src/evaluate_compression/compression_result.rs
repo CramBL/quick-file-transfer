@@ -112,11 +112,11 @@ impl CompressionResult<Finished> {
         ));
         summary.push_str(&format!(
             "Compression Time:    {:.2?}\n",
-            self.compression_time
+            self.compression_time.unwrap()
         ));
         summary.push_str(&format!(
             "Decompression Time:  {:.2?}\n",
-            self.decompression_time
+            self.decompression_time.unwrap()
         ));
         summary.push_str("Size:  ");
         summary.push_str(&format_data_size(self.compressed_size.unwrap() as u64));

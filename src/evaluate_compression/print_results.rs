@@ -42,24 +42,24 @@ pub fn evaluate_and_printout_results(compression_results: &[CompressionResult<Fi
             println!(
                 "Best Compression Ratio:   {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{}", br.compression_type()),
-                br.compression_time,
-                br.decompression_time,
+                br.compression_time.unwrap(),
+                br.decompression_time.unwrap(),
                 br.compression_ratio.unwrap(),
                 br.percentage_of_original.unwrap()
             );
             println!(
                 "Best Compression Time:    {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{}", f_compr.compression_type()),
-                f_compr.compression_time,
-                f_compr.decompression_time,
+                f_compr.compression_time.unwrap(),
+                f_compr.decompression_time.unwrap(),
                 f_compr.compression_ratio.unwrap(),
                 f_compr.percentage_of_original.unwrap()
             );
             println!(
                 "Best Decompression Time:  {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{}", f_decompr.compression_type()),
-                f_decompr.compression_time,
-                f_decompr.decompression_time,
+                f_decompr.compression_time.unwrap(),
+                f_decompr.decompression_time.unwrap(),
                 f_decompr.compression_ratio.unwrap(),
                 f_decompr.percentage_of_original.unwrap()
             );
