@@ -64,7 +64,6 @@ impl CompressionResult<Awaiting> {
             )),
         };
         if let Ok(ref res) = res {
-            log::info!("{}", res.summarize());
             log::info!("{}\n{}", res.compression_format(), res.summarize_as_table());
         }
         res
