@@ -13,6 +13,6 @@ pub struct EvaluateCompressionArgs {
     pub omit: Vec<CompressionVariant>,
 
     /// List of compression levels to omit from evaluation
-    #[arg(long, num_args(0..9))]
+    #[arg(long, num_args(0..10))]
     pub omit_levels: Vec<u8>,
 }
