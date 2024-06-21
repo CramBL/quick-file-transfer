@@ -1,4 +1,7 @@
+
 # Quick File Transfer (qft)
+
+[![CI](https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml/badge.svg)](https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml)
 
 - [Quick File Transfer (qft)](#quick-file-transfer-qft)
   - [Purpose](#purpose)
