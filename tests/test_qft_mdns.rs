@@ -39,7 +39,7 @@ fn test_qft_mdns_register_resolve() -> TestResult {
 
     let StdoutStderr {
         stdout: _reg_service_stdout,
-        stderr: _reg_service_stderr,
+        stderr: reg_service_stderr,
     } = process_output_to_stdio(reg_service_handle?.join().unwrap()?)?;
 
     let StdoutStderr {
@@ -47,8 +47,8 @@ fn test_qft_mdns_register_resolve() -> TestResult {
         stderr: resolve_hostname_stderr,
     } = process_output_to_stdio(resolve_hostname_handle?.join().unwrap()?)?;
 
-    eprintln!("{resolve_hostname_stdout}");
-    eprintln!("{resolve_hostname_stderr}");
+    assert_no_errors_or_warn(&reg_service_stderr)?;
+    assert_no_errors_or_warn(&resolve_hostname_stderr)?;
 
     assert!(
         resolve_hostname_stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),
@@ -85,7 +85,7 @@ fn test_qft_mdns_register_discover() -> TestResult {
         None,
     );
 
-    let resolve_hostname_handle = spawn_thread_qft(
+    let discover_handle = spawn_thread_qft(
         "discover mdns thread",
         [
             "mdns",
@@ -101,20 +101,23 @@ fn test_qft_mdns_register_discover() -> TestResult {
 
     let StdoutStderr {
         stdout: _reg_service_stdout,
-        stderr: _reg_service_stderr,
+        stderr: reg_service_stderr,
     } = process_output_to_stdio(reg_service_handle?.join().unwrap()?)?;
 
     let StdoutStderr {
-        stdout: resolve_hostname_stdout,
-        stderr: resolve_hostname_stderr,
-    } = process_output_to_stdio(resolve_hostname_handle?.join().unwrap()?)?;
+        stdout: discoer_stdout,
+        stderr: discover_stderr,
+    } = process_output_to_stdio(discover_handle?.join().unwrap()?)?;
 
-    eprintln!("{resolve_hostname_stdout}");
-    eprintln!("{resolve_hostname_stderr}");
+    eprintln!("{discoer_stdout}");
+    eprintln!("{discover_stderr}");
+
+    assert_no_errors_or_warn(&reg_service_stderr)?;
+    assert_no_errors_or_warn(&discover_stderr)?;
 
     assert!(
-        resolve_hostname_stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),
-        "Expected stdout to contains {SERVICE_HOSTNAME}. Stdout: {resolve_hostname_stdout}"
+        discoer_stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),
+        "Expected stdout to contains {SERVICE_HOSTNAME}. Stdout: {discoer_stdout}"
     );
     Ok(())
 }

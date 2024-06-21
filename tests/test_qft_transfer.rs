@@ -42,7 +42,7 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
     let (
         ServerOutput {
             server_stdout: _,
-            server_stderr: _,
+            server_stderr,
         },
         ClientOutput {
             client_stdout,
@@ -55,6 +55,8 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
 
     eprintln!("Client:\nstdout:\n{client_stdout}\nstderr:\n{client_stderr}");
 
+    assert_no_errors_or_warn(&server_stderr)?;
+    assert_no_errors_or_warn(&client_stderr)?;
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -82,17 +84,19 @@ pub fn test_stdout_transfer_no_compression_simple() -> TestResult {
     let (
         ServerOutput {
             server_stdout,
-            server_stderr: _,
+            server_stderr,
         },
         ClientOutput {
             client_stdout: _,
-            client_stderr: _,
+            client_stderr,
         },
     ) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
 
+    assert_no_errors_or_warn(&server_stderr)?;
+    assert_no_errors_or_warn(&client_stderr)?;
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_stdout);
 
     Ok(())
@@ -119,16 +123,19 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
     let (
         ServerOutput {
             server_stdout,
-            server_stderr: _,
+            server_stderr,
         },
         ClientOutput {
             client_stdout: _,
-            client_stderr: _,
+            client_stderr,
         },
     ) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
+
+    assert_no_errors_or_warn(&server_stderr)?;
+    assert_no_errors_or_warn(&client_stderr)?;
 
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_stdout);
 
@@ -156,17 +163,19 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
     let (
         ServerOutput {
             server_stdout,
-            server_stderr: _,
+            server_stderr,
         },
         ClientOutput {
             client_stdout: _,
-            client_stderr: _,
+            client_stderr,
         },
     ) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
 
+    assert_no_errors_or_warn(&server_stderr)?;
+    assert_no_errors_or_warn(&client_stderr)?;
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_stdout);
 
     Ok(())
@@ -212,17 +221,19 @@ pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
     let (
         ServerOutput {
             server_stdout: _,
-            server_stderr: _,
+            server_stderr,
         },
         ClientOutput {
             client_stdout: _,
-            client_stderr: _,
+            client_stderr,
         },
     ) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
 
+    assert_no_errors_or_warn(&server_stderr)?;
+    assert_no_errors_or_warn(&client_stderr)?;
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
