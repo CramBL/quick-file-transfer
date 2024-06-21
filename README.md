@@ -124,45 +124,91 @@ qft evaluate-compression --input-file Cargo.lock --omit gzip --omit-levels 0 2 3
 Example output:
 
 ```shell
+INFO Omitting:   Gzip
+INFO Evaluating: Bzip2 Lz4 Xz
+INFO Omitting compression levels (where applicable): 0 2 3 4 5 6 7 8
+INFO Buffered reading 34338 B contents in 15.728µs
+INFO Lz4
+╭────────────────────┬─────────────────────╮
+│ Compression Ratio  ┆        2.42:1       │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆   83.29µs/32.53µs   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 13.83 KiB [14163 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆        41.25%       │
+╰────────────────────┴─────────────────────╯
+INFO Bzip2
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         1         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       4.56:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  2.36ms/686.34µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.36 KiB [7533 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       21.94%      │
+╰────────────────────┴───────────────────╯
+INFO Bzip2
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         9         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       4.56:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  2.73ms/771.13µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.36 KiB [7533 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       21.94%      │
+╰────────────────────┴───────────────────╯
+INFO Xz
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         1         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       3.73:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  2.34ms/522.16µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 9.00 KiB [9216 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       26.84%      │
+╰────────────────────┴───────────────────╯
+INFO Xz
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         9         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       4.30:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  9.04ms/523.23µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.80 KiB [7984 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       23.25%      │
+╰────────────────────┴───────────────────╯
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Omitting:   Gzip
-Evaluating: Bzip2 Lz4 Xz
-Omitting compression levels (where applicable): 0 2 3 4 5 6 7 8
-Buffered reading 30970 B contents in 11.785µs
-Bzip2[1]
-    Ratio: 4.51:1
-    Compression Time:    2.13ms
-    Decompression Time:  595.31µs
-    Size:  6.70 KiB [6862 B] (22.16% of original)
+╭────────────────────┬───────────────────┬───────────────────────┬─────────────────────────╮
+│                    ┆ Best Ratio        ┆ Best Compression Time ┆ Best Decompression Time │
+╞════════════════════╪═══════════════════╪═══════════════════════╪═════════════════════════╡
+│ Format             ┆ Bzip2             ┆ Lz4                   ┆ Lz4                     │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression level  ┆ 1                 ┆ -                     ┆ -                       │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆ 4.56:1            ┆ 2.42:1                ┆ 2.42:1                  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆ 2.36ms/686.34µs   ┆ 83.29µs/32.53µs       ┆ 83.29µs/32.53µs         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.36 KiB [7533 B] ┆ 13.83 KiB [14163 B]   ┆ 13.83 KiB [14163 B]     │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆ 21.94%            ┆ 41.25%                ┆ 41.25%                  │
+╰────────────────────┴───────────────────┴───────────────────────┴─────────────────────────╯
 
-Bzip2[9]
-    Ratio: 4.51:1
-    Compression Time:    2.06ms
-    Decompression Time:  609.22µs
-    Size:  6.70 KiB [6862 B] (22.16% of original)
-
-Lz4
-    Ratio: 2.42:1
-    Compression Time:    49.35µs
-    Decompression Time:  13.51µs
-    Size:  12.49 KiB [12788 B] (41.29% of original)
-
-Xz[1]
-    Ratio: 3.71:1
-    Compression Time:    2.07ms
-    Decompression Time:  467.05µs
-    Size:  8.16 KiB [8356 B] (26.98% of original)
-
-Xz[9]
-    Ratio: 4.27:1
-    Compression Time:    8.44ms
-    Decompression Time:  485.67µs
-    Size:  7.08 KiB [7248 B] (23.40% of original)
-
-===> Summary
-Best Compression Ratio:   Bzip2[1] Compression/Decompression:     2.13ms/  595.31µs   4.51:1 (22.16% of original)
-Best Compression Time:    Lz4      Compression/Decompression:    49.35µs/   13.51µs   2.42:1 (41.29% of original)
-Best Decompression Time:  Lz4      Compression/Decompression:    49.35µs/   13.51µs   2.42:1 (41.29% of original)
+==> Short summary
+Best Compression Ratio:   Bzip2[1] Compression/Decompression:     2.36ms/  686.34µs   4.56:1 (21.94% of original)
+Best Compression Time:    Lz4      Compression/Decompression:    83.29µs/   32.53µs   2.42:1 (41.25% of original)
+Best Decompression Time:  Lz4      Compression/Decompression:    83.29µs/   32.53µs   2.42:1 (41.25% of original)
 ```
 
 ### mDNS utilities
