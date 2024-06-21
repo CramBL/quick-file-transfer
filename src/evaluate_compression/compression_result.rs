@@ -108,12 +108,12 @@ pub fn evaluate_and_printout_results(compression_results: &[CompressionResult]) 
     if let (Some(f_compr), Some(f_decompr), Some(br)) =
         (fastest_compression, fastest_decompression, best_ratio)
     {
-        eprintln!("===> Summary");
+        println!("===> Summary");
         if f_compr.eq(f_decompr) && f_compr.eq(br) {
-            eprintln!("Best in all categories:");
-            eprintln!("{}", br.summarize());
+            println!("Best in all categories:");
+            println!("{}", br.summarize());
         } else {
-            eprintln!(
+            println!(
                 "Best Compression Ratio:   {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{}", br.compression_type()),
                 br.compression_time,
@@ -121,7 +121,7 @@ pub fn evaluate_and_printout_results(compression_results: &[CompressionResult]) 
                 br.compression_ratio,
                 br.percentage_of_original
             );
-            eprintln!(
+            println!(
                 "Best Compression Time:    {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{}", f_compr.compression_type()),
                 f_compr.compression_time,
@@ -129,7 +129,7 @@ pub fn evaluate_and_printout_results(compression_results: &[CompressionResult]) 
                 f_compr.compression_ratio,
                 f_compr.percentage_of_original
             );
-            eprintln!(
+            println!(
                 "Best Decompression Time:  {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
                 format!("{}", f_decompr.compression_type()),
                 f_decompr.compression_time,
