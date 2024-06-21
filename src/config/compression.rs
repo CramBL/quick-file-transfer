@@ -67,6 +67,9 @@ impl XzArgs {
     pub fn range() -> std::ops::RangeInclusive<i64> {
         0..=9
     }
+    pub fn range_as_u8() -> std::ops::RangeInclusive<u8> {
+        std::ops::RangeInclusive::new(*Self::range().start() as u8, *Self::range().end() as u8)
+    }
     pub fn new(compression_level: u8) -> Self {
         Self { compression_level }
     }

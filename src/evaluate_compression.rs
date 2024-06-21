@@ -135,10 +135,7 @@ fn test_compress(
         }
         Compression::Xz(_) => {
             let mut res_vec = vec![];
-            for level in XzArgs::range()
-                .map(|l| l as u8)
-                .filter(|l| !omit_compression_levels.contains(l))
-            {
+            for level in XzArgs::range_as_u8().filter(|l| !omit_compression_levels.contains(l)) {
                 let mut test_contents_reader = new_bufreader(test_contents);
                 let res = black_box(test_compress_xz(
                     &mut test_contents_reader,
