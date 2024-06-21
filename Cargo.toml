@@ -27,6 +27,7 @@ flate2 = "1.0.30"
 xz2 = "0.1.7"
 bzip2 = "0.4.4"
 mdns-sd = { version = "0.11.1", optional = true }
+comfy-table = { version = "7.1.1", optional = true }
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
@@ -45,5 +46,5 @@ overflow-checks = false
 
 [features]
 default = ["mdns", "evaluate-compression"]
-evaluate-compression = []
+evaluate-compression = ["dep:comfy-table"]
 mdns = ["dep:mdns-sd"]

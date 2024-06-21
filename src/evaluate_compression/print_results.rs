@@ -1,4 +1,4 @@
-use super::compression_result::{CompressionResult, Finished};
+use super::compression_result::{print_results_as_table, CompressionResult, Finished};
 
 pub fn evaluate_and_printout_results(compression_results: &[CompressionResult<Finished>]) {
     let mut fastest_compression: Option<&CompressionResult<Finished>> = None;
@@ -34,35 +34,6 @@ pub fn evaluate_and_printout_results(compression_results: &[CompressionResult<Fi
     if let (Some(f_compr), Some(f_decompr), Some(br)) =
         (fastest_compression, fastest_decompression, best_ratio)
     {
-        println!("===> Summary");
-        if f_compr.eq(f_decompr) && f_compr.eq(br) {
-            println!("Best in all categories:");
-            println!("{}", br.summarize());
-        } else {
-            println!(
-                "Best Compression Ratio:   {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", br.compression_type()),
-                br.compression_time.unwrap(),
-                br.decompression_time.unwrap(),
-                br.compression_ratio.unwrap(),
-                br.percentage_of_original.unwrap()
-            );
-            println!(
-                "Best Compression Time:    {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", f_compr.compression_type()),
-                f_compr.compression_time.unwrap(),
-                f_compr.decompression_time.unwrap(),
-                f_compr.compression_ratio.unwrap(),
-                f_compr.percentage_of_original.unwrap()
-            );
-            println!(
-                "Best Decompression Time:  {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", f_decompr.compression_type()),
-                f_decompr.compression_time.unwrap(),
-                f_decompr.decompression_time.unwrap(),
-                f_decompr.compression_ratio.unwrap(),
-                f_decompr.percentage_of_original.unwrap()
-            );
-        }
+        print_results_as_table(f_compr, f_decompr, br);
     }
 }
