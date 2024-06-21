@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- Pretty table formatted `evaluate-compression` output
+
 ### Changed
 
-- Added features flags `mdns` & `evaluate-compression` to allow for opting out of those features (and their dependencies) they are enabled by default.
+- Features flags `mdns` & `evaluate-compression` to allow for opting out of those features (and their dependencies) they are enabled by default.
 
 ## 0.4.0 - 2024-06-20
 
