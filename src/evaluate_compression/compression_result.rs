@@ -79,7 +79,7 @@ pub fn evaluate_and_printout_results(compression_results: &[CompressionResult]) 
     let mut fastest_decompression: Option<&CompressionResult> = None;
     let mut best_ratio: Option<&CompressionResult> = None;
     let results_count = compression_results.len();
-    for r in compression_results.iter() {
+    for r in compression_results {
         if fastest_compression.is_none() && results_count > 1 {
             fastest_compression = Some(r);
             fastest_decompression = Some(r);

@@ -32,6 +32,7 @@ pub fn bind_tcp_listener(addr: Address) -> Result<TcpListener> {
 }
 
 /// Format a value to a human readable byte magnitude description
+#[must_use]
 pub fn format_data_size(size_bytes: u64) -> String {
     const KI_B_VAL: u64 = 1024;
     const KI_B_DIVIDER: f64 = 1024_f64;
@@ -47,7 +48,7 @@ pub fn format_data_size(size_bytes: u64) -> String {
             let kib_bytes = size_bytes as f64 / KI_B_DIVIDER;
             format!("{kib_bytes:.2} KiB")
         }
-        1048577..=GI_B_VAL => {
+        1_048_577..=GI_B_VAL => {
             let mib_bytes = size_bytes as f64 / MI_B_DIVIDER;
             format!("{mib_bytes:.2} MiB")
         }

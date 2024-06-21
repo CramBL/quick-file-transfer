@@ -1,6 +1,7 @@
 use anyhow::Result;
 use evaluate_compression::EvaluateCompressionArgs;
 use mdns::MdnsArgs;
+use stderrlog::LogLevelNum;
 use transfer::{listen::ListenArgs, send::SendArgs};
 mod util;
 use util::*;
@@ -53,7 +54,6 @@ impl Config {
     pub fn init() -> Result<Self> {
         let cfg = Self::parse();
 
-        use stderrlog::LogLevelNum;
         let log_level: LogLevelNum = match cfg.verbose {
             0 => LogLevelNum::Info,
             1 => LogLevelNum::Debug,

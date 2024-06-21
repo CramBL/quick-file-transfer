@@ -97,12 +97,12 @@ impl From<ServiceInfo> for MdnsServiceInfo {
 /// This is simply to fix the 'convenience case' where the ending dot is omitted from the hostname.
 /// The dot-ending is a fully qualified path that DNS resolvers typically add if it is not present.
 pub fn try_clean_hostname(hostname: Cow<'_, str>) -> Cow<'_, str> {
-    let dot_corrected_hostname = if hostname.chars().last().unwrap_or_default() != '.' {
+    let dot_corrected_hostname = if hostname.chars().last().unwrap_or_default() == '.' {
+        hostname
+    } else {
         let mut hostname_try_fix = hostname.into_owned();
         hostname_try_fix.push('.');
         hostname_try_fix.into()
-    } else {
-        hostname
     };
     fully_qualify_hostname(dot_corrected_hostname)
 }

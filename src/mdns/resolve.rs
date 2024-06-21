@@ -47,7 +47,7 @@ pub fn resolve_mdns_hostname(
             while let Ok(hostname_resolution_event) = receiver.recv() {
                 match hostname_resolution_event {
                     mdns_sd::HostnameResolutionEvent::SearchStarted(s) => {
-                        log::trace!("Search started: {s}")
+                        log::trace!("Search started: {s}");
                     }
                     mdns_sd::HostnameResolutionEvent::AddressesFound(s, recv_ip_set) => {
                         log::debug!("Hostname found! {s}: {recv_ip_set:?}");

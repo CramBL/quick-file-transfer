@@ -13,7 +13,7 @@ use config::{Command, Config};
 use evaluate_compression::evaluate_compression;
 use mdns::handle_mdns_command;
 use send::handle_send_cmd;
-use server::run_server;
+use server::listen;
 
 pub mod config;
 pub mod evaluate_compression;
@@ -32,7 +32,7 @@ fn main() -> Result<()> {
     log::trace!("{cfg:?}");
 
     match cfg.command {
-        Command::Listen(ref args) => run_server(&cfg, args),
+        Command::Listen(ref args) => listen(&cfg, args),
         Command::Send(ref cmd) => handle_send_cmd(cmd, &cfg),
         Command::Mdns(cmd) => handle_mdns_command(cmd.subcmd),
         Command::EvaluateCompression(args) => evaluate_compression(args),

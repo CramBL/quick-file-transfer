@@ -26,12 +26,12 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
         mut omit_levels,
     } = args;
 
-    omit_levels.sort();
+    omit_levels.sort_unstable();
     let compression_set: Vec<Compression> = Compression::iter().collect();
 
     if !omit.is_empty() {
         let mut print_str = String::from("Omitting:  ");
-        for compr in omit.iter() {
+        for compr in &omit {
             print_str.push_str(&format!(" {compr}"));
         }
         eprintln!("{print_str}");
@@ -44,7 +44,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
 
     if !evaluate_compressions.is_empty() {
         let mut print_str = String::from("Evaluating:");
-        for compr in evaluate_compressions.iter() {
+        for compr in &evaluate_compressions {
             print_str.push_str(&format!(" {compr}"));
         }
         eprintln!("{print_str}");
@@ -52,7 +52,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
 
     if !omit_levels.is_empty() {
         let mut print_str = String::from("Omitting compression levels (where applicable):");
-        for compr_lvls in omit_levels.iter() {
+        for compr_lvls in &omit_levels {
             print_str.push_str(&format!(" {compr_lvls}"));
         }
         eprintln!("{print_str}");
@@ -71,7 +71,7 @@ pub fn evaluate_compression(args: EvaluateCompressionArgs) -> Result<()> {
     eprintln!("Buffered reading {test_contents_len} B contents in {elapsed:?}",);
     let mut compression_results: Vec<CompressionResult> = Vec::new();
 
-    for compr in evaluate_compressions.iter() {
+    for compr in &evaluate_compressions {
         test_compress(
             *compr,
             &test_contents,
@@ -151,7 +151,7 @@ fn test_compress(
         }
     };
 
-    for res in res_vec.iter() {
+    for res in &res_vec {
         eprintln!("{}", res.summarize());
     }
     compression_results.extend(res_vec);

@@ -14,7 +14,7 @@ use crate::{
 };
 use anyhow::Result;
 
-pub fn run_server(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
+pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     let ListenArgs {
         ip,
         port,

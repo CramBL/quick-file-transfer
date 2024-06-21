@@ -82,7 +82,7 @@ pub fn discover_service_type(
             .expect("Failed joining service discovery thread")
     });
 
-    for discovered_service in discovered_services.iter() {
+    for discovered_service in discovered_services {
         println!("{discovered_service}");
     }
     Ok(())
