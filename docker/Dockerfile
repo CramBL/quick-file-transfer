@@ -39,10 +39,6 @@ RUN mkdir -p $HOME/.ssh \
     && ssh-keygen -t ed25519 -N '' -f /root/ed25519 && cat /root/ed25519.pub >> $HOME/.ssh/authorized_keys \
     && chown -R $USERNAME $HOME/.ssh
 
-RUN curl -L -H "Accept: application/vnd.github.v3.raw" \
-    https://api.github.com/repos/CramBL/quick-file-transfer/contents/scripts/install.sh \
-    | bash -s -- --to /usr/bin && qft --version
-
 # Setup SSH daemon
 RUN mkdir /run/sshd
 
