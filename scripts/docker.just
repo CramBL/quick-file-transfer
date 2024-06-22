@@ -4,7 +4,15 @@ CONTAINER_USERNAME := "userfoo"
 CONTAINER_PASSWORD := "password"
 CONTAINER_HOME := "/home/" + CONTAINER_USERNAME
 
+CONTAINER_QFT_LISTEN_PORT := "12993"
 CONTAINER_SSH_PORT := "54320"
+
+# Relaxed ssh options: 1. No host key checking 2. No known hosts file (avoids adding the target to known hosts) 3. Only log errors
+SSH_OPTIONS_LAX := "\
+-o StrictHostKeyChecking=no \
+-o UserKnownHostsFile=/dev/null \
+-o LogLevel=ERROR\
+"
 
 # Build the Docker image
 [group("Docker"), no-exit-message]
@@ -14,7 +22,11 @@ d-build:
 # Run the Docker container
 [group("Docker"), no-exit-message]
 d-run:
-    docker run --detach --publish {{CONTAINER_SSH_PORT}}:{{CONTAINER_SSH_PORT}} --name {{CONTAINER_TAG}} {{CONTAINER_TAG}}
+	docker run --detach \
+		--publish 127.0.0.1:{{CONTAINER_SSH_PORT}}:{{CONTAINER_SSH_PORT}} \
+		--publish 127.0.0.1:{{CONTAINER_QFT_LISTEN_PORT}}:{{CONTAINER_QFT_LISTEN_PORT}} \
+		--name {{CONTAINER_TAG}} {{CONTAINER_TAG}}
+
 
 # Stop and remove the Docker container
 [group("Docker"), no-exit-message]
@@ -25,7 +37,7 @@ d-stop:
 # SSH into the running container
 [group("Docker"), no-exit-message]
 d-ssh:
-    ssh -p {{CONTAINER_SSH_PORT}} userfoo@localhost
+	ssh {{SSH_OPTIONS_LAX}} -p {{CONTAINER_SSH_PORT}} {{CONTAINER_USERNAME}}@localhost
 
 # Check Docker logs
 [group("Docker"), no-exit-message]
