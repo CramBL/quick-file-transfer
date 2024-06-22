@@ -68,14 +68,17 @@ publish:
     cargo publish
 
 # List the dependencies
+[group("Dependencies")]
 deps:
     cargo tree
 
 # Update the dependencies
+[group("Dependencies")]
 update:
     cargo update
 
 # Audit Cargo.lock files for crates containing security vulnerabilities
+[group("Dependencies")]
 audit *ARGS:
     #!/usr/bin/env bash
     if ! which cargo-audit >/dev/null; then

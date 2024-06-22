@@ -31,8 +31,12 @@ d-run:
 # Stop and remove the Docker container
 [group("Docker"), no-exit-message]
 d-stop:
-    docker stop {{CONTAINER_TAG}}
-    docker rm {{CONTAINER_TAG}}
+	#!/usr/bin/env bash
+	set -euo pipefail
+	if just d-status; then
+		docker stop {{CONTAINER_TAG}}
+		docker rm {{CONTAINER_TAG}}
+	fi
 
 # SSH into the running container
 [group("Docker"), no-exit-message]
@@ -63,3 +67,49 @@ d-status:
 	@docker exec {{CONTAINER_TAG}} \
 		sh -c 'cat /tmp/*.pub >> {{CONTAINER_HOME}}/.ssh/authorized_keys'
 	{{SUCCESS}} "SSH public key setup complete."
+
+# Sets up a clean container for testing data transfer, including adding a debug binary to /usr/bin
+[group("Docker"), no-exit-message]
+d-setup-for-transfer-tests: \
+	d-stop \
+	d-build \
+	d-run \
+	d-setup-ssh-login \
+	d-clean-tmp \
+	build-x86_64-linux-musl \
+	(d-cp-to-container x86_64_LINUX_MUSL_DEBUG_BIN "/usr/bin/")
+
+# Build the docker image if it isn't in the image list ('docker images')
+[group("Docker"), no-exit-message]
+d-build-if-not-built:
+	#!/usr/bin/env bash
+	if ! just d-check-image-built; then
+		just d-build
+	fi
+
+# Check if the Docker image exists (has already been built)
+[group("Docker"), no-exit-message]
+d-check-image-built:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	if docker images {{CONTAINER_TAG}} | grep -q {{CONTAINER_TAG}}; then
+		{{SUCCESS}} "Image '{{CONTAINER_TAG}}' exists"
+	else
+		{{ERROR}} "Image '{{CONTAINER_TAG}}' does not exist"
+	fi
+
+
+# Clear /tmp directory in the Docker container
+[group("Docker"), no-exit-message]
+d-clean-tmp:
+	docker exec {{CONTAINER_TAG}} sh -c 'rm -rf /tmp/*'
+
+[group("Docker"), no-exit-message]
+d-cp-to-container FROM TO:
+	docker cp {{FROM}} {{CONTAINER_TAG}}:{{TO}}
+
+# Attach interactively to the running Docker container
+[group("Docker"), no-exit-message]
+d-attach:
+	docker exec -it -u {{CONTAINER_USERNAME}} {{CONTAINER_TAG}} /bin/bash
+
