@@ -1,4 +1,5 @@
 # Check that the version specified in Cargo.toml matches the latest git tag version
+[group("Git")]
 check-version:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -15,11 +15,12 @@ env:
     cargo --version
 
 # Lint the code
-[no-exit-message]
+[group("Code Quality"), no-exit-message]
 lint *ARGS="-- -D warnings --no-deps":
     cargo clippy {{ ARGS }}
 
 # Run pre-commit and formatting/linting
+[group("Code Quality"), no-exit-message]
 pre-commit: && check-version
     pre-commit run
     cargo fmt
@@ -28,12 +29,12 @@ pre-commit: && check-version
     cargo doc
 
 # Format the code
-[no-exit-message]
+[group("Code Quality"), no-exit-message]
 format *ARGS:
     cargo fmt {{ ARGS }}
 
 # Check if it compiles without compiling
-[no-exit-message]
+[group("Code Quality"), no-exit-message]
 check *ARGS:
     cargo check {{ ARGS }}
 
@@ -57,7 +58,7 @@ clean:
     cargo clean
 
 # Build the documentation (use `--open` to open in the browser)
-[no-exit-message]
+[group("Code Quality"), no-exit-message]
 doc *ARGS:
     cargo doc {{ ARGS }}
 
@@ -84,6 +85,7 @@ audit *ARGS:
     cargo audit {{ ARGS }}
 
 ## CI specific recipes (run these to check if the code passes CI)
+[group("Code Quality")]
 ci-lint: \
     (check "--verbose") \
     (lint "--verbose -- -D warnings --no-deps") \

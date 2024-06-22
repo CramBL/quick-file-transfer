@@ -4,7 +4,7 @@ CONTAINER_USERNAME := "userfoo"
 CONTAINER_PASSWORD := "password"
 CONTAINER_HOME := "/home/" + CONTAINER_USERNAME
 
-CONTAINER_QFT_LISTEN_PORT := "12993"
+CONTAINER_QFT_LISTEN_PORT := "12999"
 CONTAINER_SSH_PORT := "54320"
 
 # Relaxed ssh options: 1. No host key checking 2. No known hosts file (avoids adding the target to known hosts) 3. Only log errors
