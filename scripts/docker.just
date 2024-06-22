@@ -33,8 +33,10 @@ d-run:
 d-stop:
 	#!/usr/bin/env bash
 	set -euo pipefail
-	if just d-status; then
+	if just d-is-running; then
 		docker stop {{CONTAINER_TAG}}
+	fi
+	if just d-is-exited; then
 		docker rm {{CONTAINER_TAG}}
 	fi
 
@@ -50,7 +52,7 @@ d-logs:
 
 # Check if the Docker container is running
 [group("Docker"), no-exit-message]
-d-status:
+d-is-running:
 	#!/usr/bin/env bash
 	set -euo pipefail
 	OUTPUT=$(docker ps --filter 'name=^/{{CONTAINER_TAG}}$$' --format '{{ "{{.Names}}: {{.Status}}" }}')
@@ -60,9 +62,23 @@ d-status:
 		{{ERROR}} "{{CONTAINER_TAG}} is not running..."
 	fi
 
+# Check if the Docker container has exited
+[group("Docker"), no-exit-message]
+d-is-exited:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	OUTPUT=$(docker ps -a --filter 'name=^/{{CONTAINER_TAG}}$$' --filter 'status=exited' --format '{{ "{{.Names}}: {{.Status}}" }}')
+	if [[ -n "${OUTPUT}" ]]; then
+		{{SUCCESS}} "${OUTPUT}"
+	else
+		{{ERROR}} "{{CONTAINER_TAG}} is not in an exited state..."
+	fi
+
+
+
 # Copy SSH keys to container for SSH key-based login
 [group("Docker"), no-exit-message]
-@d-setup-ssh-login: d-status
+@d-setup-ssh-login: d-is-running
 	@docker cp ~/.ssh/*.pub {{CONTAINER_TAG}}:/tmp/
 	@docker exec {{CONTAINER_TAG}} \
 		sh -c 'cat /tmp/*.pub >> {{CONTAINER_HOME}}/.ssh/authorized_keys'
@@ -113,3 +129,18 @@ d-cp-to-container FROM TO:
 d-attach:
 	docker exec -it -u {{CONTAINER_USERNAME}} {{CONTAINER_TAG}} /bin/bash
 
+# Run the Docker container with a command in detached mode
+[group("Docker"), no-exit-message]
+d-run-cmd-detached CMD:
+    @echo "Running Docker container '{{CONTAINER_TAG}}' with command: '{{CMD}}'..."
+    docker run --detach \
+        --publish 127.0.0.1:{{CONTAINER_SSH_PORT}}:{{CONTAINER_SSH_PORT}} \
+        --publish 127.0.0.1:{{CONTAINER_QFT_LISTEN_PORT}}:{{CONTAINER_QFT_LISTEN_PORT}} \
+        --name {{CONTAINER_TAG}} {{CONTAINER_TAG}} \
+        /bin/sh -c '{{CMD}}; echo $? >> {{CONTAINER_HOME}}/command.exit'
+    @echo "Container '{{CONTAINER_TAG}}' started with command: '{{CMD}}'."
+
+# Run attach to the running container and execute a command in the background, append the exit code to command.exit
+[group("Docker"), no-exit-message]
+d-attach-run-bg-cmd CMD:
+	docker exec --detach {{CONTAINER_TAG}} /bin/sh -c "(cd {{CONTAINER_HOME}} && nohup {{CMD}} > /dev/null 2>&1 && echo $? >> command.exit &)"
