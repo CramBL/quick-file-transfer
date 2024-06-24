@@ -53,8 +53,12 @@ jobs:
     - name: Build
       run: cargo build --verbose
 
-    - name: Run tests
+    - name: Run Native Tests
       run: cargo test --verbose
+
+
+    - name: Run Container Tests
+      run: just d-test "--verbose -- --ignored --nocapture"
 
     - name: Test install.sh
       run: |
