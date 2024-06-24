@@ -26,7 +26,7 @@ pub fn test_mdns_discover_service_in_container() -> TestResult {
     eprintln!("{stderr}");
     eprintln!("{stdout}");
 
-    assert_no_errors_or_warn(&stdout)?;
+    assert_no_errors_or_warn(&stderr)?;
 
     assert!(
         stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),
