@@ -1,4 +1,3 @@
-# Use Alpine Linux as the base image
 FROM alpine:latest
 
 # Setup environment variables
@@ -6,7 +5,6 @@ ENV USERNAME=userfoo
 ENV PASSWORD="password"
 ENV HOME=/home/$USERNAME
 
-# Install necessary packages
 RUN apk add --no-cache --update \
     sudo \
     openssh \
@@ -39,8 +37,7 @@ RUN mkdir -p $HOME/.ssh \
     && ssh-keygen -t ed25519 -N '' -f /root/ed25519 && cat /root/ed25519.pub >> $HOME/.ssh/authorized_keys \
     && chown -R $USERNAME $HOME/.ssh
 
-# Setup SSH daemon
-RUN mkdir /run/sshd
+COPY target/x86_64-unknown-linux-musl/debug/qft /usr/bin/qft
 
 # Run the docker daemon but don't detach (-D) and listen on port 54320
 CMD ["/usr/sbin/sshd", "-D", "-p", "54320"]

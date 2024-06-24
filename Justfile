@@ -39,9 +39,15 @@ check *ARGS:
     cargo check {{ ARGS }}
 
 # Run the tests
-[no-exit-message]
+[group("Test"), no-exit-message]
 test *ARGS:
     cargo test {{ ARGS }}
+
+# Run tests using the docker test   container
+[group("Docker"), group("Test"), no-exit-message]
+d-test: d-setup-for-transfer-tests
+    RUST_TEST_THREADS="1" \
+        cargo test container_tests -- --ignored
 
 # Build the application
 [no-exit-message]
