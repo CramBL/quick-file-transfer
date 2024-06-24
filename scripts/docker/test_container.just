@@ -75,7 +75,8 @@ d-is-running:
 	if [[ -n "${OUTPUT}" ]]; then
 		{{SUCCESS}} "${OUTPUT}"
 	else
-		{{ERROR}} "{{CONTAINER_TAG}} is not running..."
+		{{WARN}} "{{CONTAINER_TAG}} is not running..."
+		exit 1
 	fi
 
 # Check if the Docker container has exited
@@ -87,7 +88,8 @@ d-is-exited:
 	if [[ -n "${OUTPUT}" ]]; then
 		{{SUCCESS}} "${OUTPUT}"
 	else
-		{{ERROR}} "{{CONTAINER_TAG}} is not in an exited state..."
+		{{WARN}} "{{CONTAINER_TAG}} is not in an exited state..."
+		exit 1
 	fi
 
 # Copy SSH keys to container for SSH key-based login

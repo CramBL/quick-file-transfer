@@ -45,9 +45,9 @@ test *ARGS:
 
 # Run tests using the docker test   container
 [group("Docker"), group("Test"), no-exit-message]
-d-test: d-setup-for-transfer-tests
+d-test ARGS="-- --ignored ": d-setup-for-transfer-tests
     RUST_TEST_THREADS="1" \
-        cargo test container_tests -- --ignored
+        cargo test container_tests {{ARGS}}
 
 # Build the application
 [no-exit-message]
