@@ -27,7 +27,6 @@ d-build: d-builder-build d-builder-compile
 # Private recipe, entry point for running commands on startup of a container
 [no-exit-message]
 _d-run CMD="/usr/sbin/sshd -D -p 54320":
-	mkdir -p {{CONTAINER_MOUNTED_TMP_DIR}}
 	docker run --detach \
 		--publish 127.0.0.1:{{CONTAINER_SSH_PORT}}:{{CONTAINER_SSH_PORT}} \
 		--publish 127.0.0.1:{{CONTAINER_QFT_LISTEN_PORT}}:{{CONTAINER_QFT_LISTEN_PORT}} \
