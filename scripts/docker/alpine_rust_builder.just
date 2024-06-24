@@ -10,8 +10,14 @@ d-builder-build:
 # Build the project for x86_64-unknown-linux-musl via the alpine builder container
 [group("Docker"), group("Alpine Builder"), no-exit-message]
 d-builder-compile *ARGS="":
+	#!/usr/bin/env bash
+	if just is-tty; then
+		INTERACTIVE_OPT="-it"
+	else
+		INTERACTIVE_OPT=""
+	fi
 	docker run \
-		-it \
+		${INTERACTIVE_OPT} \
 		--rm \
 		--volume $(pwd):/usr/src/qft \
 		--name {{CONTAINER_ALPINE_BUILDER_TAG}} {{CONTAINER_ALPINE_BUILDER_TAG}} \

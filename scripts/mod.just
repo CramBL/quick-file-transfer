@@ -24,3 +24,14 @@ installed BINARY:
 	else
 		echo "false"
 	fi
+
+
+# Checks if the recipe is running in a terminal
+[private, no-exit-message]
+is-tty:
+	#!/usr/bin/env sh
+	if [ -t 1 ]; then
+		exit 0
+	else
+		exit 1
+	fi
