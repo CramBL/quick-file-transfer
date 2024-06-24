@@ -18,7 +18,7 @@ fn setup_test_container(command: &str, args: &[&str]) -> StdoutStderr {
 }
 
 fn run_stop_container_recipe() -> Result<()> {
-    let output = Command::new("just").args(&["d-stop"]).output()?;
+    let output = Command::new("just").args(["d-stop"]).output()?;
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(output)?;
 
     eprintln!("Cleanup stdout: {stdout}");
@@ -37,7 +37,7 @@ fn cleanup_mounted_tmp_dir() -> Result<()> {
 
 fn perform_cleanup() -> Result<()> {
     // Run the cleanup command
-    let output = Command::new("just").args(&["d-stop"]).output()?;
+    let output = Command::new("just").args(["d-stop"]).output()?;
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(output)?;
 
     eprintln!("Cleanup stdout: {stdout}");
@@ -112,7 +112,7 @@ where
 /// Asserts that the file exists in the temp directory that was mounted into the container
 /// if the assertion is true, returns the path to the file
 pub fn assert_file_exists_in_container(path: &str) -> Result<PathBuf> {
-    let correcte_path: PathBuf = PathBuf::from(format!("{TEST_TMP_DIR}/{}", path.to_string()));
+    let correcte_path: PathBuf = PathBuf::from(format!("{TEST_TMP_DIR}/{path}"));
     assert!(correcte_path.exists(), "{correcte_path:?} doesn't exist!");
     Ok(correcte_path)
 }
