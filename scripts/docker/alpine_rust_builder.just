@@ -5,6 +5,7 @@ CONTAINER_ALPINE_BUILDER_TAG := "qft-alpine-builder"
 [group("Docker"), group("Alpine Builder"), no-exit-message]
 d-builder-build:
 	docker build --file ./docker/Dockerfile_builder \
+		--build-arg USER_ID=$(id -u) \
 		-t {{CONTAINER_ALPINE_BUILDER_TAG}} .
 
 # Build the project for x86_64-unknown-linux-musl via the alpine builder container

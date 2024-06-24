@@ -11,11 +11,13 @@ RUN apk add --no-cache --update \
 
 # Setup environment variables
 ENV USERNAME=qftbuilder
-ENV HOME=/home/${USERNAME}}
+ENV HOME=/home/${USERNAME}
+
+ARG USER_ID
 
 # Create user and group
-RUN addgroup $USERNAME \
-    && adduser --shell /bin/ash --disabled-password --home $HOME --ingroup $USERNAME $USERNAME
+RUN addgroup ${USERNAME} \
+    && adduser --shell /bin/ash --disabled-password --home $HOME --uid $USER_ID --ingroup $USERNAME $USERNAME
 
 USER ${USERNAME}
 
