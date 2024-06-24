@@ -1,7 +1,4 @@
-use crate::{
-    container_tests::{eprint_docker_logs, TestContainer},
-    util::*,
-};
+use crate::{container_tests::util::*, util::*};
 
 #[test]
 #[ignore = "Needs to be run with container test (just d-test)"]

@@ -1,10 +1,7 @@
 pub const IP: &str = "127.0.0.1";
 pub const CONTAINER_PORT: &str = "12999";
 
-use crate::{
-    container_tests::{assert_file_exists_in_container, eprint_docker_logs, TestContainer},
-    util::*,
-};
+use crate::{container_tests::util::*, util::*};
 
 #[test]
 #[ignore = "Needs to be run with container test (just d-test)"]
