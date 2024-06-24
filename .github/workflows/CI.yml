@@ -58,6 +58,7 @@ jobs:
 
 
     - name: Run Container Tests
+      if: ${{ matrix.os != 'macos-latest' }}
       run: just d-test "--verbose -- --ignored --nocapture"
 
     - name: Test install.sh
