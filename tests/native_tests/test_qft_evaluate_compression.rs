@@ -1,5 +1,4 @@
 use crate::util::*;
-mod util;
 
 const LICENSE: &str = "LICENSE";
 

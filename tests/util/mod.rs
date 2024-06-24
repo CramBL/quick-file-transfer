@@ -1,6 +1,5 @@
 #![allow(dead_code, unused_imports)]
 
-use std::{fmt::Debug, net::IpAddr, path::PathBuf, thread::JoinHandle, time::Duration};
 /// Re-export some common utilities for system tests
 pub use {
     anyhow::Result,
@@ -11,9 +10,19 @@ pub use {
         assert_eq as pretty_assert_eq, assert_ne as pretty_assert_ne,
         assert_str_eq as pretty_assert_str_eq,
     },
-    std::{error::Error, fmt::Display, fs, io, io::Write, path::Path, process::Output},
+    std::{
+        error::Error, fmt::Debug, fmt::Display, fs, io, io::Write, net::IpAddr, path::Path,
+        path::PathBuf, process::Output, thread::JoinHandle, time::Duration,
+    },
     testresult::{TestError, TestResult},
 };
+
+use anyhow::Context;
+mod thread_safe_port_distributor;
+pub use thread_safe_port_distributor::{get_free_port, PortGuard};
+
+pub mod regex_util;
+pub use regex_util::*;
 
 pub const BIN_NAME: &str = "qft";
 
@@ -51,6 +60,7 @@ pub fn join_server_and_client_get_outputs(
 }
 
 /// Convenience to return stdout/stderr without risking switching them (if instead a tuple of two Strings were used)
+#[derive(Debug)]
 pub struct StdoutStderr {
     pub stdout: String,
     pub stderr: String,
@@ -193,125 +203,4 @@ where
         .context(format!("Failed spawning {thread_name} thread"));
 
     handle
-}
-
-use anyhow::Context;
-pub use thread_safe_port_distributor::{get_free_port, PortGuard};
-/// Implements utility to safely get a free port for a given IP in parallel from a large number of threads.
-///
-/// This is necessary for running tests in parallel where each test spawns a server/client thread and needs a free port for that purpose.
-pub mod thread_safe_port_distributor {
-    use std::cell::RefCell;
-    use std::collections::HashSet;
-    use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
-    use std::sync::{Mutex, OnceLock};
-
-    // Stores taken ports
-    static PORTS: OnceLock<Mutex<HashSet<u16>>> = OnceLock::new();
-
-    /// Wraps a free port to guarantee the port is released/freed on drop
-    pub struct PortGuard {
-        port_num: u16,
-        port_str: &'static str,
-    }
-
-    impl PortGuard {
-        pub fn as_str(&self) -> &'static str {
-            self.port_str
-        }
-    }
-
-    impl Drop for PortGuard {
-        fn drop(&mut self) {
-            release_port(self.port_num);
-        }
-    }
-
-    /// Get a free port from an IP, e.g. `127.0.0.1`
-    ///
-    /// # Returns
-    /// An `Option<PortGuard>` where the `PortGuard` frees the port on drop.
-    ///
-    /// # Example
-    /// ```ignore
-    /// let port = get_free_port("127.0.0.1").unwrap();
-    /// println!("{}", port.as_str()); // "8080" (for example)
-    /// ```
-    pub fn get_free_port(ip: &str) -> Option<PortGuard> {
-        let ip: Ipv4Addr = ip
-            .parse()
-            .map_err(|e| format!("Invalid IP address: {e}"))
-            .unwrap();
-        let ports: &Mutex<HashSet<u16>> = get_ports();
-        for port in 1024..65535 {
-            if is_port_available(ip, port) {
-                let mut ports = ports.lock().unwrap();
-                if !ports.contains(&port) {
-                    ports.insert(port);
-                    let port_wrapper = PortGuard {
-                        port_num: port,
-                        // Leak the port string to get static liftime, the memory will be freed once the test process finishes
-                        port_str: Box::leak(port.to_string().into_boxed_str()),
-                    };
-                    return Some(port_wrapper);
-                }
-            }
-        }
-        None
-    }
-
-    fn get_ports() -> &'static Mutex<HashSet<u16>> {
-        PORTS.get_or_init(|| Mutex::new(HashSet::new()))
-    }
-
-    fn is_port_available<I: Into<IpAddr>>(ip: I, port: u16) -> bool {
-        let addr = SocketAddr::from((ip, port));
-        TcpListener::bind(addr).is_ok()
-    }
-    fn release_port(port: u16) {
-        let ports = get_ports();
-        let mut ports = ports.lock().unwrap();
-        ports.remove(&port);
-    }
-}
-
-/// matches a single ANSI escape code
-pub const ANSI_ESCAPE_REGEX: &str = r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]";
-/// WARN prefix with an ANSI escape code
-pub const WARN_PREFIX: &str = concat!("WARN ", r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]");
-pub const ERROR_PREFIX: &str = concat!("ERROR ", r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]");
-
-/// Helper function to match the raw output of stderr or stdout, with a pattern a fixed amount of times, case insensitive
-pub fn match_count<S>(
-    case_sensitive: bool,
-    haystack: &str,
-    re: S,
-    expect_match: usize,
-) -> TestResult
-where
-    S: AsRef<str> + ToOwned + Display + Into<String>,
-{
-    // Build regex pattern
-    let regex_pattern = if case_sensitive {
-        re.to_string()
-    } else {
-        format!("(?i){re}")
-    };
-    let re = fancy_regex::Regex::new(&regex_pattern)?;
-    // Count the number of matches
-    let match_count = re.find_iter(haystack).count();
-    // Assert that the number of matches is equal to the expected number of matches
-    pretty_assert_eq!(
-        match_count, expect_match,
-        "regex: {re} - expected match count: {expect_match}, got {match_count}\nFailed to match on:\n{haystack}"
-    );
-    Ok(())
-}
-
-/// Helper function takes in the output of stderr and asserts that there are no errors, warnings, or thread panics.
-pub fn assert_no_errors_or_warn(stderr: &str) -> TestResult {
-    match_count(true, stderr, ERROR_PREFIX, 0)?;
-    match_count(true, stderr, WARN_PREFIX, 0)?;
-    match_count(false, stderr, "thread.*panicked", 0)?;
-    Ok(())
 }

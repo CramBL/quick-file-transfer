@@ -1,5 +1,4 @@
 use crate::util::*;
-mod util;
 
 pub const IP: &str = "127.0.0.1";
 

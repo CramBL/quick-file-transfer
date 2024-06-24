@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use crate::util::*;
-mod util;
 
 #[test]
 fn test_qft_mdns_register_resolve() -> TestResult {
@@ -105,19 +104,19 @@ fn test_qft_mdns_register_discover() -> TestResult {
     } = process_output_to_stdio(reg_service_handle?.join().unwrap()?)?;
 
     let StdoutStderr {
-        stdout: discoer_stdout,
+        stdout: discover_stdout,
         stderr: discover_stderr,
     } = process_output_to_stdio(discover_handle?.join().unwrap()?)?;
 
-    eprintln!("{discoer_stdout}");
+    eprintln!("{discover_stdout}");
     eprintln!("{discover_stderr}");
 
     assert_no_errors_or_warn(&reg_service_stderr)?;
     assert_no_errors_or_warn(&discover_stderr)?;
 
     assert!(
-        discoer_stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),
-        "Expected stdout to contains {SERVICE_HOSTNAME}. Stdout: {discoer_stdout}"
+        discover_stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),
+        "Expected stdout to contains {SERVICE_HOSTNAME}. Stdout: {discover_stdout}"
     );
     Ok(())
 }
