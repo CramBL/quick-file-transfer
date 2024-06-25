@@ -45,7 +45,7 @@ check *ARGS:
 test *ARGS:
     cargo test {{ ARGS }}
 
-# Run tests using the docker test   container
+# Run tests using the docker test container
 [group("Docker"), group("Test"), no-exit-message]
 d-test ARGS="-- --ignored ": d-setup-for-transfer-tests
     mkdir -p {{CONTAINER_MOUNTED_TMP_DIR}}
