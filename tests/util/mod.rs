@@ -18,6 +18,9 @@ pub use {
 };
 
 use anyhow::Context;
+
+pub mod test_content;
+pub use test_content::*;
 mod thread_safe_port_distributor;
 pub use thread_safe_port_distributor::{get_free_port, PortGuard};
 
