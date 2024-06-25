@@ -4,7 +4,12 @@
 
 
 ### Fix
+
 - Large files sent with `lz4` could end up missing a few tail end bytes.
+
+### Changed
+
+- Multiple changes to how command-line arguments are parsed (and which order/combination is valid). Note: This is not the last time this will be changed.
 
 ## 0.5.0 - 2024-06-21
 
