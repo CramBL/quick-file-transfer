@@ -3,26 +3,42 @@ use anyhow::Result;
 use std::process::Command;
 use std::sync::OnceLock;
 
+pub const CONTAINER_IP: &str = "127.0.0.1";
+pub const CONTAINER_SSH_PORT: &str = "54320";
+pub const CONTAINER_TCP_PORT: &str = "12999";
+pub const CONTAINER_USER: &str = "userfoo";
+
+const JUST_CONTAINER_STOP_RECIPE: &str = "d-stop";
+
 const TEST_TMP_DIR: &str = "target/docker_mounted_tmp/";
 
 static SETUP_ONCE: OnceLock<()> = OnceLock::new();
 
-fn setup_test_container(command: &str, args: &[&str]) -> StdoutStderr {
+fn setup_test_container(command: &str, args: &[&str], include_ssh_keys: bool) -> StdoutStderr {
     SETUP_ONCE.get_or_init(|| {
         // Cleanup routine is stopping the container if it isn't stopped and cleanup of the mounted tmp dir (if it exists)
         run_stop_container_recipe().expect("Failed running stop container recipe");
         cleanup_mounted_tmp_dir().expect("failed cleaning mounted tmp dir");
     });
     let output = Command::new(command).args(args).output().unwrap();
+    if include_ssh_keys {
+        let out = run_just_cmd("d-setup-ssh-login", [""]).unwrap();
+        eprintln!(
+            "Include ssh keys (d-setup-ssh-login)\n===> STDOUT\n{}\n===> STDERR\n{}\n",
+            out.stdout, out.stderr
+        );
+    }
     process_output_to_stdio(output).unwrap()
 }
 
 fn run_stop_container_recipe() -> Result<()> {
-    let output = Command::new("just").args(["d-stop"]).output()?;
+    let output = Command::new("just")
+        .args([JUST_CONTAINER_STOP_RECIPE])
+        .output()?;
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(output)?;
 
-    eprintln!("Cleanup stdout: {stdout}");
-    eprintln!("Cleanup stderr: {stderr}");
+    eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDOUT:\n{stdout}\n");
+    eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDERR:\n{stderr}\n");
     Ok(())
 }
 
@@ -37,15 +53,15 @@ fn cleanup_mounted_tmp_dir() -> Result<()> {
 
 fn perform_cleanup() -> Result<()> {
     // Run the cleanup command
-    let output = Command::new("just").args(["d-stop"]).output()?;
+    let output = Command::new("just")
+        .args([JUST_CONTAINER_STOP_RECIPE])
+        .output()?;
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(output)?;
 
-    eprintln!("Cleanup stdout: {stdout}");
-    eprintln!("Cleanup stderr: {stderr}");
+    eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDOUT:\n{stdout}\n");
+    eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDERR:\n{stderr}\n");
 
-    let tmp_path = PathBuf::from(format!("{TEST_TMP_DIR}/tmp"));
-    fs::remove_dir_all(tmp_path.as_path())?;
-    fs::create_dir(tmp_path)?;
+    cleanup_mounted_tmp_dir()?;
     Ok(())
 }
 
@@ -54,7 +70,7 @@ pub struct TestContainer {
 }
 
 impl TestContainer {
-    pub fn setup(args: &str) -> Self {
+    pub fn setup(args: &str, include_ssh_keys: bool) -> Self {
         // Using the test container requires setting RUST_TEST_THREADS=1
         let tt = std::env::var_os("RUST_TEST_THREADS");
         assert!(
@@ -67,7 +83,7 @@ impl TestContainer {
             "Running tests sing the test container requires setting RUST_TEST_THREADS=1"
         );
 
-        let stdout_stderr = setup_test_container("just", &["d-run-with", args]);
+        let stdout_stderr = setup_test_container("just", &["d-run-with", args], include_ssh_keys);
 
         Self { stdout_stderr }
     }
@@ -123,6 +139,6 @@ pub fn get_docker_logs() -> Result<StdoutStderr> {
 
 pub fn eprint_docker_logs() -> Result<()> {
     let StdoutStderr { stdout, stderr } = get_docker_logs()?;
-    eprintln!("====== DOCKER LOGS ======:\n===> STDOUT\n{stdout}\n===>STDERR\n{stderr}\n^^^^^^^^^^^^^^^^^^^^^^^^\n       DOCKER LOGS\n\n",);
+    eprintln!("====== DOCKER LOGS ======:\n===> STDOUT\n{stdout}\n===> STDERR\n{stderr}\n^^^^^^^^^^^^^^^^^^^^^^^^\n       DOCKER LOGS\n\n",);
     Ok(())
 }
