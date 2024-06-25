@@ -30,12 +30,12 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
         false,
-        ["send", "ip", IP, "--port", port.as_str(), "-vv"],
+        ["ip", IP, "--port", port.as_str(), "-vv"],
     );
 
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
-        ["listen", "--ip", IP, "--port", port.as_str(), "-vv"],
+        ["--ip", IP, "--port", port.as_str(), "-vv"],
     );
 
     let (
@@ -74,11 +74,10 @@ pub fn test_stdout_transfer_no_compression_simple() -> TestResult {
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
         false,
-        ["send", "ip", IP, "--port", port.as_str(), "-vv"],
+        ["ip", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let server_thread =
-        spawn_server_thread(None, ["listen", "--ip", IP, "--port", port.as_str(), "-vv"]);
+    let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
 
     let (
         ServerOutput {
@@ -113,11 +112,10 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
         false,
-        ["send", "ip", "--mmap", IP, "--port", port.as_str(), "-vv"],
+        ["ip", "--mmap", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let server_thread =
-        spawn_server_thread(None, ["listen", "--ip", IP, "--port", port.as_str(), "-vv"]);
+    let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
 
     let (
         ServerOutput {
@@ -153,11 +151,10 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
         true,
-        ["send", "ip", IP, "--port", port.as_str(), "-vv"],
+        ["ip", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let server_thread =
-        spawn_server_thread(None, ["listen", "--ip", IP, "--port", port.as_str(), "-vv"]);
+    let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
 
     let (
         ServerOutput {
@@ -193,27 +190,69 @@ pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
         false,
+        ["ip", "--prealloc", IP, "--port", port.as_str(), "-vv"],
+    );
+
+    let server_thread = spawn_server_thread(
+        Some(file_to_receive.path()),
+        ["--prealloc", "--ip", IP, "--port", port.as_str(), "-vv"],
+    );
+
+    let (
+        ServerOutput {
+            server_stdout: _,
+            server_stderr,
+        },
+        ClientOutput {
+            client_stdout: _,
+            client_stderr,
+        },
+    ) = join_server_and_client_get_outputs(
+        ServerHandle(server_thread?),
+        ClientHandle(client_thread?),
+    )?;
+
+    assert_no_errors_or_warn(&server_stderr)?;
+    assert_no_errors_or_warn(&client_stderr)?;
+    pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
+
+    Ok(())
+}
+
+#[test]
+pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
+    let dir = TempDir::new()?;
+    let file_to_transfer = dir.child("f1.txt");
+    let file_to_receive = dir.child("f2.txt");
+
+    const TRANSFERED_CONTENTS: &str = LOREM_IPSUM_0x80000_BYTES;
+    fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
+
+    let port = get_free_port(IP).unwrap();
+    let client_thread = spawn_client_thread(
+        file_to_transfer.path(),
+        false,
         [
-            "send",
             "ip",
-            "--prealloc",
             IP,
             "--port",
             port.as_str(),
             "-vv",
+            "gzip",
+            "--prealloc",
         ],
     );
 
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
         [
-            "listen",
-            "--prealloc",
             "--ip",
             IP,
             "--port",
             port.as_str(),
             "-vv",
+            "gzip",
+            "--prealloc",
         ],
     );
 

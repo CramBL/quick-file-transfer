@@ -49,12 +49,14 @@ pub fn join_server_and_client_get_outputs(
     server_thread: ServerHandle,
     client_handle: ClientHandle,
 ) -> Result<(ServerOutput, ClientOutput)> {
-    let StdoutStderr { stdout, stderr } = join_thread_and_get_output(client_handle.0)?;
+    let StdoutStderr { stdout, stderr } =
+        join_thread_and_get_output(client_handle.0).expect("Client thread failed");
     let client_output = ClientOutput {
         client_stdout: stdout,
         client_stderr: stderr,
     };
-    let StdoutStderr { stdout, stderr } = join_thread_and_get_output(server_thread.0)?;
+    let StdoutStderr { stdout, stderr } =
+        join_thread_and_get_output(server_thread.0).expect("Server thread failed");
     let server_output = ServerOutput {
         server_stdout: stdout,
         server_stderr: stderr,
@@ -116,9 +118,11 @@ where
     spawn_thread_qft_file_transfer(
         "qft client",
         Some(file_for_transfer),
+        None,
         args,
         Some(Duration::from_millis(200)),
         stdin_pipe_file,
+        false,
     )
 }
 
@@ -132,17 +136,19 @@ where
     I: IntoIterator<Item = S> + Send + 'static + Debug,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
-    spawn_thread_qft_file_transfer("qft server", receive_file, args, None, false)
+    spawn_thread_qft_file_transfer("qft server", None, receive_file, args, None, false, true)
 }
 
 /// Generic spawn a thread to execute the binary in the server/client file-transfer mode.
 /// optionally have the thread sleep before executing the command
 pub fn spawn_thread_qft_file_transfer<I, S>(
     thread_name: &str,
-    file: Option<&Path>,
+    input_file: Option<&Path>,
+    output_file: Option<&Path>,
     args: I,
     sleep: Option<Duration>,
     stdin_pipe_file: bool,
+    is_server: bool,
 ) -> Result<JoinHandle<Result<Output>>>
 where
     I: IntoIterator<Item = S> + Send + 'static + Debug,
@@ -151,17 +157,28 @@ where
     let sender_thread = std::thread::Builder::new().name(thread_name.to_string());
     let handle = sender_thread
         .spawn({
-            let fpath: Option<String> = file.map(|f| f.to_str().unwrap().to_owned());
+            let input_fpath: Option<String> = input_file.map(|f| f.to_str().unwrap().to_owned());
+            let output_fpath: Option<String> = output_file.map(|f| f.to_str().unwrap().to_owned());
             move || {
-                let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
+                let mut cmd = Command::cargo_bin(BIN_NAME)?;
+                // Ugly hack to make sure the --file arg is in the right position. CLI needs a refactor after SSH utils are somewhat done.
+                if is_server {
+                    cmd.arg("listen");
+                } else {
+                    cmd.arg("send");
+                }
                 cmd.args(args);
-                if let Some(fpath) = fpath {
+                if let Some(in_fpath) = input_fpath {
                     if stdin_pipe_file {
-                        cmd.pipe_stdin(PathBuf::from(&fpath))?;
+                        cmd.pipe_stdin(PathBuf::from(&in_fpath))?;
                     } else {
-                        cmd.args(["--file", &fpath]);
+                        cmd.args(["--file", &in_fpath]);
                     }
                 }
+                if let Some(out_fpath) = output_fpath {
+                    cmd.args(["--output", &out_fpath]);
+                }
+
                 cmd.timeout(Duration::from_secs(5));
 
                 eprintln!("Command: {cmd:?}");

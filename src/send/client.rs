@@ -9,7 +9,6 @@ use crate::{
     config::{
         self,
         compression::{Bzip2Args, Compression, GzipArgs, XzArgs},
-        transfer::ContentTransferArgs,
     },
     mmap_reader::MemoryMappedReader,
     send::util::{file_with_bufreader, stdin_bufreader, tcp_bufwriter},
@@ -23,15 +22,14 @@ pub fn run_client(
     port: u16,
     message: Option<&str>,
     use_mmap: bool,
-    content_transfer_args: &ContentTransferArgs,
+    input_file: Option<&Path>,
+    prealloc: bool,
     compression: Option<Compression>,
 ) -> Result<()> {
     let socket_addr = (ip, port);
     let mut tcp_stream = TcpStream::connect(socket_addr)?;
-    if content_transfer_args.prealloc() {
-        let file_size = File::open(content_transfer_args.file().unwrap())?
-            .metadata()?
-            .len();
+    if prealloc {
+        let file_size = File::open(input_file.unwrap())?.metadata()?.len();
         log::debug!(
             "Requesting preallocation of file of size {} [{file_size} B]",
             format_data_size(file_size as u64)
@@ -43,7 +41,7 @@ pub fn run_client(
         (ip, port),
         &tcp_stream,
         compression,
-        content_transfer_args.file(),
+        input_file,
         message,
         use_mmap,
     )?;

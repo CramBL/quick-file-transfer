@@ -18,7 +18,8 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     let ListenArgs {
         ip,
         port,
-        content_transfer_args,
+        prealloc,
+        output: file,
         compression,
     } = listen_args;
     let listener = TcpListener::bind(format!("{ip}:{port}"))?;
@@ -39,7 +40,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     );
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
-    let bufwriter: &mut dyn io::Write = match content_transfer_args.file() {
+    let bufwriter: &mut dyn io::Write = match file {
         Some(p) => {
             file_write = file_with_bufwriter(p)?;
             &mut file_write
@@ -53,7 +54,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     match listener.accept() {
         Ok((mut socket, addr)) => {
             log::info!("Client accepted at: {addr:?}");
-            if content_transfer_args.prealloc() {
+            if *prealloc {
                 let mut size_buffer = [0u8; 8];
                 socket.read_exact(&mut size_buffer)?;
                 let file_size = u64::from_be_bytes(size_buffer);
@@ -61,7 +62,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                     "Preallocating file of size {} [{file_size} B]",
                     format_data_size(file_size)
                 );
-                create_file_with_len(content_transfer_args.file().unwrap(), file_size)?;
+                create_file_with_len(file.as_deref().unwrap(), file_size)?;
             }
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
 
