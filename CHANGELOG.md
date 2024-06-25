@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 
+### Fix
+- Large files sent with `lz4` could end up missing a few tail end bytes.
+
 ## 0.5.0 - 2024-06-21
 
 ### Added
