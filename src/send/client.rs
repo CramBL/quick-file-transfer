@@ -2,6 +2,7 @@ use std::{
     fs::File,
     io::{self, Write},
     net::{IpAddr, TcpStream},
+    path::Path,
 };
 
 use crate::{
@@ -33,10 +34,36 @@ pub fn run_client(
             .len();
         log::debug!(
             "Requesting preallocation of file of size {} [{file_size} B]",
-            format_data_size(file_size)
+            format_data_size(file_size as u64)
         );
         tcp_stream.write_all(&file_size.to_be_bytes())?;
     }
+
+    let transferred_len = transfer_data(
+        (ip, port),
+        &tcp_stream,
+        compression,
+        content_transfer_args.file(),
+        message,
+        use_mmap,
+    )?;
+
+    log::info!(
+        "Sent {} [{transferred_len} B]",
+        format_data_size(transferred_len)
+    );
+
+    Ok(())
+}
+
+fn transfer_data(
+    (ip, port): (IpAddr, u16),
+    tcp_stream: &TcpStream,
+    compression: Option<Compression>,
+    file: Option<&Path>,
+    message: Option<&str>,
+    use_mmap: bool,
+) -> Result<u64> {
     let mut buf_tcp_stream = tcp_bufwriter(&tcp_stream);
 
     log::info!("Connecting to: {ip}:{port}");
@@ -48,7 +75,7 @@ pub fn run_client(
 
     // On-stack dynamic dispatch
     let (mut stdin_read, mut file_read, mut mmap_read);
-    let bufreader: &mut dyn io::Read = match content_transfer_args.file() {
+    let bufreader: &mut dyn io::Read = match file {
         Some(p) if use_mmap => {
             log::debug!("Opening file in memory map mode");
             mmap_read = MemoryMappedReader::new(p)?;
@@ -69,6 +96,7 @@ pub fn run_client(
     if let Some(compression) = compression {
         log::debug!("Compression mode: {compression}");
     };
+
     let transferred_bytes = match compression {
         Some(compression) => match compression {
             config::compression::Compression::Bzip2(Bzip2Args { compression_level }) => {
@@ -80,7 +108,9 @@ pub fn run_client(
             }
             config::compression::Compression::Lz4 => {
                 let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut buf_tcp_stream);
-                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut lz4_writer, bufreader)?
+                let len = incremental_rw::<TCP_STREAM_BUFSIZE>(&mut lz4_writer, bufreader)?;
+                lz4_writer.flush()?; // Needed to ensure the entire content is written
+                len
             }
             config::compression::Compression::Gzip(GzipArgs { compression_level }) => {
                 let mut encoder = flate2::read::GzEncoder::new(
@@ -96,10 +126,5 @@ pub fn run_client(
         },
         None => incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?,
     };
-    log::info!(
-        "Sent {} [{transferred_bytes} B]",
-        format_data_size(transferred_bytes)
-    );
-
-    Ok(())
+    Ok(transferred_bytes)
 }
