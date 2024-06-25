@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use anyhow::Result;
 use stderrlog::LogLevelNum;
 use transfer::{listen::ListenArgs, send::SendArgs};
@@ -107,6 +109,7 @@ pub enum Command {
     /// Evaluate which compression works best for file content
     #[cfg(feature = "evaluate-compression")]
     EvaluateCompression(evaluate_compression::EvaluateCompressionArgs),
+    GetFreePort(GetFreePortArgs),
 }
 
 #[derive(Debug, Default, ValueEnum, Clone, Copy)]
@@ -123,4 +126,19 @@ impl fmt::Display for IpVersion {
             IpVersion::V6 => write!(f, "v6"),
         }
     }
+}
+
+#[derive(Debug, Args, Clone)]
+#[command(flatten_help = true)]
+pub struct GetFreePortArgs {
+    /// Host IP e.g. `127.0.0.1` for localhost
+    #[arg(default_value_t  = String::from("0.0.0.0"), value_parser = valid_ip)]
+    pub ip: String,
+}
+
+fn valid_ip(ip_str: &str) -> Result<String, String> {
+    if ip_str.parse::<IpAddr>().is_err() {
+        return Err(format!("'{ip_str}' is not a valid IP address."));
+    }
+    Ok(ip_str.to_owned())
 }

@@ -90,3 +90,16 @@ pub fn create_file_with_len(path: &Path, len: u64) -> Result<()> {
     file.set_len(len)?;
     Ok(())
 }
+/// Bind to port 0 on `ip`, which tells the OS to assign any available port, then
+/// retrieve the socket address from the listener.
+pub fn get_free_port(ip: &str) -> Option<u16> {
+    let mut ip_str = String::with_capacity(15);
+    ip_str.push_str(ip);
+    ip_str.push_str(":0");
+    if let Ok(listener) = TcpListener::bind(ip_str) {
+        if let Ok(local_addr) = listener.local_addr() {
+            return Some(local_addr.port());
+        }
+    }
+    None
+}

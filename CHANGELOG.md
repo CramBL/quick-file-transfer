@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+
+- `get-free-port` command to retrieve a free port from `0.0.0.0` or a specified IP.
 
 ### Fix
 

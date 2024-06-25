@@ -8,8 +8,8 @@
     clippy::maybe_infinite_iter
 )]
 
-use anyhow::Result;
-use config::{Command, Config};
+use anyhow::{bail, Result};
+use config::{Command, Config, GetFreePortArgs};
 use send::handle_send_cmd;
 use server::listen;
 
@@ -42,5 +42,15 @@ fn main() -> Result<()> {
 
         #[cfg(feature = "evaluate-compression")]
         Command::EvaluateCompression(args) => evaluate_compression::evaluate_compression(args),
+
+        Command::GetFreePort(GetFreePortArgs { ip }) => {
+            log::debug!("Retrieving free port for IP: {ip}");
+            if let Some(port) = util::get_free_port(&ip) {
+                println!("{port}");
+            } else {
+                bail!("Could not retrieve free port");
+            }
+            Ok(())
+        }
     }
 }
