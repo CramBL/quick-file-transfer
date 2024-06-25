@@ -21,6 +21,7 @@ The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for t
 "#;
 
 /// 170 paragraphs, 14851 words, 100000 bytes of Lorem Ipsum
+#[allow(non_upper_case_globals)]
 pub const LOREM_IPSUM_0x80000_BYTES: &str = "
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam lectus nisl, rhoncus id rhoncus tempor, posuere eget lectus. Sed congue ligula sit amet elit pellentesque, non cursus nisl pellentesque. Vestibulum fermentum nec libero dignissim porttitor. Ut et elementum ex. Aliquam blandit volutpat augue, eu finibus ex elementum id. Nulla facilisi. Aliquam aliquet dolor vel sem fringilla, eget suscipit mauris blandit. Sed porta sapien sed ante faucibus convallis. Donec molestie tempus magna. Praesent blandit leo condimentum, auctor mauris non, iaculis metus. Quisque eget nulla egestas ante viverra condimentum. Vestibulum at facilisis turpis. Vestibulum mattis sapien ut mi pharetra lobortis.

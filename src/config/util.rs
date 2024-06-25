@@ -4,9 +4,6 @@ pub use {
         builder::styling::{AnsiColor, Effects, Styles},
         command, ArgAction, Args, Parser, Subcommand, ValueEnum,
     },
-    std::{
-        fmt,
-        path::{Path, PathBuf},
-    },
+    std::{fmt, path::PathBuf},
     strum_macros::{Display, EnumIter},
 };

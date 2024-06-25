@@ -229,20 +229,20 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
     let port = get_free_port(IP).unwrap();
-    let client_thread = spawn_client_thread(
-        file_to_transfer.path(),
-        false,
-        [
-            "ip",
-            IP,
-            "--port",
-            port.as_str(),
-            "-vv",
-            "gzip",
-            "--prealloc",
-        ],
-    );
-
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.args([
+        "send",
+        "ip",
+        IP,
+        "--port",
+        port.as_str(),
+        "-vv",
+        "--file",
+        file_to_transfer.path().to_str().unwrap(),
+        "--prealloc",
+        "gzip",
+    ]);
+    let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
         [

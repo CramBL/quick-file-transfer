@@ -14,8 +14,8 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
     let test_container_cmd =
-        format!("qft listen --port {CONTAINER_PORT} -vv --file {file_to_receive}");
-    let _test_container = TestContainer::setup(&test_container_cmd);
+        format!("qft listen --port {CONTAINER_PORT} -vv --output {file_to_receive}");
+    let _test_container = TestContainer::setup(&test_container_cmd, false);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
     cmd.args([

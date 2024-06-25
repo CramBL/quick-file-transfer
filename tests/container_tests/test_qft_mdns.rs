@@ -9,7 +9,7 @@ pub fn test_mdns_discover_service_in_container() -> TestResult {
 
     let _test_container = TestContainer::setup(&format!(
         "qft mdns register --hostname {SERVICE_HOSTNAME} --service-label {SERVICE_LABEL} --service-protocol {SERVICE_PROTOCOL} --keep-alive-ms 60000 --color=always"
-    ));
+    ), false);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
     cmd.args([
