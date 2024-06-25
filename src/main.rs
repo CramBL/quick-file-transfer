@@ -21,6 +21,8 @@ pub mod mdns;
 pub mod mmap_reader;
 pub mod send;
 pub mod server;
+#[cfg(feature = "ssh")]
+pub mod ssh;
 pub mod util;
 
 pub const TCP_STREAM_BUFSIZE: usize = 2 * 1024;

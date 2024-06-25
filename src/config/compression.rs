@@ -14,6 +14,18 @@ pub enum Compression {
     Xz(XzArgs),
 }
 
+impl Compression {
+    /// Returns the variant as a lowercase str e.g. "bzip2"
+    pub fn variant_as_str(&self) -> &str {
+        match self {
+            Compression::Bzip2(_) => "bzip2",
+            Compression::Gzip(_) => "gzip",
+            Compression::Lz4 => "lz4",
+            Compression::Xz(_) => "xz",
+        }
+    }
+}
+
 /// This enum exists to be able to specify a variant without specifying arguments, such as with the --omit flag
 #[derive(ValueEnum, Debug, Subcommand, Clone, PartialEq, EnumIter, Display, Copy, EnumCount)]
 pub enum CompressionVariant {

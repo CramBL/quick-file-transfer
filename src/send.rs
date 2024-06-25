@@ -8,7 +8,7 @@ use crate::{config::transfer::send::SendMdnsArgs, mdns::resolve::resolve_mdns_ho
 use anyhow::Result;
 use client::run_client;
 
-mod client;
+pub mod client;
 pub mod util;
 
 pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
@@ -52,6 +52,8 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
                 }
             }
         }
+        #[cfg(feature = "ssh")]
+        SendCommand::Ssh(ref args) => crate::ssh::handle_send_ssh(args)?,
     }
     Ok(())
 }
