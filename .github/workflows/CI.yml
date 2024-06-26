@@ -38,6 +38,8 @@ jobs:
       - name: Audit
         run: cargo audit
 
+      # Lint (check/clippy) of feature combinations
+      - uses: taiki-e/install-action@cargo-hack
       - name: Check feature combinations
         run: cargo hack check --feature-powerset --no-dev-deps
       - name: Clippy feature combinations
@@ -55,11 +57,14 @@ jobs:
     - uses: Swatinem/rust-cache@v2
     - uses: extractions/setup-just@v2
 
+    # Build all feature combinations
+    - uses: taiki-e/install-action@cargo-hack
     - name: Build
-      run: cargo build --verbose
+      run: cargo hack build --feature-powerset --verbose
 
+    # Test all feature combinations
     - name: Run Native Tests
-      run: cargo test --verbose
+      run: cargo hack test --feature-powerset
 
     - name: Run Container Tests
       if: ${{ matrix.os == 'ubuntu-latest' }}
