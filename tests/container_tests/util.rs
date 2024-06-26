@@ -141,7 +141,7 @@ fn check_and_relocate_path(original_path: &Path) -> Result<PathBuf> {
 
         // Check if the new path exists
         assert!(new_path.exists(), "Path does not exist: {new_path:?}");
-        return Ok(new_path);
+        Ok(new_path)
     } else {
         bail!("Path does not start with {CONTAINER_HOME_DOWNLOAD_DIR}: {original_path:?}");
     }
