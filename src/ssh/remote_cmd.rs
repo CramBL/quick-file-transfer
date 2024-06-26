@@ -1,7 +1,7 @@
 // Takes the args and produces a string of the command that should be executed on the remote
 // to match the given SendSshArgs
 pub(super) fn remote_qft_command_str(
-    destination: Option<&str>,
+    destination: &str,
     tcp_port: u16,
     prealloc: bool,
     compression: Option<&crate::config::compression::Compression>,
@@ -15,10 +15,8 @@ pub(super) fn remote_qft_command_str(
     if prealloc {
         cmd.push_str(" --prealloc");
     }
-    if let Some(dest) = destination {
-        cmd.push_str(" --output ");
-        cmd.push_str(dest);
-    }
+    cmd.push_str(" --output ");
+    cmd.push_str(destination);
 
     if let Some(compression) = compression {
         cmd.push(' ');

@@ -76,28 +76,37 @@ struct RemoteInfo<'a> {
     user: &'a str,
     ssh_port: u16,
     resolved_ip: Cow<'a, str>,
+    destination: Cow<'a, str>,
 }
 
 impl<'a> RemoteInfo<'a> {
-    pub fn new(user: &'a str, ssh_port: u16, resolved_ip: Cow<'a, str>) -> Self {
+    pub fn new(
+        user: &'a str,
+        ssh_port: u16,
+        resolved_ip: Cow<'a, str>,
+        destination: Cow<'a, str>,
+    ) -> Self {
         Self {
             user,
             ssh_port,
             resolved_ip,
+            destination,
         }
     }
 
     pub fn from_args(ssh_args: &'a SendSshArgs) -> Result<Self> {
         let mut user: Option<&str> = None;
         let mut remote: Option<Remote> = None;
+        let mut remote_destination: Option<Cow<'a, str>> = None;
         if let Some(TargetComponents {
             user: ref user_component,
             ref host,
-            destination: _,
+            ref destination,
         }) = ssh_args.target
         {
             user = Some(user_component.as_str());
             remote = Some(Remote::new(host)?);
+            remote_destination = Some(destination.to_string_lossy())
         };
 
         if let Some(ref u) = ssh_args.user {
@@ -118,7 +127,12 @@ impl<'a> RemoteInfo<'a> {
         #[cfg(not(feature = "mdns"))]
         let resolved_ip = remote.unwrap().to_ip_str();
 
-        Ok(Self::new(user.unwrap(), ssh_args.ssh_port, resolved_ip))
+        Ok(Self::new(
+            user.unwrap(),
+            ssh_args.ssh_port,
+            resolved_ip,
+            remote_destination.unwrap(),
+        ))
     }
 }
 
@@ -140,7 +154,7 @@ pub fn handle_send_ssh(
         compression,
         ip: _,
         target: _,
-        destination,
+        destination: _,
         tcp_port,
         ssh_private_key_path,
         ssh_key_dir,
@@ -167,7 +181,7 @@ pub fn handle_send_ssh(
         ),
         &ssh_private_key,
         &remote_info.resolved_ip,
-        destination.as_deref(),
+        remote_info.destination,
         remote_info.ssh_port,
         *tcp_port,
         use_mmap,
@@ -189,7 +203,7 @@ fn run_ssh(
     (username, password): (&str, &str),
     priv_key_path: &OsStr,
     remote_ip: &str,
-    remote_destination: Option<&Path>,
+    remote_destination: Cow<str>,
     ssh_port: u16,
     tcp_port: Option<u16>,
     use_mmap: bool,
@@ -260,7 +274,7 @@ fn run_ssh(
 
     log::debug!("Using TCP port: {tcp_port}");
     let remote_cmd = remote_cmd::remote_qft_command_str(
-        remote_destination.map(|p| p.to_str().unwrap()),
+        &remote_destination,
         tcp_port,
         prealloc,
         compression.into(),
