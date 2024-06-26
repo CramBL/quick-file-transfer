@@ -78,6 +78,11 @@ jobs:
     - name: Run Native Tests
       run: cargo hack test --feature-powerset
 
+    # Run very involved tests targetting a docker container
+    # includes e.g.
+    #    * Discovering and resolving an mDNS service broadcasting from within the container
+    #    * SSH authenticating into the container, spinning up qft through ssh,
+    #         querying for a free TCP port and finally completing a transfer via TCP.
     - name: Run Container Tests
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
