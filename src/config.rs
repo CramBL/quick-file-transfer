@@ -109,6 +109,7 @@ pub enum Command {
     /// Evaluate which compression works best for file content
     #[cfg(feature = "evaluate-compression")]
     EvaluateCompression(evaluate_compression::EvaluateCompressionArgs),
+    /// Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port.
     GetFreePort(GetFreePortArgs),
 }
 
@@ -134,6 +135,14 @@ pub struct GetFreePortArgs {
     /// Host IP e.g. `127.0.0.1` for localhost
     #[arg(default_value_t  = String::from("0.0.0.0"), value_parser = valid_ip)]
     pub ip: String,
+
+    /// Start of the port range e.g. 3000
+    #[arg(short, long)]
+    pub start_port: Option<u16>,
+
+    /// End of the port range e.g. 3999
+    #[arg(short, long, requires("start_port"))]
+    pub end_port: Option<u16>,
 }
 
 fn valid_ip(ip_str: &str) -> Result<String, String> {
