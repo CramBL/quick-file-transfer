@@ -86,10 +86,13 @@ jobs:
     - name: Run Container Tests
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
-        sudo usermod -a -G docker $USER
         mkdir -p ~/.ssh
         ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
-        just d-test "--verbose -- --ignored --nocapture" || docker inspect alpine-qft-ssh
+        just d-test "--verbose -- --ignored --nocapture"
+
+    - name: Inspect Test container on failure
+      if: ${{ matrix.os == 'ubuntu-latest' && failure() }}
+      run: docker inspect alpine-qft-ssh
 
     - name: Test install.sh
       run: |
