@@ -26,7 +26,7 @@ env:
 
 # Lint the code
 [group("Code Quality"), no-exit-message]
-lint *ARGS="-- -D warnings --no-deps":
+lint *ARGS="--all --all-targets -- -D warnings --no-deps":
     cargo clippy {{ ARGS }}
 
 # Run pre-commit and formatting/linting
@@ -108,7 +108,7 @@ audit *ARGS:
 [group("Code Quality")]
 ci-lint: \
     (check "--verbose") \
-    (lint "--verbose -- -D warnings --no-deps") \
+    (lint "--verbose --all --all-targets -- -D warnings --no-deps") \
     (format "-- --check --verbose") \
     (doc "--verbose --no-deps") \
     check-version \
