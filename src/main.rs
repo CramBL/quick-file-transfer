@@ -8,14 +8,10 @@
     clippy::maybe_infinite_iter
 )]
 
-use anyhow::{bail, Result};
-use config::{Command, Config, GetFreePortArgs};
-use send::handle_send_cmd;
-use server::listen;
-
 pub mod config;
 #[cfg(feature = "evaluate-compression")]
 pub mod evaluate_compression;
+pub mod get_free_port;
 #[cfg(feature = "mdns")]
 pub mod mdns;
 pub mod mmap_reader;
@@ -25,32 +21,14 @@ pub mod server;
 pub mod ssh;
 pub mod util;
 
+pub mod run;
 pub const TCP_STREAM_BUFSIZE: usize = 2 * 1024;
 pub const BUFFERED_RW_BUFSIZE: usize = 32 * 1024;
 
-fn main() -> Result<()> {
-    let cfg = Config::init()?;
+fn main() -> anyhow::Result<()> {
+    let cfg = config::Config::init()?;
 
     log::trace!("{cfg:?}");
 
-    match cfg.command {
-        Command::Listen(ref args) => listen(&cfg, args),
-        Command::Send(ref cmd) => handle_send_cmd(cmd, &cfg),
-
-        #[cfg(feature = "mdns")]
-        Command::Mdns(cmd) => mdns::handle_mdns_command(cmd.subcmd),
-
-        #[cfg(feature = "evaluate-compression")]
-        Command::EvaluateCompression(args) => evaluate_compression::evaluate_compression(args),
-
-        Command::GetFreePort(GetFreePortArgs { ip }) => {
-            log::debug!("Retrieving free port for IP: {ip}");
-            if let Some(port) = util::get_free_port(&ip) {
-                println!("{port}");
-            } else {
-                bail!("Could not retrieve free port");
-            }
-            Ok(())
-        }
-    }
+    run::run(cfg)
 }
