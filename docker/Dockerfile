@@ -30,12 +30,12 @@ RUN ssh-keygen -A \
     && sed -i -E "s/#?(ChallengeResponseAuthentication|PasswordAuthentication).*/\1 yes/g" /etc/ssh/sshd_config
 
 # Create .ssh directory and authorize keys
-RUN mkdir -p $HOME/.ssh \
+RUN mkdir -p $HOME/.ssh $HOME/downloads \
     && umask 066 \
     && touch $HOME/.ssh/authorized_keys \
     && ssh-keygen -t rsa -b 4096 -m pem -N '' -f /root/rsa && cat /root/rsa.pub >> $HOME/.ssh/authorized_keys \
     && ssh-keygen -t ed25519 -N '' -f /root/ed25519 && cat /root/ed25519.pub >> $HOME/.ssh/authorized_keys \
-    && chown -R $USERNAME $HOME/.ssh
+    && chown -R $USERNAME $HOME/.ssh $HOME/downloads
 
 COPY target/x86_64-unknown-linux-musl/debug/qft /usr/bin/qft
 
