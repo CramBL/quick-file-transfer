@@ -12,21 +12,23 @@ pub fn test_mdns_discover_service_in_container() -> TestResult {
     ), false);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
-    cmd.args([
+    let args = [
         "mdns",
         "discover",
         "--service-label",
         SERVICE_LABEL,
         "--service-protocol",
         SERVICE_PROTOCOL,
-    ]);
+    ];
+    cmd.args(args);
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
 
     eprint_docker_logs()?;
-    eprintln!("{stderr}");
-    eprintln!("{stdout}");
+    eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
-    assert_no_errors_or_warn(&stderr)?;
+    // This error is logged/occurs because of some docker network settings but the service is still correctly discovered so we ignore it.
+    let ignore_send_to_interface_error = r"Failed to send to \[";
+    assert_no_errors_or_warn_with_ignore(&stderr, &ignore_send_to_interface_error)?;
 
     assert!(
         stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),

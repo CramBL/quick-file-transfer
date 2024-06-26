@@ -18,7 +18,7 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
     let _test_container = TestContainer::setup(&test_container_cmd, false);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
-    cmd.args([
+    let args = [
         "send",
         "ip",
         IP,
@@ -27,12 +27,12 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
         "-vv",
         "--file",
         file_to_transfer.path().to_str().unwrap(),
-    ]);
+    ];
+    cmd.args(args);
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
 
     eprint_docker_logs()?;
-    eprintln!("{stderr}");
-    eprintln!("{stdout}");
+    eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
     let f = assert_file_exists_in_container(file_to_receive)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);

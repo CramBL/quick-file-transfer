@@ -12,7 +12,7 @@ pub fn test_ssh_transfer() -> TestResult {
     let _test_container = TestContainer::setup("/usr/sbin/sshd -D -p 54320", true);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
-    cmd.args([
+    let args = [
         "send",
         "ssh",
         "--user",
@@ -27,15 +27,14 @@ pub fn test_ssh_transfer() -> TestResult {
         &format!("--destination={FILE_TO_RECEIVE}"),
         "--tcp-port",
         CONTAINER_TCP_PORT,
-    ]);
+    ];
+    cmd.args(args);
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
 
     eprint_docker_logs()?;
-    eprintln!("{stderr}");
-    eprintln!("{stdout}");
+    eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
     assert_no_errors_or_warn(&stderr)?;
-
     let f = assert_file_exists_in_container(FILE_TO_RECEIVE)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);
 
@@ -54,7 +53,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
     let _test_container = TestContainer::setup("/usr/sbin/sshd -D -p 54320", true);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
-    cmd.args([
+    let args = [
         "send",
         "ssh",
         "--user",
@@ -69,13 +68,14 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
         &format!("--destination={FILE_TO_RECEIVE}"),
         "--start-port",
         "27000",
-    ]);
+    ];
+    cmd.args(args);
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
 
     eprint_docker_logs()?;
-    eprintln!("{stderr}");
-    eprintln!("{stdout}");
+    eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
+    //ERROR Failed to send to [
     assert_no_errors_or_warn(&stderr)?;
 
     let f = assert_file_exists_in_container(FILE_TO_RECEIVE)?;
