@@ -104,11 +104,12 @@ pub fn file_with_bufwriter(path: &Path) -> Result<BufWriter<File>> {
                 log::error!("{e}");
                 log::info!("Attempting to retrieve additional debug information...");
                 let file_exists = path.exists();
+                let fpath_str = path.display().to_string();
                 let file_permissions: Option<fs::Permissions> = if file_exists {
                     if let Ok(md) = path.metadata() {
                         Some(md.permissions())
                     } else {
-                        log::error!("Failed to retrieve permissions for {}", path.display());
+                        log::error!("Failed to retrieve permissions for {fpath_str}");
                         None
                     }
                 } else {
@@ -120,19 +121,20 @@ pub fn file_with_bufwriter(path: &Path) -> Result<BufWriter<File>> {
                     parent.and_then(|p| p.metadata().ok().map(|md| md.permissions()));
                 let mut context_str = String::new();
                 if file_exists {
-                    context_str.push_str("\n\tFile exists on disk");
+                    context_str.push_str(&format!("\n\tFile {fpath_str} exists on disk"));
                 } else {
-                    context_str.push_str("\n\tFile does not exist");
+                    context_str.push_str(&format!("\n\tFile {fpath_str} does not exist"));
                 }
                 if let Some(fpermission) = file_permissions {
                     context_str.push_str(&format!(" - with permissions: {fpermission:?}"));
                 }
                 if let Some(parent_permissions) = parent_permissions {
                     context_str.push_str(&format!(
-                        "Parent directory {parent:?} - permissions: {parent_permissions:?}"
+                        "\n\tParent directory {:?} - permissions: {parent_permissions:?}",
+                        parent.unwrap(),
                     ));
                 }
-                log::debug!("Additional context for {}:{context_str}", path.display(),);
+                log::debug!("Additional context for {fpath_str}:{context_str}");
             };
             return Err(e.into());
         }
