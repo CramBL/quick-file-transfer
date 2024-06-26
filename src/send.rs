@@ -11,7 +11,7 @@ use client::run_client;
 pub mod client;
 pub mod util;
 
-pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
+pub fn handle_send_cmd(cmd: &SendArgs, cfg: &Config) -> Result<()> {
     match cmd.subcmd {
         SendCommand::Ip(SendIpArgs {
             ref ip,
@@ -52,7 +52,7 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
         }
         #[cfg(feature = "ssh")]
         SendCommand::Ssh(ref args) => {
-            crate::ssh::handle_send_ssh(args, cmd.file.as_deref(), cmd.prealloc, cmd.mmap)?
+            crate::ssh::handle_send_ssh(cfg, args, cmd.file.as_deref(), cmd.prealloc, cmd.mmap)?
         }
     }
     Ok(())
