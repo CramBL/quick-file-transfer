@@ -1,3 +1,4 @@
+use crate::config::Config;
 use anyhow::Result;
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
@@ -93,13 +94,37 @@ pub fn create_file_with_len(path: &Path, len: u64) -> Result<()> {
 /// Bind to port 0 on `ip`, which tells the OS to assign any available port, then
 /// retrieve the socket address from the listener.
 pub fn get_free_port(ip: &str) -> Option<u16> {
-    let mut ip_str = String::with_capacity(15);
-    ip_str.push_str(ip);
-    ip_str.push_str(":0");
-    if let Ok(listener) = TcpListener::bind(ip_str) {
+    if let Ok(listener) = TcpListener::bind((ip, 0)) {
         if let Ok(local_addr) = listener.local_addr() {
             return Some(local_addr.port());
         }
     }
     None
+}
+
+/// Bind to any available port within the specified range on `ip`,
+/// then retrieve the socket address from the listener.
+pub fn get_free_port_in_range(ip: &str, start_port: u16, end_port: u16) -> Option<u16> {
+    for port in start_port..=end_port {
+        if let Ok(listener) = TcpListener::bind((ip, port)) {
+            if let Ok(local_addr) = listener.local_addr() {
+                return Some(local_addr.port());
+            }
+        }
+    }
+    None
+}
+
+/// Converts the verbosity from the config back to the command-line arguments that would produce that verbosity
+pub fn verbosity_to_args(cfg: &Config) -> &str {
+    if cfg.quiet {
+        "-q"
+    } else {
+        match cfg.verbose {
+            1 => "-v",
+            2 => "-vv",
+            // Verbose is not set
+            _ => "",
+        }
+    }
 }
