@@ -142,3 +142,10 @@ pub fn eprint_docker_logs() -> Result<()> {
     eprintln!("====== DOCKER LOGS ======:\n===> STDOUT\n{stdout}\n===> STDERR\n{stderr}\n^^^^^^^^^^^^^^^^^^^^^^^^\n       DOCKER LOGS\n\n",);
     Ok(())
 }
+
+/// Print args and stdout and stderr in a way that is easy to parse in the terminal (for debugging)
+pub fn eprint_cmd_args_stderr_stdout_formatted(args: &[&str], stdout: &str, stderr: &str) {
+    eprintln!("=== COMMAND ARGUMENTS ===\n{args:?}\n");
+    eprintln!("=== COMMAND STDOUT ===\n{stdout}\n^^^COMMAND STDOUT^^^\n");
+    eprintln!("=== COMMAND STDERR ===\n{stderr}\n^^^COMMAND STDERR^^^\n");
+}
