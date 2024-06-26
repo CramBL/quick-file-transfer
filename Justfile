@@ -11,10 +11,17 @@ alias f := format
 alias t := test
 alias p := pre-commit
 
-# Needs the rust toolchain
+# List tool version
 env:
-    rustc --version
-    cargo --version
+    just --version
+    rustc --version         || echo "Not found"
+    cargo --version         || echo "Not found"
+    cargo clippy --version  || echo "Not found"
+    docker version          || echo "Not found"
+    containerd --version    || echo "Not found"
+    python --version        || echo "Not found"
+    pip --version           || echo "Not found"
+    ssh -V                  || echo "Not found"
 
 # Lint the code
 [group("Code Quality"), no-exit-message]

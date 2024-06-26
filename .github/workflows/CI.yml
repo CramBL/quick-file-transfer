@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: extractions/setup-just@v2
+      - name: Print Tool versions
+        run: just env
       - name: run pre-commit
         run: |
           pip install pre-commit
@@ -56,6 +58,9 @@ jobs:
     - uses: actions/checkout@v4
     - uses: Swatinem/rust-cache@v2
     - uses: extractions/setup-just@v2
+
+    - name: Print Tool versions
+      run: just env
 
     # Build all feature combinations
     - uses: taiki-e/install-action@cargo-hack
