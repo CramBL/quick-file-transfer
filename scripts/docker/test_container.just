@@ -15,7 +15,11 @@ CONTAINER_SSH_PORT := "54320"
 CONTAINER_MOUNTED_TMP_DIR := `pwd`+"/target/docker_mounted_tmp/tmp"
 
 # Relaxed ssh options: 1. No host key checking 2. No known hosts file (avoids adding the target to known hosts) 3. Only log errors
-SSH_OPTIONS_LAX := "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+SSH_OPTIONS_LAX := "\
+-o StrictHostKeyChecking=no \
+-o UserKnownHostsFile=/dev/null \
+-o LogLevel=ERROR\
+"
 
 # Build the Docker image (requires the build artifact from the builder container)
 [group("Docker"), no-exit-message]

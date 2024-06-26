@@ -12,6 +12,7 @@ alias t := test
 alias p := pre-commit
 
 # List tool version
+[unix]
 env:
     just --version
     rustc --version         || echo "Not found"
