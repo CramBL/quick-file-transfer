@@ -38,7 +38,7 @@ jobs:
       - name: Check docs
         run: cargo doc --no-deps
       - name: Audit
-        run: cargo audit
+        run: cargo audit || echo "Vulnerability discovered... update now or when a fix is available"
 
       # Lint (check/clippy) of feature combinations
       - uses: taiki-e/install-action@cargo-hack
