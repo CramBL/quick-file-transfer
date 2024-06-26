@@ -122,6 +122,11 @@ impl<'a> RemoteInfo<'a> {
             debug_assert!(remote.is_none());
             remote = Some(Remote::Ip(ip));
         }
+        if let Some(ref dest) = ssh_args.destination {
+            debug_assert!(remote_destination.is_none());
+            remote_destination = Some(dest.to_string_lossy());
+        }
+
         #[cfg(feature = "mdns")]
         let resolved_ip = remote.unwrap().to_resolved_ip_str(ssh_args.timeout_ms)?;
         #[cfg(not(feature = "mdns"))]
