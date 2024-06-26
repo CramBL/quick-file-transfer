@@ -181,7 +181,7 @@ pub fn handle_send_ssh(
         ),
         &ssh_private_key,
         &remote_info.resolved_ip,
-        remote_info.destination,
+        remote_info.destination.as_ref(),
         remote_info.ssh_port,
         *tcp_port,
         use_mmap,
@@ -203,7 +203,7 @@ fn run_ssh(
     (username, password): (&str, &str),
     priv_key_path: &OsStr,
     remote_ip: &str,
-    remote_destination: Cow<str>,
+    remote_destination: &str,
     ssh_port: u16,
     tcp_port: Option<u16>,
     use_mmap: bool,
@@ -274,7 +274,7 @@ fn run_ssh(
 
     log::debug!("Using TCP port: {tcp_port}");
     let remote_cmd = remote_cmd::remote_qft_command_str(
-        &remote_destination,
+        remote_destination,
         tcp_port,
         prealloc,
         compression.into(),
