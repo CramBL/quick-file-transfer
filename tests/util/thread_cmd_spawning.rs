@@ -140,7 +140,7 @@ pub fn spawn_cmd_thread(
     sleep: Option<Duration>,
 ) -> Result<JoinHandle<Result<Output>>> {
     let sender_thread = std::thread::Builder::new().name(thread_name.to_string());
-    let handle = sender_thread
+    sender_thread
         .spawn({
             move || {
                 if let Some(sleep_duration) = sleep {
@@ -151,7 +151,5 @@ pub fn spawn_cmd_thread(
                 Ok(out)
             }
         })
-        .context(format!("Failed spawning {thread_name} thread"));
-
-    handle
+        .context(format!("Failed spawning {thread_name} thread"))
 }
