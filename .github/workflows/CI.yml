@@ -59,8 +59,14 @@ jobs:
     - uses: Swatinem/rust-cache@v2
     - uses: extractions/setup-just@v2
 
-    - name: Print Tool versions
+    - name: Print Tool versions (unix)
+      if: ${{ matrix.os != 'windows-latest' }}
       run: just env
+
+    - name: Print Tool versions (windows)
+      if: ${{ matrix.os == 'windows-latest' }}
+      # Only print rust version until the day more info is needed
+      run: rustc --version
 
     # Build all feature combinations
     - uses: taiki-e/install-action@cargo-hack
