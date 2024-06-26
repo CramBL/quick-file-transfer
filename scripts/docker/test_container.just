@@ -12,7 +12,7 @@ CONTAINER_SSH_PORT := "54320"
 
 # Piggy backing on the target dir used for build artifacts to have a temporary directory that the docker container
 #  mounts into /tmp, then it is easy to check that files were correctly received in the container even after it has exited.
-CONTAINER_MOUNTED_TMP_DIR := `pwd`+"/target/docker_mounted_tmp/tmp"
+CONTAINER_MOUNTED_TMP_DIR := `pwd`+"/target/docker_mounted_tmp/"
 
 # Relaxed ssh options: 1. No host key checking 2. No known hosts file (avoids adding the target to known hosts) 3. Only log errors
 SSH_OPTIONS_LAX := "\
@@ -34,7 +34,7 @@ _d-run CMD="/usr/sbin/sshd -D -p 54320":
 		--publish 127.0.0.1:{{CONTAINER_SSH_PORT}}:{{CONTAINER_SSH_PORT}} \
 		--publish 127.0.0.1:{{CONTAINER_QFT_LISTEN_PORT}}:{{CONTAINER_QFT_LISTEN_PORT}} \
 		--publish 127.0.0.1:{{CONTAINER_QFT_PORT_START}}-{{CONTAINER_QFT_PORT_END}}:{{CONTAINER_QFT_PORT_START}}-{{CONTAINER_QFT_PORT_END}} \
-		--mount type=bind,source="{{CONTAINER_MOUNTED_TMP_DIR}}",target="/tmp" \
+		--mount type=bind,source="{{CONTAINER_MOUNTED_TMP_DIR}}",target="{{CONTAINER_HOME}}/downloads" \
 		--name {{CONTAINER_TAG}} {{CONTAINER_TAG}} \
 		{{CMD}}
 

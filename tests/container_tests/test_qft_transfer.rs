@@ -8,7 +8,8 @@ use crate::{container_tests::util::*, util::*};
 pub fn test_file_transfer_no_compression_simple() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
-    let file_to_receive = "/tmp/received.txt";
+
+    let file_to_receive: String = CONTAINER_HOME_DOWNLOAD_DIR.to_owned() + "/received.txt";
 
     const TRANSFERED_CONTENTS: &str = "contents";
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
@@ -34,7 +35,7 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
-    let f = assert_file_exists_in_container(file_to_receive)?;
+    let f = assert_file_exists_in_container(&file_to_receive)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);
 
     Ok(())

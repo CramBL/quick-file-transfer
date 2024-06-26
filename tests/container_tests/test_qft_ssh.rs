@@ -7,7 +7,7 @@ pub fn test_ssh_transfer() -> TestResult {
     let file_to_transfer = dir.child("f-L,sL.txt");
     const TRANSFERED_CONTENTS: &str = LOREM_IPSUM_WHAT;
     fs::write(&file_to_transfer, LOREM_IPSUM_WHAT)?;
-    const FILE_TO_RECEIVE: &str = "/tmp/LOREM_WHAT.txt";
+    let file_to_receive: String = CONTAINER_HOME_DOWNLOAD_DIR.to_owned() + "/LOREM_WHAT.txt";
 
     let _test_container = TestContainer::setup("/usr/sbin/sshd -D -p 54320", true);
 
@@ -24,7 +24,7 @@ pub fn test_ssh_transfer() -> TestResult {
         "--file",
         file_to_transfer.path().to_str().unwrap(),
         "-vv",
-        &format!("--destination={FILE_TO_RECEIVE}"),
+        &format!("--destination={file_to_receive}"),
         "--tcp-port",
         CONTAINER_TCP_PORT,
     ];
@@ -35,7 +35,7 @@ pub fn test_ssh_transfer() -> TestResult {
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
     assert_no_errors_or_warn(&stderr)?;
-    let f = assert_file_exists_in_container(FILE_TO_RECEIVE)?;
+    let f = assert_file_exists_in_container(&file_to_receive)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);
 
     Ok(())
@@ -48,7 +48,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
     let file_to_transfer = dir.child("f-L,sL.txt");
     const TRANSFERED_CONTENTS: &str = LOREM_IPSUM_WHAT;
     fs::write(&file_to_transfer, LOREM_IPSUM_WHAT)?;
-    const FILE_TO_RECEIVE: &str = "/tmp/LOREM_WHAT.txt";
+    let file_to_receive: String = CONTAINER_HOME_DOWNLOAD_DIR.to_owned() + "/LOREM_WHAT.txt";
 
     let _test_container = TestContainer::setup("/usr/sbin/sshd -D -p 54320", true);
 
@@ -65,7 +65,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
         "--file",
         file_to_transfer.path().to_str().unwrap(),
         "-vv",
-        &format!("--destination={FILE_TO_RECEIVE}"),
+        &format!("--destination={file_to_receive}"),
         "--start-port",
         "27000",
     ];
@@ -78,7 +78,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
     //ERROR Failed to send to [
     assert_no_errors_or_warn(&stderr)?;
 
-    let f = assert_file_exists_in_container(FILE_TO_RECEIVE)?;
+    let f = assert_file_exists_in_container(&file_to_receive)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);
 
     Ok(())

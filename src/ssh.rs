@@ -36,7 +36,6 @@ enum Remote<'a> {
 }
 
 impl<'a> Remote<'a> {
-    #[cfg(feature = "mdns")]
     pub fn new(host: &'a str) -> Result<Self> {
         if host.parse::<std::net::IpAddr>().is_ok() {
             return Ok(Self::Ip(host));

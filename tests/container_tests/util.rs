@@ -1,5 +1,5 @@
 use crate::util::*;
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::process::Command;
 use std::sync::OnceLock;
 
@@ -7,6 +7,7 @@ pub const CONTAINER_IP: &str = "127.0.0.1";
 pub const CONTAINER_SSH_PORT: &str = "54320";
 pub const CONTAINER_TCP_PORT: &str = "12999";
 pub const CONTAINER_USER: &str = "userfoo";
+pub const CONTAINER_HOME_DOWNLOAD_DIR: &str = "/home/userfoo/downloads";
 
 const JUST_CONTAINER_STOP_RECIPE: &str = "d-stop";
 
@@ -125,12 +126,33 @@ where
     process_output_to_stdio(output)
 }
 
+fn check_and_relocate_path(original_path: &Path) -> Result<PathBuf> {
+    let container_home_download_dir = Path::new(CONTAINER_HOME_DOWNLOAD_DIR);
+    let test_tmp_dir = Path::new(TEST_TMP_DIR);
+
+    if original_path.starts_with(container_home_download_dir) {
+        // Remove the CONTAINER_HOME_DOWNLOAD_DIR part
+        let remainder = original_path
+            .strip_prefix(container_home_download_dir)
+            .unwrap();
+
+        // Append the remainder to TEST_TMP_DIR
+        let new_path = test_tmp_dir.join(remainder);
+
+        // Check if the new path exists
+        assert!(new_path.exists(), "Path does not exist: {new_path:?}");
+        return Ok(new_path);
+    } else {
+        bail!("Path does not start with {CONTAINER_HOME_DOWNLOAD_DIR}: {original_path:?}");
+    }
+}
 /// Asserts that the file exists in the temp directory that was mounted into the container
 /// if the assertion is true, returns the path to the file
 pub fn assert_file_exists_in_container(path: &str) -> Result<PathBuf> {
-    let correcte_path: PathBuf = PathBuf::from(format!("{TEST_TMP_DIR}/{path}"));
-    assert!(correcte_path.exists(), "{correcte_path:?} doesn't exist!");
-    Ok(correcte_path)
+    let tmp_dir = PathBuf::from(TEST_TMP_DIR);
+    assert!(tmp_dir.exists() && tmp_dir.is_dir());
+    let p = PathBuf::from(path);
+    check_and_relocate_path(&p)
 }
 
 pub fn get_docker_logs() -> Result<StdoutStderr> {
