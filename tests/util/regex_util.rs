@@ -34,10 +34,55 @@ where
     Ok(())
 }
 
+/// Helper function to match the raw output of stderr or stdout, with a pattern a fixed amount of times, case insensitive
+pub fn match_count_with_excludes<S>(
+    case_sensitive: bool,
+    haystack: &str,
+    re: S,
+    expect_match: usize,
+    exclusions: &[S],
+) -> TestResult
+where
+    S: AsRef<str> + ToOwned + Display + Into<String>,
+{
+    // Build the base regex pattern
+    let base_pattern = re.as_ref().to_string();
+
+    // Add case insensitivity if set
+    let regex_pattern = if case_sensitive {
+        base_pattern
+    } else {
+        format!("(?i){base_pattern}")
+    };
+
+    // Create the exclusion part of the regex with negative lookaheads
+    let exclusions_pattern: String = exclusions
+        .iter()
+        .map(|ex| format!("(?!.*{}.*$)", ex.as_ref()))
+        .collect::<Vec<_>>()
+        .join("");
+
+    // Combine the base pattern with exclusions
+    let final_pattern = format!("(?m)^{exclusions_pattern}{regex_pattern}.*$");
+
+    // Case sensitivity is already configured so just disable it to prevent `match_count` from including (?i) again
+    match_count(false, haystack, final_pattern, expect_match)?;
+
+    Ok(())
+}
+
 /// Helper function takes in the output of stderr and asserts that there are no errors, warnings, or thread panics.
 pub fn assert_no_errors_or_warn(stderr: &str) -> TestResult {
     match_count(true, stderr, "ERROR", 0)?;
     match_count(true, stderr, "WARN", 0)?;
+    match_count(false, stderr, "thread.*panicked", 0)?;
+    Ok(())
+}
+
+/// Helper function takes in the output of stderr and asserts that there are no errors, warnings, or thread panics. While ignoring an error or warning pattern specified by `ignore`.
+pub fn assert_no_errors_or_warn_with_ignore(stderr: &str, ignore: &str) -> TestResult {
+    match_count_with_excludes(true, stderr, "ERROR", 0, &[ignore])?;
+    match_count_with_excludes(true, stderr, "WARN", 0, &[ignore])?;
     match_count(false, stderr, "thread.*panicked", 0)?;
     Ok(())
 }
