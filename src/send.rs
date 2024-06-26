@@ -3,7 +3,7 @@ use crate::config::{
     Config,
 };
 #[cfg(feature = "mdns")]
-use crate::{config::transfer::send::SendMdnsArgs, mdns::resolve::resolve_mdns_hostname};
+use crate::{config::transfer::send::mdns::SendMdnsArgs, mdns::resolve::resolve_mdns_hostname};
 
 use anyhow::Result;
 use client::run_client;
