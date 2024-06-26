@@ -28,7 +28,7 @@ pub fn test_mdns_discover_service_in_container() -> TestResult {
 
     // This error is logged/occurs because of some docker network settings but the service is still correctly discovered so we ignore it.
     let ignore_send_to_interface_error = r"Failed to send to \[";
-    assert_no_errors_or_warn_with_ignore(&stderr, &ignore_send_to_interface_error)?;
+    assert_no_errors_or_warn_with_ignore(&stderr, ignore_send_to_interface_error)?;
 
     assert!(
         stdout.contains(&format!("Hostname:  {SERVICE_HOSTNAME}.local.")),
