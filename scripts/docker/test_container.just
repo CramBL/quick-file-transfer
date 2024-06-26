@@ -34,7 +34,7 @@ _d-run CMD="/usr/sbin/sshd -D -p 54320":
 		--publish 127.0.0.1:{{CONTAINER_SSH_PORT}}:{{CONTAINER_SSH_PORT}} \
 		--publish 127.0.0.1:{{CONTAINER_QFT_LISTEN_PORT}}:{{CONTAINER_QFT_LISTEN_PORT}} \
 		--publish 127.0.0.1:{{CONTAINER_QFT_PORT_START}}-{{CONTAINER_QFT_PORT_END}}:{{CONTAINER_QFT_PORT_START}}-{{CONTAINER_QFT_PORT_END}} \
-		--volume {{CONTAINER_MOUNTED_TMP_DIR}}:/tmp \
+		--mount type=bind,source="{{CONTAINER_MOUNTED_TMP_DIR}}",target="/tmp" \
 		--name {{CONTAINER_TAG}} {{CONTAINER_TAG}} \
 		{{CMD}}
 
