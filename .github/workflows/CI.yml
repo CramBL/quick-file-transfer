@@ -89,7 +89,7 @@ jobs:
         sudo usermod -a -G docker $USER
         mkdir -p ~/.ssh
         ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
-        just d-test "--verbose -- --ignored --nocapture"
+        just d-test "--verbose -- --ignored --nocapture" || docker inspect alpine-qft-ssh
 
     - name: Test install.sh
       run: |

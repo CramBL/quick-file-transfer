@@ -1,3 +1,4 @@
+docker_mounted_tmp
 target
 *.data
 *.raucb

@@ -12,7 +12,7 @@ CONTAINER_SSH_PORT := "54320"
 
 # Piggy backing on the target dir used for build artifacts to have a temporary directory that the docker container
 #  mounts into /tmp, then it is easy to check that files were correctly received in the container even after it has exited.
-CONTAINER_MOUNTED_TMP_DIR := `pwd`+"/target/docker_mounted_tmp/"
+CONTAINER_MOUNTED_TMP_DIR := `pwd`+"/docker_mounted_tmp"
 
 # Relaxed ssh options: 1. No host key checking 2. No known hosts file (avoids adding the target to known hosts) 3. Only log errors
 SSH_OPTIONS_LAX := "\
@@ -25,6 +25,7 @@ SSH_OPTIONS_LAX := "\
 [group("Docker"), no-exit-message]
 d-build: d-builder-build d-builder-compile
     docker build --file ./docker/Dockerfile \
+        --build-arg USER_ID=$(id -u) \
         -t {{CONTAINER_TAG}} .
 
 # Private recipe, entry point for running commands on startup of a container

@@ -5,6 +5,8 @@ ENV USERNAME=userfoo
 ENV PASSWORD="password"
 ENV HOME=/home/$USERNAME
 
+ARG USER_ID
+
 RUN apk add --no-cache --update \
     sudo \
     openssh \
@@ -17,7 +19,7 @@ RUN echo 'Europe/London' > /etc/timezone
 
 # Create user and group
 RUN addgroup $USERNAME \
-    && adduser --shell /bin/ash --disabled-password --home $HOME --ingroup $USERNAME $USERNAME \
+    && adduser --shell /bin/ash --disabled-password --home $HOME --uid $USER_ID --ingroup $USERNAME $USERNAME \
     && echo "${USERNAME}:${PASSWORD}" | chpasswd
 
 # Generate SSH keys and configure SSH

@@ -11,7 +11,7 @@ pub const CONTAINER_HOME_DOWNLOAD_DIR: &str = "/home/userfoo/downloads";
 
 const JUST_CONTAINER_STOP_RECIPE: &str = "d-stop";
 
-const TEST_TMP_DIR: &str = "target/docker_mounted_tmp/";
+const TEST_TMP_DIR: &str = "docker_mounted_tmp/";
 
 static SETUP_ONCE: OnceLock<()> = OnceLock::new();
 
@@ -44,11 +44,27 @@ fn run_stop_container_recipe() -> Result<()> {
 }
 
 fn cleanup_mounted_tmp_dir() -> Result<()> {
-    let tmp_path = PathBuf::from(format!("{TEST_TMP_DIR}/tmp"));
-    if tmp_path.exists() {
-        fs::remove_dir_all(tmp_path.as_path())?;
+    let tmp_path = PathBuf::from(TEST_TMP_DIR);
+    assert!(
+        tmp_path.exists(),
+        "The tmp directory {tmp_path:?} that docker mounts does not exist!"
+    );
+    for res in fs::read_dir(tmp_path)? {
+        match res {
+            Ok(dir_entry) => match dir_entry.file_type() {
+                Ok(t) => {
+                    let entry_path = dir_entry.path();
+                    if t.is_file() {
+                        fs::remove_file(entry_path)?;
+                    } else if t.is_dir() {
+                        fs::remove_dir_all(entry_path)?;
+                    }
+                }
+                Err(e) => eprintln!("{e}"),
+            },
+            Err(e) => eprintln!("{e}"),
+        }
     }
-    fs::create_dir(tmp_path)?;
     Ok(())
 }
 
@@ -102,7 +118,7 @@ impl TestContainer {
 
 impl Drop for TestContainer {
     fn drop(&mut self) {
-        perform_cleanup().expect("Test container clenup failed!");
+        perform_cleanup().expect("Test container cleanup failed!");
     }
 }
 
