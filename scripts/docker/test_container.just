@@ -5,6 +5,9 @@ CONTAINER_PASSWORD := "password"
 CONTAINER_HOME := "/home/" + CONTAINER_USERNAME
 
 CONTAINER_QFT_LISTEN_PORT := "12999"
+# Extra ports for other stuff. Don't map hundreds of ports, it will be very slow.
+CONTAINER_QFT_PORT_START := "27000"
+CONTAINER_QFT_PORT_END := "27002"
 CONTAINER_SSH_PORT := "54320"
 
 # Piggy backing on the target dir used for build artifacts to have a temporary directory that the docker container
@@ -30,6 +33,7 @@ _d-run CMD="/usr/sbin/sshd -D -p 54320":
 	docker run --detach \
 		--publish 127.0.0.1:{{CONTAINER_SSH_PORT}}:{{CONTAINER_SSH_PORT}} \
 		--publish 127.0.0.1:{{CONTAINER_QFT_LISTEN_PORT}}:{{CONTAINER_QFT_LISTEN_PORT}} \
+		--publish 127.0.0.1:{{CONTAINER_QFT_PORT_START}}-{{CONTAINER_QFT_PORT_END}}:{{CONTAINER_QFT_PORT_START}}-{{CONTAINER_QFT_PORT_END}} \
 		--volume {{CONTAINER_MOUNTED_TMP_DIR}}:/tmp \
 		--name {{CONTAINER_TAG}} {{CONTAINER_TAG}} \
 		{{CMD}}
@@ -49,7 +53,7 @@ d-stop:
 	#!/usr/bin/env bash
 	set -euo pipefail
 	if just d-is-running; then
-		docker stop {{CONTAINER_TAG}}
+		docker stop --time 5 {{CONTAINER_TAG}}
 	fi
 	if just d-is-exited; then
 		docker rm {{CONTAINER_TAG}}
