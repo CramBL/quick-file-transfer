@@ -51,7 +51,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
     fs::write(&file_to_transfer, LOREM_IPSUM_WHAT)?;
     const FILE_TO_RECEIVE: &str = "/tmp/LOREM_WHAT.txt";
 
-    let _test_container = TestContainer::setup(&format!("/usr/sbin/sshd -D -p 54320"), true);
+    let _test_container = TestContainer::setup("/usr/sbin/sshd -D -p 54320", true);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
     cmd.args([
