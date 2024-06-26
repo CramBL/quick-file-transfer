@@ -38,6 +38,11 @@ jobs:
       - name: Audit
         run: cargo audit
 
+      - name: Check feature combinations
+        run: cargo hack check --feature-powerset --no-dev-deps
+      - name: Clippy feature combinations
+        run: cargo hack clippy --feature-powerset --no-dev-deps
+
 
   Test:
     strategy:
