@@ -19,7 +19,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         ip,
         port,
         prealloc,
-        output: file,
+        output: output_file,
         compression,
     } = listen_args;
     let listener = TcpListener::bind(format!("{ip}:{port}"))?;
@@ -40,7 +40,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     );
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
-    let bufwriter: &mut dyn io::Write = match file {
+    let bufwriter: &mut dyn io::Write = match output_file {
         Some(p) => {
             file_write = file_with_bufwriter(p)?;
             &mut file_write
@@ -62,7 +62,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                     "Preallocating file of size {} [{file_size} B]",
                     format_data_size(file_size)
                 );
-                create_file_with_len(file.as_deref().unwrap(), file_size)?;
+                create_file_with_len(output_file.as_deref().unwrap(), file_size)?;
             }
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
 
@@ -97,7 +97,46 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
 }
 
 pub fn file_with_bufwriter(path: &Path) -> Result<BufWriter<File>> {
-    let f = fs::File::create(path)?;
+    let f = match fs::File::create(path) {
+        Ok(f) => f,
+        Err(e) => {
+            if e.kind() == io::ErrorKind::PermissionDenied {
+                log::error!("{e}");
+                log::info!("Attempting to retrieve additional debug information...");
+                let file_exists = path.exists();
+                let file_permissions: Option<fs::Permissions> = if file_exists {
+                    if let Ok(md) = path.metadata() {
+                        Some(md.permissions())
+                    } else {
+                        log::error!("Failed to retrieve permissions for {}", path.display());
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                let parent = path.parent();
+                let parent_permissions: Option<fs::Permissions> =
+                    parent.and_then(|p| p.metadata().ok().map(|md| md.permissions()));
+                let mut context_str = String::new();
+                if file_exists {
+                    context_str.push_str("\n\tFile exists on disk");
+                } else {
+                    context_str.push_str("\n\tFile does not exist");
+                }
+                if let Some(fpermission) = file_permissions {
+                    context_str.push_str(&format!(" - with permissions: {fpermission:?}"));
+                }
+                if let Some(parent_permissions) = parent_permissions {
+                    context_str.push_str(&format!(
+                        "Parent directory {parent:?} - permissions: {parent_permissions:?}"
+                    ));
+                }
+                log::debug!("Additional context for {}:{context_str}", path.display(),);
+            };
+            return Err(e.into());
+        }
+    };
     let writer = BufWriter::with_capacity(BUFFERED_RW_BUFSIZE, f);
     Ok(writer)
 }
