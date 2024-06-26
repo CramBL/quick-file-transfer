@@ -8,7 +8,7 @@ pub fn test_mdns_discover_service_in_container() -> TestResult {
     const SERVICE_PROTOCOL: &str = "tcp";
 
     let _test_container = TestContainer::setup(&format!(
-        "qft mdns register --hostname {SERVICE_HOSTNAME} --service-label {SERVICE_LABEL} --service-protocol {SERVICE_PROTOCOL} --keep-alive-ms 60000 --color=always"
+        "qft mdns register --hostname {SERVICE_HOSTNAME} --service-label {SERVICE_LABEL} --service-protocol {SERVICE_PROTOCOL} --keep-alive-ms 3000 --color=always"
     ), false);
 
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
