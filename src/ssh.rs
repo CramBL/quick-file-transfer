@@ -36,6 +36,7 @@ enum Remote<'a> {
 }
 
 impl<'a> Remote<'a> {
+    #[cfg(feature = "mdns")]
     pub fn new(host: &'a str) -> Result<Self> {
         if host.parse::<std::net::IpAddr>().is_ok() {
             return Ok(Self::Ip(host));
@@ -105,46 +106,52 @@ impl<'a> RemoteInfo<'a> {
         }) = ssh_args.target
         {
             destination
+        } else if let Some(destination) = &ssh_args.destination {
+            destination
         } else {
-            if let Some(destination) = &ssh_args.destination {
-                destination
-            } else {
-                unreachable!()
-            }
+            unreachable!()
         };
         dest_path.to_string_lossy()
     }
 
-    pub fn from_args(ssh_args: &'a SendSshArgs) -> Result<Self> {
-        let mut user: Option<&str> = None;
-        let mut remote: Option<Remote> = None;
-        let remote_destination = Self::remote_destination_from_args(ssh_args);
-
-        if let Some(ref u) = ssh_args.user {
-            debug_assert!(user.is_none());
-            user = Some(u);
+    fn remote_user_from_args(ssh_args: &'a SendSshArgs) -> &'a str {
+        if let Some(TargetComponents { ref user, .. }) = ssh_args.target {
+            user
+        } else if let Some(ref user) = ssh_args.user {
+            user
+        } else {
+            unreachable!()
         }
+    }
+
+    fn remote_from_args(ssh_args: &'a SendSshArgs) -> Remote {
         #[cfg(feature = "mdns")]
         if let Some(ref h) = ssh_args.hostname {
-            debug_assert!(remote.is_none());
-            remote = Some(Remote::new(h)?);
+            use anyhow::Context;
+            return Remote::new(h)
+                .with_context(|| format!("Failed to resolve IP for hostname {h}"))
+                .unwrap();
         }
         if let Some(ref ip) = ssh_args.ip {
-            debug_assert!(remote.is_none());
-            remote = Some(Remote::Ip(ip));
+            Remote::Ip(ip)
+        } else {
+            unreachable!()
         }
+    }
+
+    pub fn from_args(ssh_args: &'a SendSshArgs) -> Self {
+        let user: &str = Self::remote_user_from_args(ssh_args);
+        let remote_destination = Self::remote_destination_from_args(ssh_args);
+        let remote: Remote = Self::remote_from_args(ssh_args);
 
         #[cfg(feature = "mdns")]
-        let resolved_ip = remote.unwrap().to_resolved_ip_str(ssh_args.timeout_ms)?;
+        let resolved_ip = remote
+            .to_resolved_ip_str(ssh_args.timeout_ms)
+            .expect("Failed to resolve IP for the specified hostname");
         #[cfg(not(feature = "mdns"))]
-        let resolved_ip = remote.unwrap().to_ip_str();
+        let resolved_ip = remote.to_ip_str();
 
-        Ok(Self::new(
-            user.unwrap(),
-            ssh_args.ssh_port,
-            resolved_ip,
-            remote_destination,
-        ))
+        Self::new(user, ssh_args.ssh_port, resolved_ip, remote_destination)
     }
 }
 
@@ -155,7 +162,7 @@ pub fn handle_send_ssh(
     prealloc: bool,
     use_mmap: bool,
 ) -> Result<()> {
-    let remote_info = RemoteInfo::from_args(args)?;
+    let remote_info = RemoteInfo::from_args(args);
     let SendSshArgs {
         user: _,
         #[cfg(feature = "mdns")]
