@@ -20,6 +20,6 @@ d-builder-compile *ARGS="":
 	docker run \
 		${INTERACTIVE_OPT} \
 		--rm \
-		--volume $(pwd):/usr/src/qft \
+		--mount type=bind,source="$(pwd)",target="/usr/src/qft" \
 		--name {{CONTAINER_ALPINE_BUILDER_TAG}} {{CONTAINER_ALPINE_BUILDER_TAG}} \
 		cargo build --target x86_64-unknown-linux-musl {{ARGS}}
