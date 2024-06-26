@@ -94,20 +94,31 @@ impl<'a> RemoteInfo<'a> {
         }
     }
 
+    // Helper to extract the destination from arguments
+    fn remote_destination_from_args(ssh_args: &'a SendSshArgs) -> Cow<'a, str> {
+        debug_assert!(
+            (ssh_args.target.is_some() && ssh_args.destination.is_none())
+                || (ssh_args.destination.is_some() && ssh_args.target.is_none())
+        );
+        let dest_path = if let Some(TargetComponents {
+            ref destination, ..
+        }) = ssh_args.target
+        {
+            destination
+        } else {
+            if let Some(destination) = &ssh_args.destination {
+                destination
+            } else {
+                unreachable!()
+            }
+        };
+        dest_path.to_string_lossy()
+    }
+
     pub fn from_args(ssh_args: &'a SendSshArgs) -> Result<Self> {
         let mut user: Option<&str> = None;
         let mut remote: Option<Remote> = None;
-        let mut remote_destination: Option<Cow<'a, str>> = None;
-        if let Some(TargetComponents {
-            user: ref user_component,
-            ref host,
-            ref destination,
-        }) = ssh_args.target
-        {
-            user = Some(user_component.as_str());
-            remote = Some(Remote::new(host)?);
-            remote_destination = Some(destination.to_string_lossy())
-        };
+        let remote_destination = Self::remote_destination_from_args(ssh_args);
 
         if let Some(ref u) = ssh_args.user {
             debug_assert!(user.is_none());
@@ -122,10 +133,6 @@ impl<'a> RemoteInfo<'a> {
             debug_assert!(remote.is_none());
             remote = Some(Remote::Ip(ip));
         }
-        if let Some(ref dest) = ssh_args.destination {
-            debug_assert!(remote_destination.is_none());
-            remote_destination = Some(dest.to_string_lossy());
-        }
 
         #[cfg(feature = "mdns")]
         let resolved_ip = remote.unwrap().to_resolved_ip_str(ssh_args.timeout_ms)?;
@@ -136,7 +143,7 @@ impl<'a> RemoteInfo<'a> {
             user.unwrap(),
             ssh_args.ssh_port,
             resolved_ip,
-            remote_destination.unwrap(),
+            remote_destination,
         ))
     }
 }
