@@ -2,12 +2,11 @@ use crate::{
     config::{
         compression::Compression,
         transfer::send::ssh::{SendSshArgs, TargetComponents},
-        Config, IpVersion,
+        Config,
     },
     util::verbosity_to_args,
 };
 use anyhow::{bail, Result};
-use mdns_util::is_mdns_hostname;
 use std::{
     borrow::Cow,
     ffi::OsStr,
@@ -29,31 +28,46 @@ pub const ENV_SSH_PRIVATE_KEY: &str = "QFT_SSH_PRIVATE_KEY";
 
 pub const ENV_REMOTE_USER: &str = "QFT_REMOTE_USER";
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Remote<'a> {
     Ip(&'a str),
+    #[cfg(feature = "mdns")]
     MdnsHostname(&'a str),
 }
 
 impl<'a> Remote<'a> {
     pub fn new(host: &'a str) -> Result<Self> {
         if host.parse::<std::net::IpAddr>().is_ok() {
-            Ok(Self::Ip(host))
-        } else if is_mdns_hostname(host) {
-            Ok(Self::MdnsHostname(host))
-        } else {
-            bail!("'{host}' is not an IP or a mDNS/DNS-SD hostname");
+            return Ok(Self::Ip(host));
         }
+        #[cfg(feature = "mdns")]
+        if mdns_util::is_mdns_hostname(host) {
+            return Ok(Self::MdnsHostname(host));
+        }
+        bail!("'{host}' is not an IP or a mDNS/DNS-SD hostname");
     }
 
-    pub fn resolve(self, timeout_ms: u64) -> Result<Cow<'a, str>> {
+    #[cfg(feature = "mdns")]
+    pub fn to_resolved_ip_str(self, timeout_ms: u64) -> Result<Cow<'a, str>> {
         match self {
             Remote::Ip(ip) => Ok(Cow::Borrowed(ip)),
             Remote::MdnsHostname(hn) => {
-                let ip = mdns_util::get_remote_ip_from_hostname(hn, timeout_ms, IpVersion::V4)?;
+                let ip = mdns_util::get_remote_ip_from_hostname(
+                    hn,
+                    timeout_ms,
+                    crate::config::IpVersion::V4,
+                )?;
                 let ip_str = ip.to_string().into();
                 Ok(ip_str)
             }
+        }
+    }
+
+    #[cfg(not(feature = "mdns"))]
+    pub fn to_ip_str(self) -> Cow<'a, str> {
+        debug_assert!(matches!(self, Remote::Ip(_)));
+        match self {
+            Remote::Ip(ip) => Cow::Borrowed(ip),
         }
     }
 }
@@ -90,15 +104,19 @@ impl<'a> RemoteInfo<'a> {
             debug_assert!(user.is_none());
             user = Some(u);
         }
+        #[cfg(feature = "mdns")]
         if let Some(ref h) = ssh_args.hostname {
             debug_assert!(remote.is_none());
-            remote = Some(Remote::new(&h)?);
+            remote = Some(Remote::new(h)?);
         }
         if let Some(ref ip) = ssh_args.ip {
             debug_assert!(remote.is_none());
-            remote = Some(Remote::Ip(&ip));
+            remote = Some(Remote::Ip(ip));
         }
-        let resolved_ip = remote.unwrap().resolve(ssh_args.timeout_ms)?;
+        #[cfg(feature = "mdns")]
+        let resolved_ip = remote.unwrap().to_resolved_ip_str(ssh_args.timeout_ms)?;
+        #[cfg(not(feature = "mdns"))]
+        let resolved_ip = remote.unwrap().to_ip_str();
 
         Ok(Self::new(user.unwrap(), ssh_args.ssh_port, resolved_ip))
     }
@@ -114,7 +132,8 @@ pub fn handle_send_ssh(
     let remote_info = RemoteInfo::from_args(args)?;
     let SendSshArgs {
         user: _,
-        hostname: _,
+        #[cfg(feature = "mdns")]
+            hostname: _,
         timeout_ms: _,
         ip_version: _,
         ssh_port: _,
@@ -164,6 +183,7 @@ pub fn handle_send_ssh(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_ssh(
     cfg: &Config,
     (username, password): (&str, &str),
@@ -245,9 +265,9 @@ fn run_ssh(
         prealloc,
         compression.into(),
         verbosity_to_args(cfg),
-    )?;
+    );
 
-    log::debug!("Sending cmd {remote_cmd}");
+    log::debug!("Sending remote qft command {remote_cmd}");
 
     let server_ready_flag = AtomicBool::new(false);
     let server_output = std::thread::scope(|scope| {

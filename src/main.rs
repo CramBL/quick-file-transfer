@@ -30,5 +30,5 @@ fn main() -> anyhow::Result<()> {
 
     log::trace!("{cfg:?}");
 
-    run::run(cfg)
+    run::run(&cfg)
 }

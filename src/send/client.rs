@@ -32,7 +32,7 @@ pub fn run_client(
         let file_size = File::open(input_file.unwrap())?.metadata()?.len();
         log::debug!(
             "Requesting preallocation of file of size {} [{file_size} B]",
-            format_data_size(file_size as u64)
+            format_data_size(file_size)
         );
         tcp_stream.write_all(&file_size.to_be_bytes())?;
     }
@@ -62,7 +62,7 @@ fn transfer_data(
     message: Option<&str>,
     use_mmap: bool,
 ) -> Result<u64> {
-    let mut buf_tcp_stream = tcp_bufwriter(&tcp_stream);
+    let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
 
     log::info!("Connecting to: {ip}:{port}");
     if let Some(msg) = message {

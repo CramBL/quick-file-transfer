@@ -6,29 +6,28 @@ use std::{
     path::{Path, PathBuf},
 };
 
+const PRIORITY_KEYS: [&str; 3] = ["ed25519", "rsa", "ecdsa"];
+
+// Gets the path to the first file in `dir` that ends with any of the strings described in [`PRIORITY_KEYS`].
 fn get_private_key_path_from_dir(dir: &Path) -> Result<PathBuf> {
     debug_assert!(dir.is_dir());
-    const PRIORITY_KEYS: [&str; 3] = ["ed25519", "rsa", "ecdsa"];
-    for res in fs::read_dir(&dir)? {
+    for res in fs::read_dir(dir)? {
         match res {
             Ok(dir_entry) => {
-                if dir_entry.file_name().to_str().is_some_and(|s| {
+                if let Some(fname) = dir_entry.file_name().to_str() {
                     for pkeys in PRIORITY_KEYS {
-                        if s.ends_with(pkeys) {
-                            return true;
+                        if fname.ends_with(pkeys) {
+                            return Ok(dir_entry.path());
                         }
                     }
-                    false
-                }) {
-                    return Ok(dir_entry.path());
                 }
             }
             Err(e) => log::error!("{e}"),
         }
     }
     bail!(
-        "Failed retrieving ssh private key from {}. Hint: You can point to another directory with {ENV_SSH_KEY_DIR} or directly to the private key you wish to use with {ENV_SSH_PRIVATE_KEY}",
-        dir.to_string_lossy()
+        "Failed retrieving ssh private key from {dir}. Hint: You can point to another directory with {ENV_SSH_KEY_DIR} or directly to the private key you wish to use with {ENV_SSH_PRIVATE_KEY}",
+        dir = dir.to_string_lossy()
     )
 }
 

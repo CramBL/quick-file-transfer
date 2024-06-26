@@ -6,7 +6,7 @@ pub(super) fn remote_qft_command_str(
     prealloc: bool,
     compression: Option<&crate::config::compression::Compression>,
     verbosity: &str,
-) -> anyhow::Result<String> {
+) -> String {
     let mut cmd = String::from("qft listen ");
     cmd.push_str(verbosity);
     cmd.push_str(" --port ");
@@ -24,6 +24,5 @@ pub(super) fn remote_qft_command_str(
         cmd.push(' ');
         cmd.push_str(compression.variant_as_str());
     }
-    log::debug!("Remote qft command: {cmd}");
-    Ok(cmd)
+    cmd
 }

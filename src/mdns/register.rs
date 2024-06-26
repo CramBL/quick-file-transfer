@@ -11,7 +11,7 @@ pub fn start_mdns_service(
     service_protocol: &str,
     instance_name: &str,
     keep_alive_ms: u64,
-    ip: Option<String>,
+    ip: Option<&str>,
     port: u16,
 ) -> Result<()> {
     let mdns = ServiceDaemon::new()?;
@@ -19,7 +19,7 @@ pub fn start_mdns_service(
     let service_type = format!("_{service_label}._{service_protocol}.local.");
     let ip_str: Option<String> = if let Some(ip) = ip {
         let _ip_addr: IpAddr = ip.parse().expect("Invalid IP address");
-        Some(ip)
+        Some(ip.to_owned())
     } else {
         None
     };
