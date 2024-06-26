@@ -79,7 +79,10 @@ jobs:
 
     - name: Run Container Tests
       if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: just d-test "--verbose -- --ignored --nocapture"
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+        just d-test "--verbose -- --ignored --nocapture"
 
     - name: Test install.sh
       run: |
