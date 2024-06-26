@@ -6,7 +6,7 @@ use crate::{
     },
     util::verbosity_to_args,
 };
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use std::{
     borrow::Cow,
     ffi::OsStr,
@@ -125,9 +125,14 @@ impl<'a> RemoteInfo<'a> {
     }
 
     fn remote_from_args(ssh_args: &'a SendSshArgs) -> Remote {
+        if let Some(TargetComponents { ref host, .. }) = ssh_args.target {
+            return Remote::new(host)
+                .with_context(|| format!("Failed to resolve IP for hostname {host}"))
+                .unwrap();
+        }
+
         #[cfg(feature = "mdns")]
         if let Some(ref h) = ssh_args.hostname {
-            use anyhow::Context;
             return Remote::new(h)
                 .with_context(|| format!("Failed to resolve IP for hostname {h}"))
                 .unwrap();
