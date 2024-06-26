@@ -5,6 +5,7 @@
 ### Added
 
 - `get-free-port` command to retrieve a free port from `0.0.0.0` or a specified IP.
+- `send ssh` command to send files to a remote host similar to how `scp` does it, except that the data transfer does not go over ssh, only the authentication happens over ssh.
 
 ### Fix
 
