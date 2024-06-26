@@ -53,7 +53,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
 
     match listener.accept() {
         Ok((mut socket, addr)) => {
-            log::info!("Client accepted at: {addr:?}");
+            log::debug!("Client accepted at: {addr:?}");
             if *prealloc {
                 let mut size_buffer = [0u8; 8];
                 socket.read_exact(&mut size_buffer)?;
