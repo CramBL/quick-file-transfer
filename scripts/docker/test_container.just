@@ -6,8 +6,8 @@ CONTAINER_HOME := "/home/" + CONTAINER_USERNAME
 
 CONTAINER_QFT_LISTEN_PORT := "12999"
 # Extra ports for other stuff. Don't map hundreds of ports, it will be very slow.
-CONTAINER_QFT_PORT_START := "27000"
-CONTAINER_QFT_PORT_END := "27002"
+CONTAINER_QFT_PORT_START := "49152"
+CONTAINER_QFT_PORT_END := "49154"
 CONTAINER_SSH_PORT := "54320"
 
 # Piggy backing on the target dir used for build artifacts to have a temporary directory that the docker container
