@@ -1,5 +1,6 @@
 use std::ops::RangeInclusive;
 
+use serde::{Deserialize, Serialize};
 use strum_macros::EnumCount;
 
 use super::util::*;
@@ -24,10 +25,32 @@ impl Compression {
             Compression::Xz(_) => "xz",
         }
     }
+
+    /// Returns the compression format variant as [CompressionVariant]
+    pub fn variant(&self) -> CompressionVariant {
+        match self {
+            Compression::Bzip2(_) => CompressionVariant::Bzip2,
+            Compression::Gzip(_) => CompressionVariant::Gzip,
+            Compression::Lz4 => CompressionVariant::Lz4,
+            Compression::Xz(_) => CompressionVariant::Xz,
+        }
+    }
 }
 
 /// This enum exists to be able to specify a variant without specifying arguments, such as with the --omit flag
-#[derive(ValueEnum, Debug, Subcommand, Clone, PartialEq, EnumIter, Display, Copy, EnumCount)]
+#[derive(
+    ValueEnum,
+    Debug,
+    Subcommand,
+    Clone,
+    PartialEq,
+    EnumIter,
+    Display,
+    Copy,
+    EnumCount,
+    Serialize,
+    Deserialize,
+)]
 pub enum CompressionVariant {
     Bzip2,
     Gzip,
