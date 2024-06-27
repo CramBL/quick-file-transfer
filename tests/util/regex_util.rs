@@ -7,6 +7,22 @@ pub const ANSI_ESCAPE_REGEX: &str = r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]";
 pub const WARN_PREFIX: &str = concat!("WARN ", r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]");
 pub const ERROR_PREFIX: &str = concat!("ERROR ", r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]");
 
+/// Helper function to match the raw output of stderr or stdout, with a pattern and return the number of matches
+pub fn regex_matches<S>(case_sensitive: bool, haystack: &str, re: S) -> usize
+where
+    S: AsRef<str> + ToOwned + Display + Into<String>,
+{
+    // Build regex pattern
+    let regex_pattern = if case_sensitive {
+        re.to_string()
+    } else {
+        format!("(?i){re}")
+    };
+    let re = fancy_regex::Regex::new(&regex_pattern).expect("Failed to compile regex");
+    // Count the number of matches
+    re.find_iter(haystack).count()
+}
+
 /// Helper function to match the raw output of stderr or stdout, with a pattern a fixed amount of times, case insensitive
 pub fn match_count<S>(
     case_sensitive: bool,
@@ -24,8 +40,10 @@ where
         format!("(?i){re}")
     };
     let re = fancy_regex::Regex::new(&regex_pattern)?;
+
     // Count the number of matches
     let match_count = re.find_iter(haystack).count();
+
     // Assert that the number of matches is equal to the expected number of matches
     pretty_assert_eq!(
         match_count, expect_match,
