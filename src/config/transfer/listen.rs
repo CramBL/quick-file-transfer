@@ -8,10 +8,11 @@ pub struct ListenArgs {
     #[arg(long, default_value_t  = String::from("0.0.0.0"))]
     pub ip: String,
 
-    /// e.g. 30301
-    #[arg(short, long, default_value_t = 12993,
-        long_help("Specify port to listen on, e.g. 30301. \
-        Prefer ports 1024-49151 as ports below that number are reserved for special use. \
+    /// Prefer ports 49152-65535 as ports outside that range may be reserved.
+    #[arg(short, long, default_value_t = 49152, value_parser = clap::value_parser!(u16).range(1024..),
+        long_help("Specify port to listen on, e.g. 49999. \
+        Prefer ports 49152-65535 as ports outside that range may be reserved, while 49152 and higher are for dynamic use. \
+        \n0-1024 are reserved for special purposes and require root, 1024-49152 can be reserved for various services. \
         \nHigher numbers are preferred for ephemeral/dynamic use (client processes), such as temporary outgoing ssh connections and the likes.")
     )]
     pub port: u16,
