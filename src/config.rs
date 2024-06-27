@@ -31,7 +31,7 @@ pub struct Config {
     #[arg(short, long, action = ArgAction::Count, default_value_t = 0, global = true)]
     pub verbose: u8,
 
-    /// Silence all log output
+    /// Silence all log output, this will lead to better performance.
     #[arg(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
