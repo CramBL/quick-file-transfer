@@ -32,6 +32,7 @@ pub struct SendArgs {
     pub mmap: bool,
 }
 
+#[allow(clippy::large_enum_variant)] // This lint should be revised when command-line args are fairly stabilized
 #[derive(Subcommand, Debug)]
 pub enum SendCommand {
     /// Send to target by specifying IP e.g. `192.1.1.1`

@@ -94,7 +94,6 @@ impl Config {
     }
 }
 
-#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Run in Listen (server) mode
