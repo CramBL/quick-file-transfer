@@ -102,6 +102,7 @@ pub fn run_client(
                         }
                     }
                 };
+                std::thread::sleep(poll_opts.interval);
             }
         }
     };
