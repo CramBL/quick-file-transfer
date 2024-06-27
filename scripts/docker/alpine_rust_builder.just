@@ -4,7 +4,7 @@ CONTAINER_ALPINE_BUILDER_TAG := "qft-alpine-builder"
 # Build the container that can build a binary for the test container (x86_64-unknown-linux-musl)
 [group("Docker"), group("Alpine Builder"), no-exit-message]
 d-builder-build:
-	docker build --file ./docker/Dockerfile_builder \
+	docker build --file ./docker/Dockerfile.builder \
 		--build-arg USER_ID=$(id -u) \
 		-t {{CONTAINER_ALPINE_BUILDER_TAG}} .
 
