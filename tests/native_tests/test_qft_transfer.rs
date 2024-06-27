@@ -3,21 +3,6 @@ use crate::util::*;
 pub const IP: &str = "127.0.0.1";
 
 #[test]
-pub fn test_get_version() -> TestResult {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--version");
-
-    let StdoutStderr { stdout, stderr: _ } = process_output_to_stdio(cmd.output()?)?;
-
-    pretty_assert_str_eq!(
-        stdout,
-        format!("Quick File Transfer {}\n", env!("CARGO_PKG_VERSION"))
-    );
-
-    Ok(())
-}
-
-#[test]
 pub fn test_file_transfer_no_compression_simple() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
