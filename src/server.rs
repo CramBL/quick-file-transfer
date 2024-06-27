@@ -20,13 +20,13 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         port,
         prealloc,
         output: output_file,
-        compression,
+        decompression,
     } = listen_args;
     let listener = TcpListener::bind(format!("{ip}:{port}"))?;
 
     log::info!(
         "Listening on: {ip}:{port} for a {}",
-        match compression {
+        match decompression {
             Some(c) => {
                 match c {
                     CompressionVariant::Bzip2 => "bzip2 compressed file",
@@ -66,7 +66,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
             }
             let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
 
-            let len = match compression {
+            let len = match decompression {
                 Some(compr) => match compr {
                     CompressionVariant::Bzip2 => {
                         let mut tcp_decoder = bzip2::read::BzDecoder::new(buf_tcp_reader);
