@@ -15,11 +15,9 @@ pub fn handle_mdns_command(cmd: &MdnsCommand) -> Result<()> {
         MdnsCommand::Discover(MdnsDiscoverArgs {
             timeout_ms,
             service_type,
-        }) => discover::discover_service_type(
-            &service_type.label,
-            &service_type.protocol,
-            *timeout_ms,
-        ),
+        }) => {
+            discover::discover_service_type(&service_type.label, service_type.protocol, *timeout_ms)
+        }
         MdnsCommand::Resolve(MdnsResolveArgs {
             hostname,
             timeout_ms,
@@ -35,7 +33,7 @@ pub fn handle_mdns_command(cmd: &MdnsCommand) -> Result<()> {
         }) => register::start_mdns_service(
             hostname,
             &service_type.label,
-            &service_type.protocol,
+            service_type.protocol,
             instance_name,
             *keep_alive_ms,
             ip.as_deref(),

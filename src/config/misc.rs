@@ -41,3 +41,18 @@ impl fmt::Display for IpVersion {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum TransportLayerProtocol {
+    TCP,
+    UDP,
+}
+
+impl fmt::Display for TransportLayerProtocol {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TransportLayerProtocol::TCP => write!(f, "tcp"),
+            TransportLayerProtocol::UDP => write!(f, "udp"),
+        }
+    }
+}

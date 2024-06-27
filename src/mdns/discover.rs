@@ -6,11 +6,14 @@ use std::{
     time::Duration,
 };
 
-use crate::mdns::util::{self, MdnsServiceInfo};
+use crate::{
+    config::misc::TransportLayerProtocol,
+    mdns::util::{self, MdnsServiceInfo},
+};
 
 pub fn discover_service_type(
     service_label: &str,
-    service_protocol: &str,
+    service_protocol: TransportLayerProtocol,
     timeout_ms: u64,
 ) -> Result<()> {
     let stopflag = AtomicBool::new(false);

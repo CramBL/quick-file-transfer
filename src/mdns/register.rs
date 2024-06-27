@@ -3,12 +3,15 @@ use std::{net::IpAddr, thread, time::Duration};
 use anyhow::Result;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 
-use crate::mdns::util::{self, mdns_daemon_shutdown};
+use crate::{
+    config::misc::TransportLayerProtocol,
+    mdns::util::{self, mdns_daemon_shutdown},
+};
 
 pub fn start_mdns_service(
     hostname: &str,
     service_label: &str,
-    service_protocol: &str,
+    service_protocol: TransportLayerProtocol,
     instance_name: &str,
     keep_alive_ms: u64,
     ip: Option<&str>,

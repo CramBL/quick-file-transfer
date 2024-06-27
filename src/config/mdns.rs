@@ -18,7 +18,7 @@ pub struct MdnsArgs {
 
 #[derive(Subcommand, Clone, Debug)]
 pub enum MdnsCommand {
-    /// Discover mDNS
+    /// Use DNS-SD to discover services and attempt to resolve them via mDNS.
     Discover(MdnsDiscoverArgs),
     /// Resolve mDNS hostname
     Resolve(MdnsResolveArgs),
@@ -38,5 +38,5 @@ pub struct ServiceTypeArgs {
         visible_alias("proto"),
         value_name = "PROTOCOL"
     )]
-    pub protocol: String,
+    pub protocol: super::misc::TransportLayerProtocol,
 }
