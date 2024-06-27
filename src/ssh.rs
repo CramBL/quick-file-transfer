@@ -171,8 +171,9 @@ pub fn handle_send_ssh(
         user: _,
         #[cfg(feature = "mdns")]
             hostname: _,
+        #[cfg(feature = "mdns")]
+            ip_version: _,
         timeout_ms: _,
-        ip_version: _,
         ssh_port: _,
         compression,
         ip: _,

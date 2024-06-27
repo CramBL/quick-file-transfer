@@ -1,10 +1,6 @@
-use std::path::PathBuf;
-
-use clap::Args;
-
-use crate::config::IpVersion;
-
 use super::Compression;
+use clap::Args;
+use std::path::PathBuf;
 
 #[derive(Debug, Args)]
 #[command(flatten_help = true)]
@@ -51,8 +47,9 @@ pub struct SendSshArgs {
     pub tcp_delay_ms: u64,
 
     /// Preferred IP version (attempts to fall back to another variant if the preferred version is not found)
-    #[arg(long, default_value_t = IpVersion::V4, requires("hostname"))]
-    pub ip_version: IpVersion,
+    #[cfg(feature = "mdns")]
+    #[arg(long, default_value_t = crate::config::IpVersion::V4)]
+    pub ip_version: crate::config::IpVersion,
 
     /// Port for SSH
     #[arg(short('p'), long, default_value_t = 22)]
