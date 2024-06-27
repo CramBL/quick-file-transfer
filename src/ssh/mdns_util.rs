@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use std::net::IpAddr;
 
-use crate::config::IpVersion;
+use crate::config::misc::IpVersion;
 
 pub fn get_remote_ip_from_hostname(
     hostname: &str,

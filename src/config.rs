@@ -16,17 +16,10 @@ pub mod evaluate_compression;
 #[cfg(feature = "mdns")]
 pub mod mdns;
 
-/// Styling for the `help` terminal output
-pub fn cli_styles() -> Styles {
-    Styles::styled()
-        .header(AnsiColor::Yellow.on_default() | Effects::BOLD)
-        .usage(AnsiColor::Yellow.on_default() | Effects::BOLD)
-        .literal(AnsiColor::Blue.on_default())
-        .placeholder(AnsiColor::Green.on_default())
-}
+pub mod misc;
 
 #[derive(Debug, Parser)]
-#[command(name = "Quick File Transfer", version, styles = cli_styles())]
+#[command(name = "Quick File Transfer", version, styles = misc::cli_styles())]
 #[command(bin_name = BIN_NAME)]
 pub struct Config {
     /// Accepted subcommands, e.g. `version`
@@ -103,22 +96,6 @@ impl Config {
     }
 }
 
-#[derive(ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ColorWhen {
-    Always,
-    Auto,
-    Never,
-}
-
-impl std::fmt::Display for ColorWhen {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.to_possible_value()
-            .expect("no values are skipped")
-            .get_name()
-            .fmt(f)
-    }
-}
-
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Subcommand)]
 pub enum Command {
@@ -134,22 +111,6 @@ pub enum Command {
     EvaluateCompression(evaluate_compression::EvaluateCompressionArgs),
     /// Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port.
     GetFreePort(GetFreePortArgs),
-}
-
-#[derive(Debug, Default, ValueEnum, Clone, Copy)]
-pub enum IpVersion {
-    #[default]
-    V4,
-    V6,
-}
-
-impl fmt::Display for IpVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IpVersion::V4 => write!(f, "v4"),
-            IpVersion::V6 => write!(f, "v6"),
-        }
-    }
 }
 
 #[derive(Debug, Args, Clone)]

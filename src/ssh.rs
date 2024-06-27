@@ -58,7 +58,7 @@ impl<'a> Remote<'a> {
                 let ip = mdns_util::get_remote_ip_from_hostname(
                     hn,
                     timeout_ms,
-                    crate::config::IpVersion::V4,
+                    crate::config::misc::IpVersion::V4,
                 )?;
                 let ip_str = ip.to_string().into();
                 Ok(ip_str)

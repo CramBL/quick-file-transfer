@@ -1,8 +1,7 @@
+use mdns_sd::{DaemonStatus, ServiceDaemon, ServiceInfo};
 use std::{borrow::Cow, collections::HashSet, fmt, net::IpAddr};
 
-use mdns_sd::{DaemonStatus, ServiceDaemon, ServiceInfo};
-
-use crate::config::IpVersion;
+use crate::config::misc::IpVersion;
 
 #[derive(Debug, PartialEq)]
 pub struct MdnsServiceInfo {

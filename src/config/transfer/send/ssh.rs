@@ -48,8 +48,8 @@ pub struct SendSshArgs {
 
     /// Preferred IP version (attempts to fall back to another variant if the preferred version is not found)
     #[cfg(feature = "mdns")]
-    #[arg(long, default_value_t = crate::config::IpVersion::V4)]
-    pub ip_version: crate::config::IpVersion,
+    #[arg(long, default_value_t = crate::config::misc::IpVersion::V4)]
+    pub ip_version: crate::config::misc::IpVersion,
 
     /// Port for SSH
     #[arg(short('p'), long, default_value_t = 22)]

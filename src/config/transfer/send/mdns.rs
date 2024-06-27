@@ -1,6 +1,6 @@
 use clap::Args;
 
-use crate::config::IpVersion;
+use crate::config::misc::IpVersion;
 
 use super::Compression;
 
