@@ -29,6 +29,7 @@ bzip2 = "0.4.4"
 mdns-sd = { version = "0.11.1", optional = true }          # Feature: mdns
 comfy-table = { version = "7.1.1", optional = true }       # Feature: evaluate-compression
 ssh-rs = { version = "0.5.0", optional = true }            # Feature: ssh
+clap_complete = "4.5.6"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"

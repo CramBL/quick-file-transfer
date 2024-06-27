@@ -30,5 +30,11 @@ fn main() -> anyhow::Result<()> {
 
     log::trace!("{cfg:?}");
 
+    if let Some(shell) = cfg.completions {
+        config::Config::generate_completion_script(shell);
+        log::info!("Completions generated for {shell:?}. Exiting...");
+        return Ok(());
+    }
+
     run::run(&cfg)
 }

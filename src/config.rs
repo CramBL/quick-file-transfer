@@ -9,6 +9,8 @@ use util::*;
 pub mod compression;
 pub mod transfer;
 
+pub const BIN_NAME: &str = "qft";
+
 #[cfg(feature = "evaluate-compression")]
 pub mod evaluate_compression;
 #[cfg(feature = "mdns")]
@@ -25,11 +27,11 @@ pub fn cli_styles() -> Styles {
 
 #[derive(Debug, Parser)]
 #[command(name = "Quick File Transfer", version, styles = cli_styles())]
-#[command(bin_name = "qft")]
+#[command(bin_name = BIN_NAME)]
 pub struct Config {
     /// Accepted subcommands, e.g. `version`
     #[clap(subcommand)]
-    pub command: Command,
+    pub command: Option<Command>,
 
     /// Pass many times for more log output
     ///
@@ -52,6 +54,15 @@ pub struct Config {
         global = true
     )]
     pub color: clap::ColorChoice,
+
+    /// Generate completion scripts for the specified shell.
+    /// Note: The completion script is printed to stdout
+    #[arg(
+        long = "completions",
+        value_hint = clap::ValueHint::Other,
+        value_name = "SHELL"
+    )]
+    pub completions: Option<clap_complete::Shell>,
 }
 
 impl Config {
@@ -78,6 +89,17 @@ impl Config {
             .init()?;
 
         Ok(cfg)
+    }
+
+    /// Generate completion scripts for the specified shell.
+    pub fn generate_completion_script(shell: clap_complete::Shell) {
+        use clap::CommandFactory;
+        clap_complete::generate(
+            shell,
+            &mut Config::command(),
+            BIN_NAME,
+            &mut std::io::stdout(),
+        );
     }
 }
 
