@@ -344,7 +344,6 @@ fn run_ssh(
             crate::send::client::run_client(
                 remote_ip.parse()?,
                 tcp_port,
-                None,
                 use_mmap,
                 input_file,
                 prealloc,

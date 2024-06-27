@@ -1,4 +1,4 @@
-use crate::config::util::*;
+use crate::{config::util::*, util::IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START};
 
 #[cfg(feature = "mdns")]
 pub mod mdns;
@@ -54,12 +54,9 @@ pub enum SendCommand {
 pub struct SendIpArgs {
     /// IP to send to e.g. `192.0.0.1`
     pub ip: String,
-    /// e.g. 12005
-    #[arg(short, long, default_value_t = 12993, value_parser = clap::value_parser!(u16).range(1..))]
+    /// e.g. 49152. IANA recommends: 49152-65535 for dynamic use.
+    #[arg(short, long, default_value_t = IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START, value_parser = clap::value_parser!(u16).range(1..))]
     pub port: u16,
-    /// Send a message to the server
-    #[arg(short, long)]
-    pub message: Option<String>,
     /// Compression format
     #[command(subcommand)]
     pub compression: Option<Compression>,

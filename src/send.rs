@@ -16,12 +16,10 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
         SendCommand::Ip(SendIpArgs {
             ref ip,
             port,
-            ref message,
             compression,
         }) => run_client(
             ip.parse()?,
             port,
-            message.as_deref(),
             cmd.mmap,
             cmd.file.as_deref(),
             cmd.prealloc,
@@ -33,7 +31,6 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
             timeout_ms,
             ip_version,
             port,
-            ref message,
             compression,
         }) => {
             if let Some(resolved_info) = resolve_mdns_hostname(hostname, timeout_ms, true)? {
@@ -41,7 +38,6 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
                     run_client(
                         *ip,
                         port,
-                        message.as_deref(),
                         cmd.mmap,
                         cmd.file.as_deref(),
                         cmd.prealloc,

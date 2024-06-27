@@ -20,7 +20,6 @@ use anyhow::Result;
 pub fn run_client(
     ip: IpAddr,
     port: u16,
-    message: Option<&str>,
     use_mmap: bool,
     input_file: Option<&Path>,
     prealloc: bool,
@@ -37,14 +36,8 @@ pub fn run_client(
         tcp_stream.write_all(&file_size.to_be_bytes())?;
     }
 
-    let transferred_len = transfer_data(
-        (ip, port),
-        &tcp_stream,
-        compression,
-        input_file,
-        message,
-        use_mmap,
-    )?;
+    let transferred_len =
+        transfer_data((ip, port), &tcp_stream, compression, input_file, use_mmap)?;
 
     log::info!(
         "Sent {} [{transferred_len} B]",
@@ -59,17 +52,11 @@ fn transfer_data(
     tcp_stream: &TcpStream,
     compression: Option<Compression>,
     file: Option<&Path>,
-    message: Option<&str>,
     use_mmap: bool,
 ) -> Result<u64> {
     let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
 
     log::info!("Connecting to: {ip}:{port}");
-    if let Some(msg) = message {
-        let res = buf_tcp_stream.write_all(msg.as_bytes());
-        log::debug!("Wrote message: {msg}");
-        log::debug!("TCP write result: {res:?}");
-    }
 
     // On-stack dynamic dispatch
     let (mut stdin_read, mut file_read, mut mmap_read);

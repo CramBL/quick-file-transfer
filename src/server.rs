@@ -87,7 +87,11 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                 },
                 None => incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut buf_tcp_reader)?,
             };
-            log::info!("Received: {} [{len} B]", format_data_size(len));
+            if len < 1023 {
+                log::info!("Received: {len} B");
+            } else {
+                log::info!("Received: {} [{len} B]", format_data_size(len));
+            }
         }
         Err(e) => println!("Failed accepting connection to client: {e:?}"),
     }
