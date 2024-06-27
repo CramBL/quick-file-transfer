@@ -3,7 +3,7 @@ use crate::config::util::*;
 use super::ServiceTypeArgs;
 
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+#[command(flatten_help = true)]
 pub struct MdnsRegisterArgs {
     /// Service name to register e.g. `foo` (translates to `foo.local.`)
     #[arg(short('n'), long, default_value_t = String::from("test_name"))]

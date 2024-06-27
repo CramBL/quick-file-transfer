@@ -3,7 +3,7 @@ use crate::config::util::*;
 use super::ServiceTypeArgs;
 
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+#[command(flatten_help = true)]
 pub struct MdnsDiscoverArgs {
     #[command(flatten)]
     pub service_type: ServiceTypeArgs,

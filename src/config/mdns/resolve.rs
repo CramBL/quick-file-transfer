@@ -1,7 +1,7 @@
 use crate::config::util::*;
 
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+#[command(flatten_help = true)]
 pub struct MdnsResolveArgs {
     /// mDNS hostname to resolve e.g. `foo` (translates to `foo.local.`)
     pub hostname: String,

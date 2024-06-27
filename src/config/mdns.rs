@@ -10,7 +10,7 @@ pub mod resolve;
 
 /// Holds the mDNS subcommands
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, arg_required_else_help = true)]
+#[command(arg_required_else_help = true)]
 pub struct MdnsArgs {
     #[command(subcommand)]
     pub subcmd: MdnsCommand,

@@ -3,7 +3,7 @@ use strum::EnumCount;
 use super::{compression::CompressionVariant, util::*};
 
 #[derive(Debug, Args, Clone)]
-#[command(args_conflicts_with_subcommands = true, flatten_help = true)]
+#[command(flatten_help = true)]
 pub struct EvaluateCompressionArgs {
     #[arg(short, long)]
     pub input_file: PathBuf,
