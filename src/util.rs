@@ -141,3 +141,34 @@ pub fn verbosity_to_args(cfg: &Config) -> &str {
         }
     }
 }
+
+/// This is for generating pseudo-random number for application client/server hand shake.
+///
+/// It is adapted from: https://docs.rs/rand_xoshiro/latest/src/rand_xoshiro/splitmix64.rs.html
+/// ... and gutted
+///
+/// There's no strong requirement for this random number other than being fast, and lets not add the rand crate as a dependency just for this...
+pub(crate) mod tiny_rnd {
+
+    /// Get a "random" number from a seed (one shot).
+    ///
+    /// # Note
+    ///
+    /// Adapted (gutted) from: https://docs.rs/rand_xoshiro/latest/src/rand_xoshiro/splitmix64.rs.html
+    ///
+    /// Stateless  gutted splitmix64 random number generator.
+    ///
+    /// The gutted splitmix algorithm is NOT suitable for cryptographic purposes, but is
+    /// very fast and has a 64 bit state.
+    pub fn rnd_u32(seed: u64) -> u32 {
+        const PHI: u64 = 0x9e3779b97f4a7c15;
+        let mut z = seed.wrapping_add(PHI);
+        // David Stafford's
+        // (http://zimbry.blogspot.com/2011/09/better-bit-mixing-improving-on.html)
+        // "Mix4" variant of the 64-bit finalizer in Austin Appleby's
+        // MurmurHash3 algorithm.
+        z = (z ^ (z >> 33)).wrapping_mul(0x62A9D9ED799705F5);
+        z = (z ^ (z >> 28)).wrapping_mul(0xCB24D0A5C88C35B3);
+        (z >> 32) as u32
+    }
+}
