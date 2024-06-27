@@ -153,7 +153,7 @@ impl<'a> RemoteInfo<'a> {
 
         #[cfg(feature = "mdns")]
         let resolved_ip = remote
-            .to_resolved_ip_str(ssh_args.timeout_ms)
+            .to_resolved_ip_str(ssh_args.mdns_resolve_timeout_ms)
             .expect("Failed to resolve IP for the specified hostname");
         #[cfg(not(feature = "mdns"))]
         let resolved_ip = remote.to_ip_str();
@@ -176,7 +176,7 @@ pub fn handle_send_ssh(
             hostname: _,
         #[cfg(feature = "mdns")]
             ip_version: _,
-        timeout_ms: _,
+        mdns_resolve_timeout_ms: _,
         ssh_port: _,
         compression,
         ip: _,

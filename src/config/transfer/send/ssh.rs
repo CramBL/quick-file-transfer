@@ -27,13 +27,13 @@ pub struct SendSshArgs {
     #[arg(long, group("target-mode"))]
     pub ip: Option<String>,
 
-    /// Port that will be used to do the transfer via TCP. If no port is specified, the remote will attempt to find a free port.
+    /// Port that will be used to do the transfer via TCP. Prefer leaving this value empty. If no port is specified, the remote will attempt to find a free port. Don't use this unless you have very specific needs.
     #[arg(long)]
     pub tcp_port: Option<u16>,
 
     /// Maximum time (ms) to attempt to resolve IP of mDNS hostname
     #[arg(long, default_value_t = 5000)]
-    pub timeout_ms: u64,
+    pub mdns_resolve_timeout_ms: u64,
 
     /// Maximum time (ms) to attempt to establish an SSH connection
     #[arg(long, default_value_t = 10000)]
