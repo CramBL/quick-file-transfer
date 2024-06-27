@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, Write},
+    io::{self, Read, Write},
     net::{IpAddr, TcpStream},
     path::Path,
 };
@@ -9,14 +9,41 @@ use crate::{
     config::{
         self,
         compression::{Bzip2Args, Compression, GzipArgs, XzArgs},
+        transfer::{
+            command::ServerCommand,
+            util::{PollAbortCondition, TcpConnectMode},
+        },
     },
     mmap_reader::MemoryMappedReader,
     send::util::{file_with_bufreader, stdin_bufreader, tcp_bufwriter},
-    util::{format_data_size, incremental_rw},
+    util::{format_data_size, incremental_rw, tiny_rnd::rnd_u32},
     TCP_STREAM_BUFSIZE,
 };
-use anyhow::Result;
 
+use anyhow::{bail, Result};
+
+fn send_command(stream: &mut TcpStream, command: &ServerCommand) -> anyhow::Result<()> {
+    let command_bytes = bincode::serialize(command)?;
+    debug_assert!(command_bytes.len() <= u8::MAX as usize);
+    let size = command_bytes.len() as u8;
+    let header = size.to_be_bytes();
+
+    // Send the header followed by the command
+    stream.write_all(&header)?;
+    stream.write_all(&command_bytes)?;
+    Ok(())
+}
+
+fn qft_client_handshake(socket: &mut TcpStream) -> anyhow::Result<()> {
+    let mut handshake_buf: [u8; 4] = [0; 4];
+    socket.read_exact(&mut handshake_buf)?;
+    let recv_handshake: u32 = u32::from_be_bytes(handshake_buf);
+    let return_handshake: u32 = rnd_u32(recv_handshake as u64);
+    socket.write_all(&return_handshake.to_be_bytes())?;
+    Ok(())
+}
+
+/// If poll is specified, poll the server with the specified interval, else exut on the first failure to establish a connection.
 pub fn run_client(
     ip: IpAddr,
     port: u16,
@@ -24,18 +51,74 @@ pub fn run_client(
     input_file: Option<&Path>,
     prealloc: bool,
     compression: Option<Compression>,
+    connect_mode: TcpConnectMode,
 ) -> Result<()> {
     let socket_addr = (ip, port);
-    let mut tcp_stream = TcpStream::connect(socket_addr)?;
+
+    let mut tcp_stream = match connect_mode {
+        TcpConnectMode::OneShot => {
+            let mut socket = TcpStream::connect(socket_addr)?;
+            qft_client_handshake(&mut socket)?;
+            socket
+        }
+        TcpConnectMode::Poll(poll_opts) => {
+            let mut attempts: u32 = 0;
+            let now = std::time::Instant::now();
+            loop {
+                match TcpStream::connect(socket_addr) {
+                    Ok(mut socket) => {
+                        if let Err(e) = qft_client_handshake(&mut socket) {
+                            log::warn!("Handshake failed: {e} ... retrying");
+                        } else {
+                            break socket;
+                        }
+                    }
+                    Err(e) => {
+                        log::trace!("Connection attempt failed: {e}");
+                        match e.kind() {
+                            io::ErrorKind::NotFound
+                            | io::ErrorKind::ConnectionRefused
+                            | io::ErrorKind::ConnectionReset
+                            | io::ErrorKind::NotConnected
+                            | io::ErrorKind::BrokenPipe
+                            | io::ErrorKind::TimedOut
+                            | io::ErrorKind::Interrupted => {
+                                log::debug!("Retrying TCP connection in {:?}", poll_opts.interval)
+                            }
+                            _ => bail!(e),
+                        }
+                    }
+                }
+                match poll_opts.abort_condition {
+                    PollAbortCondition::Attempts(att) => {
+                        attempts += 1;
+                        if attempts == att {
+                            bail!("Failed establishing a TCP connection after {att} attempts")
+                        }
+                    }
+                    PollAbortCondition::Timeout(timeout_dur) => {
+                        if now.elapsed() >= timeout_dur {
+                            bail!("Failed establishing a TCP connection after {timeout_dur:?}")
+                        }
+                    }
+                };
+            }
+        }
+    };
+
     if prealloc {
         let file_size = File::open(input_file.unwrap())?.metadata()?.len();
         log::debug!(
             "Requesting preallocation of file of size {} [{file_size} B]",
             format_data_size(file_size)
         );
-        tcp_stream.write_all(&file_size.to_be_bytes())?;
+        let cmd_prealloc = ServerCommand::Prealloc(file_size);
+        log::debug!("Sending command: {cmd_prealloc:?}");
+        send_command(&mut tcp_stream, &cmd_prealloc)?;
     }
 
+    let cmd_receive_data = ServerCommand::ReceiveData(compression.map(|c| c.variant()));
+    send_command(&mut tcp_stream, &cmd_receive_data)?;
     let transferred_len =
         transfer_data((ip, port), &tcp_stream, compression, input_file, use_mmap)?;
 
@@ -54,9 +137,9 @@ fn transfer_data(
     file: Option<&Path>,
     use_mmap: bool,
 ) -> Result<u64> {
-    let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
-
     log::info!("Connecting to: {ip}:{port}");
+
+    let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
 
     // On-stack dynamic dispatch
     let (mut stdin_read, mut file_read, mut mmap_read);

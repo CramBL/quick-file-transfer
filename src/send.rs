@@ -11,8 +11,8 @@ use client::run_client;
 pub mod client;
 pub mod util;
 
-pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
-    match cmd.subcmd {
+pub fn handle_send_cmd(send_args: &SendArgs, _cfg: &Config) -> Result<()> {
+    match send_args.subcmd {
         SendCommand::Ip(SendIpArgs {
             ref ip,
             port,
@@ -20,10 +20,11 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
         }) => run_client(
             ip.parse()?,
             port,
-            cmd.mmap,
-            cmd.file.as_deref(),
-            cmd.prealloc,
+            send_args.mmap,
+            send_args.file.as_deref(),
+            send_args.prealloc,
             compression,
+            send_args.tcp_connect_mode(),
         )?,
         #[cfg(feature = "mdns")]
         SendCommand::Mdns(SendMdnsArgs {
@@ -38,18 +39,24 @@ pub fn handle_send_cmd(cmd: &SendArgs, _cfg: &Config) -> Result<()> {
                     run_client(
                         *ip,
                         port,
-                        cmd.mmap,
-                        cmd.file.as_deref(),
-                        cmd.prealloc,
+                        send_args.mmap,
+                        send_args.file.as_deref(),
+                        send_args.prealloc,
                         compression,
+                        send_args.tcp_connect_mode(),
                     )?;
                 }
             }
         }
         #[cfg(feature = "ssh")]
-        SendCommand::Ssh(ref args) => {
-            crate::ssh::handle_send_ssh(_cfg, args, cmd.file.as_deref(), cmd.prealloc, cmd.mmap)?
-        }
+        SendCommand::Ssh(ref args) => crate::ssh::handle_send_ssh(
+            _cfg,
+            args,
+            send_args.file.as_deref(),
+            send_args.prealloc,
+            send_args.mmap,
+            send_args.tcp_connect_mode(),
+        )?,
     }
     Ok(())
 }

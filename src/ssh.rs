@@ -1,7 +1,10 @@
 use crate::{
     config::{
         compression::Compression,
-        transfer::send::ssh::{SendSshArgs, TargetComponents},
+        transfer::{
+            send::ssh::{SendSshArgs, TargetComponents},
+            util::TcpConnectMode,
+        },
         Config,
     },
     util::{
@@ -168,6 +171,7 @@ pub fn handle_send_ssh(
     input_file: Option<&Path>,
     prealloc: bool,
     use_mmap: bool,
+    tcp_conect_mode: TcpConnectMode,
 ) -> Result<()> {
     let remote_info = RemoteInfo::from_args(args);
     let SendSshArgs {
@@ -219,6 +223,7 @@ pub fn handle_send_ssh(
         *end_port,
         *ssh_timeout_ms,
         *tcp_delay_ms,
+        tcp_conect_mode,
     )?;
 
     Ok(())
@@ -241,6 +246,7 @@ fn run_ssh(
     end_port: u16,
     ssh_timeout_ms: u64,
     tcp_delay_ms: u64,
+    tcp_conect_mode: TcpConnectMode,
 ) -> Result<()> {
     log::debug!("Connecting to {remote_ip} with a timeout of {ssh_timeout_ms} ms");
     let connection_result = ssh::create_session()
@@ -348,6 +354,7 @@ fn run_ssh(
                 input_file,
                 prealloc,
                 *compression,
+                tcp_conect_mode,
             )
         });
         log::trace!("Joining client thread");

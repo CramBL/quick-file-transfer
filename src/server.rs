@@ -2,31 +2,35 @@ use flate2::read::GzDecoder;
 use lz4_flex::frame::FrameDecoder;
 use std::{
     fs::{self, File},
-    io::{self, BufReader, BufWriter, Read, StdoutLock},
-    net::TcpListener,
+    io::{self, BufReader, BufWriter, Read, StdoutLock, Write},
+    net::{TcpListener, TcpStream},
     path::Path,
 };
 
 use crate::{
-    config::{compression::CompressionVariant, transfer::listen::ListenArgs, Config},
-    util::{create_file_with_len, format_data_size, incremental_rw},
+    config::{
+        compression::CompressionVariant,
+        transfer::{command::ServerCommand, listen::ListenArgs},
+        Config,
+    },
+    util::{create_file_with_len, format_data_size, incremental_rw, tiny_rnd::rnd_u32},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     let ListenArgs {
         ip,
         port,
-        prealloc,
-        output: output_file,
+        output: _,
         decompression,
     } = listen_args;
-    let listener = TcpListener::bind(format!("{ip}:{port}"))?;
 
+    let port = port.unwrap();
+    let listener = TcpListener::bind(format!("{ip}:{port}"))?;
     log::info!(
-        "Listening on: {ip}:{port} for a {}",
-        match decompression {
+        "Listening on: {ip}:{port} for a {describe_contents}",
+        describe_contents = match decompression {
             Some(c) => {
                 match c {
                     CompressionVariant::Bzip2 => "bzip2 compressed file",
@@ -38,65 +42,49 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
             None => "raw file",
         }
     );
-    // On-stack dynamic dispatch
-    let (mut stdout_write, mut file_write);
-    let bufwriter: &mut dyn io::Write = match output_file {
-        Some(p) => {
-            file_write = file_with_bufwriter(p)?;
-            &mut file_write
-        }
-        None => {
-            stdout_write = stdout_bufwriter();
-            &mut stdout_write
-        }
-    };
+
+    let handshake_u32 = rnd_u32(std::process::id() as u64);
+    let expect_handshake = rnd_u32(handshake_u32 as u64);
 
     match listener.accept() {
         Ok((mut socket, addr)) => {
             log::debug!("Client accepted at: {addr:?}");
-            if *prealloc {
-                let mut size_buffer = [0u8; 8];
-                socket.read_exact(&mut size_buffer)?;
-                let file_size = u64::from_be_bytes(size_buffer);
-                log::debug!(
-                    "Preallocating file of size {} [{file_size} B]",
-                    format_data_size(file_size)
-                );
-                create_file_with_len(output_file.as_deref().unwrap(), file_size)?;
-            }
-            let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, socket);
-
-            let len = match decompression {
-                Some(compr) => match compr {
-                    CompressionVariant::Bzip2 => {
-                        let mut tcp_decoder = bzip2::read::BzDecoder::new(buf_tcp_reader);
-                        incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
-                    }
-                    CompressionVariant::Gzip => {
-                        let mut tcp_decoder = GzDecoder::new(buf_tcp_reader);
-                        incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
-                    }
-                    CompressionVariant::Lz4 => {
-                        let mut tcp_decoder = FrameDecoder::new(buf_tcp_reader);
-                        incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
-                    }
-                    CompressionVariant::Xz => {
-                        let mut tcp_decoder = xz2::read::XzDecoder::new(buf_tcp_reader);
-                        incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
-                    }
-                },
-                None => incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut buf_tcp_reader)?,
-            };
-            if len < 1023 {
-                log::info!("Received: {len} B");
+            socket.write_all(&handshake_u32.to_be_bytes())?;
+            let mut handshake_buf: [u8; 4] = [0; 4];
+            socket.read_exact(&mut handshake_buf)?;
+            let handshake: u32 = u32::from_be_bytes(handshake_buf);
+            if handshake != expect_handshake {
+                bail!("Received unexpected handshake: {handshake}")
             } else {
-                log::info!("Received: {} [{len} B]", format_data_size(len));
+                log::trace!("QFT handshake OK");
+            }
+
+            let mut header_buf = [0; ServerCommand::HEADER_SIZE];
+            let mut cmd_buf: [u8; 256] = [0; 256];
+            // Main command receive event loop
+            loop {
+                // Read the header to determine the size of the incoming command/data
+                if let Err(e) = socket.read_exact(&mut header_buf) {
+                    if e.kind() == io::ErrorKind::UnexpectedEof {
+                        log::info!("Client disconnected, shutting down...");
+                        break;
+                    } else {
+                        bail!("{e}");
+                    }
+                }
+                let inc_cmd_len = ServerCommand::size_from_bytes(header_buf);
+
+                // Read the actual command/data based on the size
+                if let Err(e) = socket.read_exact(&mut cmd_buf[..inc_cmd_len]) {
+                    anyhow::bail!("Error reading command into buffer: {e}");
+                }
+                let command: ServerCommand = bincode::deserialize(&cmd_buf[..inc_cmd_len])?;
+                log::trace!("Received command: {command:?}");
+                command_handler(&mut socket, command, listen_args)?;
             }
         }
-        Err(e) => println!("Failed accepting connection to client: {e:?}"),
+        Err(e) => bail!(e),
     }
-
-    log::debug!("Server exiting...");
     Ok(())
 }
 
@@ -150,4 +138,79 @@ pub fn file_with_bufwriter(path: &Path) -> Result<BufWriter<File>> {
 pub fn stdout_bufwriter() -> BufWriter<StdoutLock<'static>> {
     let stdout = io::stdout().lock();
     BufWriter::with_capacity(BUFFERED_RW_BUFSIZE, stdout)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn command_handler(
+    tcp_socket: &mut TcpStream,
+    cmd: ServerCommand,
+    listen_args: &ListenArgs,
+) -> anyhow::Result<()> {
+    match cmd {
+        ServerCommand::ReceiveData(decompr) => {
+            handle_receive_data(listen_args, tcp_socket, decompr)?
+        }
+        ServerCommand::GetFreePort => todo!(),
+        ServerCommand::Prealloc(fsize) => {
+            log::debug!(
+                "Preallocating file of size {} [{fsize} B]",
+                format_data_size(fsize)
+            );
+            create_file_with_len(listen_args.output.as_deref().unwrap(), fsize)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_receive_data(
+    listen_args: &ListenArgs,
+    tcp_socket: &mut TcpStream,
+    decompression: Option<CompressionVariant>,
+) -> anyhow::Result<()> {
+    //
+
+    // On-stack dynamic dispatch
+    let (mut stdout_write, mut file_write);
+    let bufwriter: &mut dyn io::Write = match listen_args.output.as_deref() {
+        Some(p) => {
+            file_write = file_with_bufwriter(p)?;
+            &mut file_write
+        }
+        None => {
+            stdout_write = stdout_bufwriter();
+            &mut stdout_write
+        }
+    };
+
+    let mut buf_tcp_reader = BufReader::with_capacity(BUFFERED_RW_BUFSIZE, tcp_socket);
+
+    let len = match decompression {
+        Some(compr) => match compr {
+            CompressionVariant::Bzip2 => {
+                let mut tcp_decoder = bzip2::read::BzDecoder::new(buf_tcp_reader);
+                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+            }
+            CompressionVariant::Gzip => {
+                let mut tcp_decoder = GzDecoder::new(buf_tcp_reader);
+                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+            }
+            CompressionVariant::Lz4 => {
+                let mut tcp_decoder = FrameDecoder::new(buf_tcp_reader);
+                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+            }
+            CompressionVariant::Xz => {
+                let mut tcp_decoder = xz2::read::XzDecoder::new(buf_tcp_reader);
+                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+            }
+        },
+        None => incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut buf_tcp_reader)?,
+    };
+    if len < 1023 {
+        log::info!("Received: {len} B");
+    } else {
+        log::info!("Received: {} [{len} B]", format_data_size(len));
+    }
+
+    Ok(())
 }

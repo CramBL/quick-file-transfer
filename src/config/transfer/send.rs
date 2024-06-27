@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{config::util::*, util::IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START};
 
 #[cfg(feature = "mdns")]
@@ -30,6 +32,49 @@ pub struct SendArgs {
     /// Use memory mapping mode
     #[arg(long, action = ArgAction::SetTrue, requires = "INPUT_FILE", global(true))]
     pub mmap: bool,
+
+    /// Poll the server with a specified interval (ms) until a connection is established.
+    #[arg(
+        long("poll"),
+        global(true),
+        value_name("INTERVAL_MS"),
+        default_value_t = 100
+    )]
+    pub poll: u32,
+
+    /// Disable polling, exit immediately if the first attempt at establishing a connection to the server fails
+    #[arg(
+        long("one-shot"),
+        visible_alias("disable-poll"),
+        default_value_t = false
+    )]
+    pub one_shot: bool,
+
+    /// Maxiumum time to attempt to establish a TCP connection to remote.
+    #[arg(long, default_value = Some("5000"), group("tcp_about_condition"))]
+    pub tcp_timeout_ms: Option<u32>,
+
+    /// Maximum attempts to establish a TCP connection to remote.
+    #[arg(long, group("tcp_about_condition"))]
+    pub tcp_max_attempts: Option<u32>,
+}
+
+impl SendArgs {
+    /// Returns the configured mode for making Tcp connections
+    pub fn tcp_connect_mode(&self) -> TcpConnectMode {
+        if self.one_shot {
+            TcpConnectMode::OneShot
+        } else {
+            let abort_cond = if let Some(attempts) = self.tcp_max_attempts {
+                PollAbortCondition::Attempts(attempts)
+            } else {
+                PollAbortCondition::Timeout(Duration::from_millis(
+                    self.tcp_timeout_ms.unwrap().into(),
+                ))
+            };
+            TcpConnectMode::poll_from_ms(self.poll, abort_cond)
+        }
+    }
 }
 
 #[allow(clippy::large_enum_variant)] // This lint should be revised when command-line args are fairly stabilized
