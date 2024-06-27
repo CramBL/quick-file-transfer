@@ -29,6 +29,11 @@ env:
 lint *ARGS="--all --all-targets -- -D warnings --no-deps":
     cargo clippy {{ ARGS }}
 
+# Lint all feature combinations
+[group("Code Quality"), no-exit-message]
+lint-feature-combination *ARGS:
+    cargo hack clippy --feature-powerset --no-dev-deps {{ARGS}}
+
 # Run pre-commit and formatting/linting
 [group("Code Quality"), no-exit-message]
 pre-commit: && check-version
@@ -48,10 +53,20 @@ format *ARGS:
 check *ARGS:
     cargo check {{ ARGS }}
 
+# Check all feature combinations
+[group("Code Quality"), no-exit-message]
+check-feature-combination *ARGS:
+    cargo hack check --feature-powerset --no-dev-deps {{ARGS}}
+
 # Run the tests
 [group("Test"), no-exit-message]
 test *ARGS:
     cargo test {{ ARGS }}
+
+# Run the tests with all feature combinations
+[group("Test"), no-exit-message]
+test-feature-combination *ARGS:
+    cargo hack test --feature-powerset {{ ARGS }}
 
 # Run tests using the docker test container
 [group("Docker"), group("Test"), no-exit-message]
