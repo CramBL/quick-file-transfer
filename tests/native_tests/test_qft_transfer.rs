@@ -180,7 +180,7 @@ pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
 
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
-        ["--prealloc", "--ip", IP, "--port", port.as_str(), "-vv"],
+        ["--ip", IP, "--port", port.as_str(), "-vv"],
     );
 
     let (
@@ -242,7 +242,6 @@ pub fn test_file_transfer_bzip2_default_with_prealloc() -> TestResult {
             "-vv",
             "--decompression",
             "bzip2",
-            "--prealloc",
         ],
     );
 
@@ -305,7 +304,6 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
             "-vv",
             "--decompression",
             "gzip",
-            "--prealloc",
         ],
     );
 
@@ -315,13 +313,16 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
             server_stderr,
         },
         ClientOutput {
-            client_stdout: _,
+            client_stdout,
             client_stderr,
         },
     ) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
+
+    eprintln!("=== COMMAND STDOUT ===\n{client_stdout}\n^^^COMMAND STDOUT^^^\n");
+    eprintln!("=== COMMAND STDERR ===\n{client_stderr}\n^^^COMMAND STDERR^^^\n");
 
     assert_no_errors_or_warn(&server_stderr)?;
     assert_no_errors_or_warn(&client_stderr)?;
@@ -368,7 +369,6 @@ pub fn test_file_transfer_lz4_default_with_prealloc() -> TestResult {
             "-vv",
             "--decompression",
             "lz4",
-            "--prealloc",
         ],
     );
 
@@ -431,7 +431,6 @@ pub fn test_file_transfer_xz_default_with_prealloc() -> TestResult {
             "-vv",
             "--decompression",
             "xz",
-            "--prealloc",
         ],
     );
 
