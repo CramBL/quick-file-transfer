@@ -28,7 +28,7 @@ pub struct SendSshArgs {
     pub hostname: Option<String>,
 
     /// Ip for the remote
-    #[arg(long, group("target-mode"), conflicts_with("hostname"))]
+    #[arg(long, group("target-mode"))]
     pub ip: Option<String>,
 
     /// Port that will be used to do the transfer via TCP. If no port is specified, the remote will attempt to find a free port.
