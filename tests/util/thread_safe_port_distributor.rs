@@ -43,7 +43,8 @@ pub fn get_free_port(ip: &str) -> Option<PortGuard> {
         .map_err(|e| format!("Invalid IP address: {e}"))
         .unwrap();
     let ports: &Mutex<HashSet<u16>> = get_ports();
-    for port in 1024..65535 {
+    // This range is valid for later windows and should be for most or all unix.
+    for port in 49152..61000 {
         if is_port_available(ip, port) {
             let mut ports = ports.lock().unwrap();
             if !ports.contains(&port) {

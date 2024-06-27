@@ -67,7 +67,9 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
         "-vv",
         &format!("--destination={file_to_receive}"),
         "--start-port",
-        "27000",
+        CONTAINER_DYNAMIC_PORTS_START,
+        "--end-port",
+        CONTAINER_DYNAMIC_PORTS_END,
     ];
     cmd.args(args);
     let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;

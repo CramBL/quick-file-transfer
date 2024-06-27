@@ -67,8 +67,8 @@ pub struct SendSshArgs {
     #[arg(long, env(crate::ssh::ENV_SSH_KEY_DIR))]
     pub ssh_key_dir: Option<PathBuf>,
 
-    /// Start of the port range to look for free ports for TCP transfer
-    #[arg(short, long, default_value_t = 27000)]
+    /// Start of the port range to look for free ports for TCP transfer. IANA recommends: 49152-65535 for dynamic use.
+    #[arg(short, long, default_value_t = 49152)]
     pub start_port: u16,
 
     /// end of the port range to look for free ports for TCP transfer

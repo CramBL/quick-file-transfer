@@ -6,6 +6,8 @@ use std::sync::OnceLock;
 pub const CONTAINER_IP: &str = "127.0.0.1";
 pub const CONTAINER_SSH_PORT: &str = "54320";
 pub const CONTAINER_TCP_PORT: &str = "12999";
+pub const CONTAINER_DYNAMIC_PORTS_START: &str = "49152";
+pub const CONTAINER_DYNAMIC_PORTS_END: &str = "49154";
 pub const CONTAINER_USER: &str = "userfoo";
 pub const CONTAINER_HOME_DOWNLOAD_DIR: &str = "/home/userfoo/downloads";
 

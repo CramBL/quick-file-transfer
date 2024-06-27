@@ -214,8 +214,8 @@ pub fn test_file_transfer_bzip2_default_with_prealloc() -> TestResult {
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
     let port = get_free_port(IP).unwrap();
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.args([
+    let mut cmd_client = Command::cargo_bin(BIN_NAME)?;
+    cmd_client.args([
         "send",
         "ip",
         IP,
@@ -227,7 +227,11 @@ pub fn test_file_transfer_bzip2_default_with_prealloc() -> TestResult {
         "--prealloc",
         "bzip2",
     ]);
-    let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
+    let client_thread = spawn_cmd_thread(
+        "Client thread",
+        cmd_client,
+        Some(Duration::from_millis(200)),
+    );
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
         [
@@ -236,6 +240,7 @@ pub fn test_file_transfer_bzip2_default_with_prealloc() -> TestResult {
             "--port",
             port.as_str(),
             "-vv",
+            "--decompression",
             "bzip2",
             "--prealloc",
         ],
@@ -272,8 +277,8 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
     let port = get_free_port(IP).unwrap();
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.args([
+    let mut cmd_client = Command::cargo_bin(BIN_NAME)?;
+    cmd_client.args([
         "send",
         "ip",
         IP,
@@ -285,7 +290,11 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
         "--prealloc",
         "gzip",
     ]);
-    let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
+    let client_thread = spawn_cmd_thread(
+        "Client thread",
+        cmd_client,
+        Some(Duration::from_millis(200)),
+    );
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
         [
@@ -294,6 +303,7 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
             "--port",
             port.as_str(),
             "-vv",
+            "--decompression",
             "gzip",
             "--prealloc",
         ],
@@ -330,8 +340,8 @@ pub fn test_file_transfer_lz4_default_with_prealloc() -> TestResult {
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
     let port = get_free_port(IP).unwrap();
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.args([
+    let mut cmd_client = Command::cargo_bin(BIN_NAME)?;
+    cmd_client.args([
         "send",
         "ip",
         IP,
@@ -343,7 +353,11 @@ pub fn test_file_transfer_lz4_default_with_prealloc() -> TestResult {
         "--prealloc",
         "lz4",
     ]);
-    let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
+    let client_thread = spawn_cmd_thread(
+        "Client thread",
+        cmd_client,
+        Some(Duration::from_millis(200)),
+    );
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
         [
@@ -352,6 +366,7 @@ pub fn test_file_transfer_lz4_default_with_prealloc() -> TestResult {
             "--port",
             port.as_str(),
             "-vv",
+            "--decompression",
             "lz4",
             "--prealloc",
         ],
@@ -388,8 +403,8 @@ pub fn test_file_transfer_xz_default_with_prealloc() -> TestResult {
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
     let port = get_free_port(IP).unwrap();
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.args([
+    let mut cmd_client = Command::cargo_bin(BIN_NAME)?;
+    cmd_client.args([
         "send",
         "ip",
         IP,
@@ -401,7 +416,11 @@ pub fn test_file_transfer_xz_default_with_prealloc() -> TestResult {
         "--prealloc",
         "xz",
     ]);
-    let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
+    let client_thread = spawn_cmd_thread(
+        "Client thread",
+        cmd_client,
+        Some(Duration::from_millis(200)),
+    );
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
         [
@@ -410,6 +429,7 @@ pub fn test_file_transfer_xz_default_with_prealloc() -> TestResult {
             "--port",
             port.as_str(),
             "-vv",
+            "--decompression",
             "xz",
             "--prealloc",
         ],
@@ -446,8 +466,8 @@ pub fn test_file_transfer_bzip2_compr_level_1() -> TestResult {
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
     let port = get_free_port(IP).unwrap();
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.args([
+    let mut cmd_client = Command::cargo_bin(BIN_NAME)?;
+    cmd_client.args([
         "send",
         "ip",
         IP,
@@ -459,10 +479,22 @@ pub fn test_file_transfer_bzip2_compr_level_1() -> TestResult {
         "bzip2",
         "1",
     ]);
-    let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
+    let client_thread = spawn_cmd_thread(
+        "Client thread",
+        cmd_client,
+        Some(Duration::from_millis(200)),
+    );
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
-        ["--ip", IP, "--port", port.as_str(), "-vv", "bzip2"],
+        [
+            "--ip",
+            IP,
+            "--port",
+            port.as_str(),
+            "-vv",
+            "--decompression",
+            "bzip2",
+        ],
     );
 
     let (
@@ -512,7 +544,14 @@ pub fn test_file_transfer_gzip_compr_level_1() -> TestResult {
     let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
-        ["--ip", IP, "--port", port.as_str(), "-vv", "gzip"],
+        [
+            "--ip",
+            IP,
+            "--port",
+            port.as_str(),
+            "-vv",
+            "--decompression=gzip",
+        ],
     );
 
     let (
@@ -562,7 +601,15 @@ pub fn test_file_transfer_xz_compr_level_1() -> TestResult {
     let client_thread = spawn_cmd_thread("Client thread", cmd, Some(Duration::from_millis(200)));
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
-        ["--ip", IP, "--port", port.as_str(), "-vv", "xz"],
+        [
+            "--ip",
+            IP,
+            "--port",
+            port.as_str(),
+            "-vv",
+            "--decompression",
+            "xz",
+        ],
     );
 
     let (
