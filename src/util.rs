@@ -102,6 +102,10 @@ pub fn get_free_port(ip: &str) -> Option<u16> {
     None
 }
 
+/// see more: https://www.rfc-editor.org/rfc/rfc6335.html#section-6
+pub const IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START: u16 = 49152;
+pub const IANA_RECOMMEND_DYNAMIC_PORT_RANGE_END: u16 = 65535;
+
 /// Bind to any available port within the specified range on `ip`,
 /// then retrieve the socket address from the listener.
 ///

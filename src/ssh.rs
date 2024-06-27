@@ -4,7 +4,10 @@ use crate::{
         transfer::send::ssh::{SendSshArgs, TargetComponents},
         Config,
     },
-    util::verbosity_to_args,
+    util::{
+        verbosity_to_args, IANA_RECOMMEND_DYNAMIC_PORT_RANGE_END,
+        IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START,
+    },
 };
 use anyhow::{bail, Context, Result};
 use std::{
@@ -260,6 +263,9 @@ fn run_ssh(
             const GET_FREE_PORT_CMD_PREFIX: &str = "qft get-free-port";
             const START_PORT_OPTION: &str = "--start-port";
             const END_PORT_OPTION: &str = "--end-port";
+            if start_port < crate::util::IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START {
+                log::warn!("Specified start port range of {start_port} is outside of the IANA recommended range for dynamic ports ({}-{})", IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START, IANA_RECOMMEND_DYNAMIC_PORT_RANGE_END);
+            }
             let get_free_port_cmd = format!("{GET_FREE_PORT_CMD_PREFIX} {START_PORT_OPTION} {start_port} {END_PORT_OPTION} {end_port} -q",            );
             log::debug!(
                 "No TCP port specified, querying remote for a free port with '{get_free_port_cmd}'"
