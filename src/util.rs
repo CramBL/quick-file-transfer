@@ -104,6 +104,15 @@ pub fn get_free_port(ip: &str) -> Option<u16> {
 
 /// Bind to any available port within the specified range on `ip`,
 /// then retrieve the socket address from the listener.
+///
+///
+/// # Note
+///
+/// Internet Assigned Numbers Authority (IANA) suggests 49152-65535 for dynamic/ephemeral use.
+/// Although note that Linux distros often use 32768-61000 so a conservative/robust range of
+/// 49152-61000 is preferable.
+///
+/// see more: https://www.rfc-editor.org/rfc/rfc6335.html#section-6
 pub fn get_free_port_in_range(ip: &str, start_port: u16, end_port: u16) -> Option<u16> {
     for port in start_port..=end_port {
         if let Ok(listener) = TcpListener::bind((ip, port)) {
