@@ -1,7 +1,7 @@
 use anyhow::bail;
 
 use crate::{
-    config::GetFreePortArgs,
+    config::get_free_port::GetFreePortArgs,
     util::{self, get_free_port_in_range},
 };
 

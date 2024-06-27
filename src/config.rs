@@ -1,5 +1,3 @@
-use std::net::IpAddr;
-
 use anyhow::Result;
 use stderrlog::LogLevelNum;
 use transfer::{listen::ListenArgs, send::SendArgs};
@@ -13,16 +11,16 @@ pub const BIN_NAME: &str = "qft";
 
 #[cfg(feature = "evaluate-compression")]
 pub mod evaluate_compression;
+pub mod get_free_port;
 #[cfg(feature = "mdns")]
 pub mod mdns;
-
 pub mod misc;
 
 #[derive(Debug, Parser)]
 #[command(name = "Quick File Transfer", version, styles = misc::cli_styles())]
 #[command(bin_name = BIN_NAME)]
 pub struct Config {
-    /// Accepted subcommands, e.g. `version`
+    /// Accepted subcommands, e.g. `listen`
     #[clap(subcommand)]
     pub command: Option<Command>,
 
@@ -33,7 +31,7 @@ pub struct Config {
     #[arg(short, long, action = ArgAction::Count, default_value_t = 0, global = true)]
     pub verbose: u8,
 
-    /// Silence all output
+    /// Silence all log output
     #[arg(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
@@ -110,28 +108,5 @@ pub enum Command {
     #[cfg(feature = "evaluate-compression")]
     EvaluateCompression(evaluate_compression::EvaluateCompressionArgs),
     /// Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port.
-    GetFreePort(GetFreePortArgs),
-}
-
-#[derive(Debug, Args, Clone)]
-#[command(flatten_help = true)]
-pub struct GetFreePortArgs {
-    /// Host IP e.g. `127.0.0.1` for localhost
-    #[arg(default_value_t  = String::from("0.0.0.0"), value_parser = valid_ip)]
-    pub ip: String,
-
-    /// Start of the port range e.g. 50000. IANA recommends: 49152-65535 for dynamic use.
-    #[arg(short, long)]
-    pub start_port: Option<u16>,
-
-    /// End of the port range e.g. 51000. IANA recommends: 49152-65535 for dynamic use.
-    #[arg(short, long, requires("start_port"))]
-    pub end_port: Option<u16>,
-}
-
-fn valid_ip(ip_str: &str) -> Result<String, String> {
-    if ip_str.parse::<IpAddr>().is_err() {
-        return Err(format!("'{ip_str}' is not a valid IP address."));
-    }
-    Ok(ip_str.to_owned())
+    GetFreePort(get_free_port::GetFreePortArgs),
 }
