@@ -21,6 +21,10 @@ pub struct ListenArgs {
     #[arg(short('o'), long, value_name("PATH"), name("OUTPUT"), global(true))]
     pub output: Option<PathBuf>,
 
+    /// Specify a directory for storing received files. Files retain their original name from the client host.
+    #[arg(long("output-dir"), value_name("DIRECTORY"), global(true))]
+    pub output_dir: Option<PathBuf>,
+
     /// Compression format of the received file, incremental decompression is performed as the data is received.
     #[arg(short('d'), long, global(true))]
     pub decompression: Option<CompressionVariant>,
