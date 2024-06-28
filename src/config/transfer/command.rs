@@ -9,7 +9,7 @@ use crate::config::compression::CompressionVariant;
 pub enum ServerCommand {
     GetFreePort,
     Prealloc(u64),
-    ReceiveData(Option<CompressionVariant>),
+    ReceiveData(String, Option<CompressionVariant>),
 }
 
 impl ServerCommand {

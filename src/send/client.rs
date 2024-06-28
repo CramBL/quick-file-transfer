@@ -32,6 +32,11 @@ pub fn run_client(
     connect_mode: TcpConnectMode,
 ) -> Result<()> {
     let mut tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
+    let fname: String = if let Some(f) = input_file {
+        f.file_name().unwrap().to_string_lossy().into_owned()
+    } else {
+        String::from("stdin")
+    };
 
     if prealloc {
         let file_size = File::open(input_file.unwrap())?.metadata()?.len();
@@ -42,7 +47,7 @@ pub fn run_client(
         send_command(&mut tcp_stream, &ServerCommand::Prealloc(file_size))?;
     }
 
-    let cmd_receive_data = ServerCommand::ReceiveData(compression.map(|c| c.variant()));
+    let cmd_receive_data = ServerCommand::ReceiveData(fname, compression.map(|c| c.variant()));
     send_command(&mut tcp_stream, &cmd_receive_data)?;
     let transferred_len =
         transfer_data((ip, port), &tcp_stream, compression, input_file, use_mmap)?;

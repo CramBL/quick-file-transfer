@@ -26,7 +26,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         port,
         output: _,
         decompression,
-        output_dir,
+        output_dir: _,
     } = listen_args;
 
     let port = port.unwrap();
@@ -127,8 +127,9 @@ fn command_handler(
     listen_args: &ListenArgs,
 ) -> anyhow::Result<()> {
     match cmd {
-        ServerCommand::ReceiveData(decompr) => {
-            handle_receive_data(listen_args, tcp_socket, decompr)?
+        ServerCommand::ReceiveData(fname, decompr) => {
+            log::debug!("Received file with name: {fname}");
+            handle_receive_data(listen_args, tcp_socket, fname, decompr)?
         }
         ServerCommand::GetFreePort => todo!(),
         ServerCommand::Prealloc(fsize) => {
@@ -146,20 +147,37 @@ fn command_handler(
 fn handle_receive_data(
     listen_args: &ListenArgs,
     tcp_socket: &mut TcpStream,
+    fname: String,
     decompression: Option<CompressionVariant>,
 ) -> anyhow::Result<()> {
-    //
-
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
-    let bufwriter: &mut dyn io::Write = match listen_args.output.as_deref() {
-        Some(p) => {
-            file_write = file_with_bufwriter(p)?;
+
+    let bufwriter: &mut dyn io::Write = match (
+        listen_args.output.as_deref(),
+        listen_args.output_dir.as_deref(),
+    ) {
+        (None, Some(d)) => {
+            if !d.is_dir() && d.exists() {
+                bail!("Output directory path {d:?} is invalid - has to point at a directory or non-existent path")
+            }
+            if !d.exists() {
+                fs::create_dir(d)?;
+            }
+            let new_fpath = d.join(fname);
+            file_write = file_with_bufwriter(&new_fpath)?;
             &mut file_write
         }
-        None => {
+        (Some(f), None) => {
+            file_write = file_with_bufwriter(f)?;
+            &mut file_write
+        }
+        (None, None) => {
             stdout_write = stdout_bufwriter();
             &mut stdout_write
+        }
+        (Some(_), Some(_)) => {
+            unreachable!("Specifying both an output name and an output directory is invalid")
         }
     };
 

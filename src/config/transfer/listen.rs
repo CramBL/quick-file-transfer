@@ -18,11 +18,16 @@ pub struct ListenArgs {
     pub port: Option<u16>,
 
     /// Supply a path for outputting contents (if none: use stdio)
-    #[arg(short('o'), long, value_name("PATH"), name("OUTPUT"), global(true))]
+    #[arg(short('o'), long, value_name("PATH"), global(true), group("OUTPUT"))]
     pub output: Option<PathBuf>,
 
     /// Specify a directory for storing received files. Files retain their original name from the client host.
-    #[arg(long("output-dir"), value_name("DIRECTORY"), global(true))]
+    #[arg(
+        long("output-dir"),
+        value_name("DIRECTORY"),
+        global(true),
+        group("OUTPUT")
+    )]
     pub output_dir: Option<PathBuf>,
 
     /// Compression format of the received file, incremental decompression is performed as the data is received.
