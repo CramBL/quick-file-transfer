@@ -2,7 +2,7 @@ use flate2::read::GzDecoder;
 use lz4_flex::frame::FrameDecoder;
 use std::{
     fs::{self, File},
-    io::{self, BufReader, BufWriter, Read, StdoutLock, Write},
+    io::{self, BufReader, BufWriter, StdoutLock},
     net::{TcpListener, TcpStream},
     path::Path,
 };
@@ -13,7 +13,9 @@ use crate::{
         transfer::{command::ServerCommand, listen::ListenArgs},
         Config,
     },
-    util::{create_file_with_len, format_data_size, incremental_rw, tiny_rnd::rnd_u32},
+    util::{
+        create_file_with_len, format_data_size, incremental_rw, read_server_cmd, server_handshake,
+    },
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::{bail, Result};
@@ -24,6 +26,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         port,
         output: _,
         decompression,
+        output_dir,
     } = listen_args;
 
     let port = port.unwrap();
@@ -43,44 +46,21 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         }
     );
 
-    let handshake_u32 = rnd_u32(std::process::id() as u64);
-    let expect_handshake = rnd_u32(handshake_u32 as u64);
-
     match listener.accept() {
         Ok((mut socket, addr)) => {
             log::debug!("Client accepted at: {addr:?}");
-            socket.write_all(&handshake_u32.to_be_bytes())?;
-            let mut handshake_buf: [u8; 4] = [0; 4];
-            socket.read_exact(&mut handshake_buf)?;
-            let handshake: u32 = u32::from_be_bytes(handshake_buf);
-            if handshake != expect_handshake {
-                bail!("Received unexpected handshake: {handshake}")
-            } else {
-                log::trace!("QFT handshake OK");
-            }
+            server_handshake(&mut socket)?;
 
-            let mut header_buf = [0; ServerCommand::HEADER_SIZE];
             let mut cmd_buf: [u8; 256] = [0; 256];
             // Main command receive event loop
             loop {
-                // Read the header to determine the size of the incoming command/data
-                if let Err(e) = socket.read_exact(&mut header_buf) {
-                    if e.kind() == io::ErrorKind::UnexpectedEof {
-                        log::info!("Client disconnected, shutting down...");
-                        break;
-                    } else {
-                        bail!("{e}");
-                    }
+                if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
+                    log::trace!("Received command: {cmd:?}");
+                    command_handler(&mut socket, cmd, listen_args)?;
+                } else {
+                    log::info!("Client disconnected, shutting down...");
+                    break;
                 }
-                let inc_cmd_len = ServerCommand::size_from_bytes(header_buf);
-
-                // Read the actual command/data based on the size
-                if let Err(e) = socket.read_exact(&mut cmd_buf[..inc_cmd_len]) {
-                    anyhow::bail!("Error reading command into buffer: {e}");
-                }
-                let command: ServerCommand = bincode::deserialize(&cmd_buf[..inc_cmd_len])?;
-                log::trace!("Received command: {command:?}");
-                command_handler(&mut socket, command, listen_args)?;
             }
         }
         Err(e) => bail!(e),

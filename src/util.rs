@@ -1,8 +1,11 @@
+use crate::config::transfer::command::ServerCommand;
 use crate::config::Config;
-use anyhow::Result;
+use anyhow::{bail, Result};
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::{fmt, fs, io};
+use tiny_rnd::rnd_u32;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Address<'cfg> {
@@ -140,6 +143,48 @@ pub fn verbosity_to_args(cfg: &Config) -> &str {
             _ => "",
         }
     }
+}
+
+/// Do the basic handshake from the serverside to ensure we're talking to a QFT client
+pub fn server_handshake(socket: &mut TcpStream) -> anyhow::Result<()> {
+    let handshake_u32 = rnd_u32(std::process::id() as u64);
+    let expect_handshake = rnd_u32(handshake_u32 as u64);
+
+    socket.write_all(&handshake_u32.to_be_bytes())?;
+    let mut handshake_buf: [u8; 4] = [0; 4];
+    socket.read_exact(&mut handshake_buf)?;
+    let handshake: u32 = u32::from_be_bytes(handshake_buf);
+
+    if handshake != expect_handshake {
+        bail!("Received unexpected handshake: {handshake}")
+    } else {
+        log::trace!("QFT handshake OK");
+    }
+    Ok(())
+}
+
+pub fn read_server_cmd(
+    socket: &mut TcpStream,
+    cmd_buf: &mut [u8],
+) -> anyhow::Result<Option<ServerCommand>> {
+    let mut header_buf = [0; ServerCommand::HEADER_SIZE];
+    // Read the header to determine the size of the incoming command/data
+    if let Err(e) = socket.read_exact(&mut header_buf) {
+        if e.kind() == io::ErrorKind::UnexpectedEof {
+            // Ok but no command indicates the client disconnected
+            return Ok(None);
+        } else {
+            bail!("{e}");
+        }
+    }
+    let inc_cmd_len = ServerCommand::size_from_bytes(header_buf);
+
+    // Read the actual command/data based on the size
+    if let Err(e) = socket.read_exact(&mut cmd_buf[..inc_cmd_len]) {
+        anyhow::bail!("Error reading command into buffer: {e}");
+    }
+    let command: ServerCommand = bincode::deserialize(&cmd_buf[..inc_cmd_len])?;
+    Ok(Some(command))
 }
 
 /// This is for generating pseudo-random number for application client/server hand shake.
