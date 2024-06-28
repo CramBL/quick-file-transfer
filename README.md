@@ -1,4 +1,3 @@
-
 # Quick File Transfer (qft)
 
 [![CI](https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml/badge.svg)](https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml)
@@ -10,8 +9,7 @@
   - [Examples](#examples)
     - [File transfer](#file-transfer)
     - [Host #1](#host-1)
-    - [Host #2](#host-2)
-    - [CI script](#ci-script)
+    - [CI script with no SSH auth](#ci-script-with-no-ssh-auth)
     - [Evaluate compression](#evaluate-compression)
     - [mDNS utilities](#mdns-utilities)
       - [Discover services](#discover-services)
@@ -28,7 +26,7 @@ Transfer files as **quickly**, **safely**, and **painlessly** as possible on a l
 
 `qft` optimizes for a scenario where embedded systems regularly transfer large files across a local network, such as a continuous integration pipeline where firmware (e.g. Rauc) can take significant time to transfer with tools such as `rsync`, `scp`, or `netcat`.
 
-To accomplish this, `qft` acts as a server/client that transfers data over TCP. It is very similar to how `netcat` can be used to transfer files, but `qft` focuses solely on transferring files, and comes with a variety of customization options such as [compression/decompression](#supported-compression-formats), memory mapping, preallocation options and more. TCP is chosen for reliable data transfer, and no authentication or encryption is layered on top to reduce the overhead.
+To accomplish this, `qft` acts as a server/client that transfers data over TCP. It is very similar to how `netcat` can be used to transfer files, but `qft` focuses solely on transferring files, and comes with a variety of customization options such as [compression/decompression](#supported-compression-formats), memory mapping, preallocation options and more. TCP is chosen for reliable data transfer, and no authentication or encryption is layered on top to reduce the overhead, addressing remote targets by mDNS is also supported.
 
 If you are worried about a man-in-the-middle, you can simply check your data on the receiving end before continuing. There should be no additional security concerns (if you disagree, please create an issue highlighting the concern).
 
@@ -37,51 +35,46 @@ If you are worried about a man-in-the-middle, you can simply check your data on 
 - [x] Send files via TCP by specifying either IP or mDNS/DNS-SD hostname
 - [x] Evaluate [supported compression formats](#supported-compression-formats) on your input data
 - [x] Discover, resolve, and/or register mDNS/DNS-SD services
+- [x] SCP like transfers `qft send <user>@<host>:<dest> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.
+- [x] Shell completions for bash, elvish, fish, powershell, and zsh.
 
 ## Usage
 
 ```markdown
 $ qft -h
-Usage: qft [OPTIONS] <COMMAND>
+Usage: qft [OPTIONS] [COMMAND]
 
 Commands:
   listen                Run in Listen (server) mode
   send                  Run in Send (client) mode
   mdns                  Use mDNS utilities
   evaluate-compression  Evaluate which compression works best for file content
+  get-free-port         Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port
   help                  Print this message or the help of the given subcommand(s)
 
 Options:
-  -v, --verbose...    Pass many times for more log output
-  -q, --quiet         Silence all output [env: QFT_QUIET=]
-      --color=<WHEN>  [default: auto] [possible values: auto, always, never]
-  -h, --help          Print help (see more with '--help')
-  -V, --version       Print version
+  -v, --verbose...           Pass many times for more log output
+  -q, --quiet                Silence all log output, this will lead to better performance [env: QFT_QUIET=]
+      --color=<WHEN>         [default: auto] [possible values: auto, always, never]
+      --completions <SHELL>  Generate completion scripts for the specified shell. Note: The completion script is printed to stdout [possible values: bash, elvish, fish, powershell, zsh]
+  -h, --help                 Print help (see more with '--help')
+  -V, --version              Print version
 ```
 
 ## Examples
 
 ### File transfer
 
-In a CI script Host #2 could simply ssh into Host #1 and launch the `qft listen` command as a background process before invoking `qft send`.
+In a CI script using key based SSH auth, it looks very similar to SCP.
+> Both hosts need qft installed!
 
 ### Host #1
 
-Listen on port `1234`.
-
 ```shell
-qft listen --ip 0.0.0.0 --port 12345 --file received.data
+qft send ssh foo@bar.local:/tmp/data --file received.data
 ```
 
-### Host #2
-
-Transfer a file to **Host #1**.
-
-```shell
-qft send ip <HOST-1-IP> --port 12345 --file transfer.data
-```
-
-### CI script
+### CI script with no SSH auth
 
 Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.
 
