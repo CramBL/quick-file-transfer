@@ -6,6 +6,7 @@ pub(super) fn remote_qft_command_str(
     prealloc: bool,
     compression: Option<&crate::config::compression::Compression>,
     verbosity: &str,
+    multiple_transfers: bool,
 ) -> String {
     let mut cmd = String::from("qft listen ");
     cmd.push_str(verbosity);
@@ -15,7 +16,11 @@ pub(super) fn remote_qft_command_str(
     if prealloc {
         cmd.push_str(" --prealloc");
     }
-    cmd.push_str(" --output ");
+    if multiple_transfers {
+        cmd.push_str(" --output-dir ");
+    } else {
+        cmd.push_str(" --output ");
+    }
     cmd.push_str(destination);
 
     if let Some(compression) = compression {

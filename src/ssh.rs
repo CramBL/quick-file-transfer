@@ -239,7 +239,7 @@ fn run_ssh(
     ssh_port: u16,
     tcp_port: Option<u16>,
     use_mmap: bool,
-    input_file: &[PathBuf],
+    input_files: &[PathBuf],
     prealloc: bool,
     compression: &Option<Compression>,
     start_port: u16,
@@ -315,6 +315,7 @@ fn run_ssh(
         prealloc,
         compression.into(),
         verbosity_to_args(cfg),
+        input_files.len() > 1,
     );
 
     log::debug!("Sending remote qft command {remote_cmd}");
@@ -341,7 +342,7 @@ fn run_ssh(
         let client_h = scope.spawn(|| {
             log::debug!("Starting client thread targetting {remote_ip}:{tcp_port}");
             log::trace!("use mmap: {use_mmap}");
-            log::trace!("file: {input_file:?}");
+            log::trace!("file(s): {input_files:?}");
             log::trace!("prealloc: {prealloc}");
             log::trace!("compression: {:?}", compression);
             while !server_ready_flag.load(Ordering::Relaxed) {
@@ -351,7 +352,7 @@ fn run_ssh(
                 remote_ip.parse()?,
                 tcp_port,
                 use_mmap,
-                input_file,
+                input_files,
                 prealloc,
                 *compression,
                 tcp_conect_mode,
