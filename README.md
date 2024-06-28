@@ -35,7 +35,7 @@ If you are worried about a man-in-the-middle, you can simply check your data on 
 - [x] Send files via TCP by specifying either IP or mDNS/DNS-SD hostname
 - [x] Evaluate [supported compression formats](#supported-compression-formats) on your input data
 - [x] Discover, resolve, and/or register mDNS/DNS-SD services
-- [x] SCP like transfers `qft send <user>@<host>:<dest> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.
+- [x] SCP like transfers `qft send ssh <user>@<host>:<path> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.
 - [x] Shell completions for bash, elvish, fish, powershell, and zsh.
 
 ## Usage

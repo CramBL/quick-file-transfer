@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[command(flatten_help = true)]
 #[cfg(feature = "ssh")]
 pub struct SendSshArgs {
-    /// 'classic' ssh/scp form of `<user>@<hostname>:<dst>`
+    /// 'classic' ssh/scp form of `<user>@<hostname>:<path>`
     #[arg(conflicts_with("target-mode"), group("arg-mode"), value_parser = parse_scp_style)]
     pub target: Option<TargetComponents>,
 
