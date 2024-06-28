@@ -1,12 +1,12 @@
 use std::time::Duration;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum TcpConnectMode {
     OneShot,
     Poll(TcpPollOptions),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct TcpPollOptions {
     pub interval: Duration,
     pub abort_condition: PollAbortCondition,
@@ -21,7 +21,7 @@ impl TcpPollOptions {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum PollAbortCondition {
     Attempts(u32),
     Timeout(Duration),

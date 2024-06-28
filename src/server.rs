@@ -46,24 +46,30 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         }
     );
 
-    match listener.accept() {
-        Ok((mut socket, addr)) => {
-            log::debug!("Client accepted at: {addr:?}");
-            server_handshake(&mut socket)?;
+    let mut expect_data_recv_cnt = 1;
+    while expect_data_recv_cnt > 0 {
+        match listener.accept() {
+            Ok((mut socket, addr)) => {
+                expect_data_recv_cnt -= 1;
+                log::debug!("Client accepted at: {addr:?}");
+                server_handshake(&mut socket)?;
 
-            let mut cmd_buf: [u8; 256] = [0; 256];
-            // Main command receive event loop
-            loop {
-                if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
-                    log::trace!("Received command: {cmd:?}");
-                    command_handler(&mut socket, cmd, listen_args)?;
-                } else {
-                    log::info!("Client disconnected, shutting down...");
-                    break;
+                let mut cmd_buf: [u8; 256] = [0; 256];
+                // Main command receive event loop
+                loop {
+                    if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
+                        log::trace!("Received command: {cmd:?}");
+                        let expect_more_data = command_handler(&mut socket, cmd, listen_args)?;
+                        log::trace!("Expecting {expect_more_data} more data transfers");
+                        expect_data_recv_cnt = expect_more_data;
+                    } else {
+                        log::info!("Client disconnected...");
+                        break;
+                    }
                 }
             }
+            Err(e) => bail!(e),
         }
-        Err(e) => bail!(e),
     }
     Ok(())
 }
@@ -125,11 +131,12 @@ fn command_handler(
     tcp_socket: &mut TcpStream,
     cmd: ServerCommand,
     listen_args: &ListenArgs,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<u32> {
     match cmd {
-        ServerCommand::ReceiveData(fname, decompr) => {
-            log::debug!("Received file with name: {fname}");
-            handle_receive_data(listen_args, tcp_socket, fname, decompr)?
+        ServerCommand::ReceiveData(f_count, fname, decompr) => {
+            log::debug!("Received file list: {fname:?}");
+            handle_receive_data(listen_args, tcp_socket, fname, decompr)?;
+            return Ok(f_count);
         }
         ServerCommand::GetFreePort => todo!(),
         ServerCommand::Prealloc(fsize) => {
@@ -141,7 +148,7 @@ fn command_handler(
         }
     }
 
-    Ok(())
+    Ok(0)
 }
 
 fn handle_receive_data(
@@ -149,7 +156,7 @@ fn handle_receive_data(
     tcp_socket: &mut TcpStream,
     fname: String,
     decompression: Option<CompressionVariant>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<u64> {
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
 
@@ -210,5 +217,5 @@ fn handle_receive_data(
         log::info!("Received: {} [{len} B]", format_data_size(len));
     }
 
-    Ok(())
+    Ok(len)
 }

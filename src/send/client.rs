@@ -2,7 +2,7 @@ use std::{
     fs::File,
     io::{self, Write},
     net::{IpAddr, TcpStream},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use crate::{
@@ -26,42 +26,60 @@ pub fn run_client(
     ip: IpAddr,
     port: u16,
     use_mmap: bool,
-    input_file: Option<&Path>,
+    input_files: &[PathBuf],
     prealloc: bool,
     compression: Option<Compression>,
     connect_mode: TcpConnectMode,
 ) -> Result<()> {
-    let mut tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
-    let fname: String = if let Some(f) = input_file {
-        f.file_name().unwrap().to_string_lossy().into_owned()
-    } else {
-        String::from("stdin")
-    };
-
-    if prealloc {
-        let file_size = File::open(input_file.unwrap())?.metadata()?.len();
-        log::debug!(
-            "Requesting preallocation of file of size {} [{file_size} B]",
-            format_data_size(file_size)
+    if input_files.is_empty() {
+        let mut tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
+        let cmd_receive_data =
+            ServerCommand::ReceiveData(0, "stdin".to_string(), compression.map(|c| c.variant()));
+        send_command(&mut tcp_stream, &cmd_receive_data)?;
+        let transferred_len =
+            transfer_data((ip, port), &mut tcp_stream, compression, None, use_mmap)?;
+        log::info!(
+            "Sent {} [{transferred_len} B]",
+            format_data_size(transferred_len)
         );
-        send_command(&mut tcp_stream, &ServerCommand::Prealloc(file_size))?;
-    }
+    } else {
+        let mut fcount = input_files.len();
+        log::info!("Sending {fcount} files");
+        for f in input_files {
+            let mut tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
 
-    let cmd_receive_data = ServerCommand::ReceiveData(fname, compression.map(|c| c.variant()));
-    send_command(&mut tcp_stream, &cmd_receive_data)?;
-    let transferred_len =
-        transfer_data((ip, port), &tcp_stream, compression, input_file, use_mmap)?;
-    log::info!(
-        "Sent {} [{transferred_len} B]",
-        format_data_size(transferred_len)
-    );
+            fcount -= 1;
+            let fname: String = f.file_name().unwrap().to_str().unwrap().to_owned();
+            if prealloc {
+                let file_size = File::open(f)?.metadata()?.len();
+                log::debug!(
+                    "Requesting preallocation of file of size {} [{file_size} B]",
+                    format_data_size(file_size)
+                );
+                send_command(&mut tcp_stream, &ServerCommand::Prealloc(file_size))?;
+            }
+
+            let cmd_receive_data =
+                ServerCommand::ReceiveData(fcount as u32, fname, compression.map(|c| c.variant()));
+            send_command(&mut tcp_stream, &cmd_receive_data)?;
+            let transferred_len =
+                transfer_data((ip, port), &mut tcp_stream, compression, Some(f), use_mmap)?;
+            tcp_stream.flush()?;
+            tcp_stream.shutdown(std::net::Shutdown::Write)?;
+
+            log::info!(
+                "Sent {} [{transferred_len} B]",
+                format_data_size(transferred_len)
+            );
+        }
+    }
 
     Ok(())
 }
 
 fn transfer_data(
     (ip, port): (IpAddr, u16),
-    tcp_stream: &TcpStream,
+    tcp_stream: &mut TcpStream,
     compression: Option<Compression>,
     file: Option<&Path>,
     use_mmap: bool,
@@ -123,5 +141,6 @@ fn transfer_data(
         },
         None => incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?,
     };
+
     Ok(transferred_bytes)
 }

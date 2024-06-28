@@ -71,6 +71,7 @@ pub fn incremental_rw<const BUFSIZE: usize>(
     let mut total_read = 0;
     loop {
         let bytes_read = reader.read(&mut buf)?;
+        log::debug!("Read {bytes_read}");
         if bytes_read == 0 {
             break;
         }
@@ -105,7 +106,7 @@ pub fn get_free_port(ip: &str) -> Option<u16> {
     None
 }
 
-/// see more: https://www.rfc-editor.org/rfc/rfc6335.html#section-6
+/// see more: <https://www.rfc-editor.org/rfc/rfc6335.html#section-6>
 pub const IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START: u16 = 49152;
 pub const IANA_RECOMMEND_DYNAMIC_PORT_RANGE_END: u16 = 65535;
 
@@ -119,7 +120,7 @@ pub const IANA_RECOMMEND_DYNAMIC_PORT_RANGE_END: u16 = 65535;
 /// Although note that Linux distros often use 32768-61000 so a conservative/robust range of
 /// 49152-61000 is preferable.
 ///
-/// see more: https://www.rfc-editor.org/rfc/rfc6335.html#section-6
+/// see more: <https://www.rfc-editor.org/rfc/rfc6335.html#section-6>
 pub fn get_free_port_in_range(ip: &str, start_port: u16, end_port: u16) -> Option<u16> {
     for port in start_port..=end_port {
         if let Ok(listener) = TcpListener::bind((ip, port)) {
@@ -189,7 +190,7 @@ pub fn read_server_cmd(
 
 /// This is for generating pseudo-random number for application client/server hand shake.
 ///
-/// It is adapted from: https://docs.rs/rand_xoshiro/latest/src/rand_xoshiro/splitmix64.rs.html
+/// It is adapted from: <https://docs.rs/rand_xoshiro/latest/src/rand_xoshiro/splitmix64.rs.html>
 /// ... and gutted
 ///
 /// There's no strong requirement for this random number other than being fast, and lets not add the rand crate as a dependency just for this...
@@ -199,7 +200,7 @@ pub(crate) mod tiny_rnd {
     ///
     /// # Note
     ///
-    /// Adapted (gutted) from: https://docs.rs/rand_xoshiro/latest/src/rand_xoshiro/splitmix64.rs.html
+    /// Adapted (gutted) from: <https://docs.rs/rand_xoshiro/latest/src/rand_xoshiro/splitmix64.rs.html>
     ///
     /// Stateless  gutted splitmix64 random number generator.
     ///

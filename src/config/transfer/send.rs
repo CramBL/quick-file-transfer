@@ -23,7 +23,7 @@ pub struct SendArgs {
         group("io-content"),
         name("INPUT_FILE")
     )]
-    pub file: Option<PathBuf>,
+    pub file: Vec<PathBuf>,
 
     /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
     #[arg(long, action = ArgAction::SetTrue, requires = "INPUT_FILE", global(true))]
