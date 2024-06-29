@@ -169,7 +169,7 @@ pub fn handle_send_ssh(
     cfg: &Config,
     args: &SendSshArgs,
     input_files: &[PathBuf],
-    prealloc: bool,
+    no_prealloc: bool,
     use_mmap: bool,
     tcp_conect_mode: TcpConnectMode,
 ) -> Result<()> {
@@ -217,7 +217,7 @@ pub fn handle_send_ssh(
         *tcp_port,
         use_mmap,
         input_files,
-        prealloc,
+        no_prealloc,
         compression,
         *start_port,
         *end_port,
@@ -240,7 +240,7 @@ fn run_ssh(
     tcp_port: Option<u16>,
     use_mmap: bool,
     input_files: &[PathBuf],
-    prealloc: bool,
+    no_prealloc: bool,
     compression: &Option<Compression>,
     start_port: u16,
     end_port: u16,
@@ -342,7 +342,7 @@ fn run_ssh(
             log::debug!("Starting client thread targetting {remote_ip}:{tcp_port}");
             log::trace!("use mmap: {use_mmap}");
             log::trace!("file(s): {input_files:?}");
-            log::trace!("prealloc: {prealloc}");
+            log::trace!("no prealloc: {no_prealloc}");
             log::trace!("compression: {:?}", compression);
             while !server_ready_flag.load(Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(2));
@@ -352,7 +352,7 @@ fn run_ssh(
                 tcp_port,
                 use_mmap,
                 input_files,
-                prealloc,
+                no_prealloc,
                 *compression,
                 tcp_conect_mode,
             )
