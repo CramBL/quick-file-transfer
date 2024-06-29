@@ -1,10 +1,7 @@
 use crate::{
     config::{
         compression::Compression,
-        transfer::{
-            send::ssh::{SendSshArgs, TargetComponents},
-            util::TcpConnectMode,
-        },
+        transfer::{send::ssh::SendSshArgs, util::TcpConnectMode},
         Config,
     },
     util::{
@@ -12,9 +9,8 @@ use crate::{
         IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START,
     },
 };
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use std::{
-    borrow::Cow,
     ffi::OsStr,
     path::PathBuf,
     sync::atomic::{AtomicBool, Ordering},
@@ -26,6 +22,7 @@ use std::{
 mod mdns_util;
 pub mod private_key;
 mod remote_cmd;
+pub mod remote_info;
 pub(crate) mod util;
 
 pub const ENV_REMOTE_PASSWORD: &str = "QFT_REMOTE_PASSWORD";
@@ -33,137 +30,6 @@ pub const ENV_SSH_KEY_DIR: &str = "QFT_SSH_KEY_DIR";
 pub const ENV_SSH_PRIVATE_KEY: &str = "QFT_SSH_PRIVATE_KEY";
 
 pub const ENV_REMOTE_USER: &str = "QFT_REMOTE_USER";
-
-#[derive(Debug, Clone, Copy)]
-enum Remote<'a> {
-    Ip(&'a str),
-    #[cfg(feature = "mdns")]
-    MdnsHostname(&'a str),
-}
-
-impl<'a> Remote<'a> {
-    pub fn new(host: &'a str) -> Result<Self> {
-        if host.parse::<std::net::IpAddr>().is_ok() {
-            return Ok(Self::Ip(host));
-        }
-        #[cfg(feature = "mdns")]
-        if mdns_util::is_mdns_hostname(host) {
-            return Ok(Self::MdnsHostname(host));
-        }
-        bail!("'{host}' is not an IP or a mDNS/DNS-SD hostname");
-    }
-
-    #[cfg(feature = "mdns")]
-    pub fn to_resolved_ip_str(self, timeout_ms: u64) -> Result<Cow<'a, str>> {
-        match self {
-            Remote::Ip(ip) => Ok(Cow::Borrowed(ip)),
-            Remote::MdnsHostname(hn) => {
-                let ip = mdns_util::get_remote_ip_from_hostname(
-                    hn,
-                    timeout_ms,
-                    crate::config::misc::IpVersion::V4,
-                )?;
-                let ip_str = ip.to_string().into();
-                Ok(ip_str)
-            }
-        }
-    }
-
-    #[cfg(not(feature = "mdns"))]
-    pub fn to_ip_str(self) -> Cow<'a, str> {
-        debug_assert!(matches!(self, Remote::Ip(_)));
-        match self {
-            Remote::Ip(ip) => Cow::Borrowed(ip),
-        }
-    }
-}
-
-struct RemoteInfo<'a> {
-    user: &'a str,
-    ssh_port: u16,
-    resolved_ip: Cow<'a, str>,
-    destination: Cow<'a, str>,
-}
-
-impl<'a> RemoteInfo<'a> {
-    pub fn new(
-        user: &'a str,
-        ssh_port: u16,
-        resolved_ip: Cow<'a, str>,
-        destination: Cow<'a, str>,
-    ) -> Self {
-        Self {
-            user,
-            ssh_port,
-            resolved_ip,
-            destination,
-        }
-    }
-
-    // Helper to extract the destination from arguments
-    fn remote_destination_from_args(ssh_args: &'a SendSshArgs) -> Cow<'a, str> {
-        debug_assert!(
-            (ssh_args.target.is_some() && ssh_args.destination.is_none())
-                || (ssh_args.destination.is_some() && ssh_args.target.is_none())
-        );
-        let dest_path = if let Some(TargetComponents {
-            ref destination, ..
-        }) = ssh_args.target
-        {
-            destination
-        } else if let Some(destination) = &ssh_args.destination {
-            destination
-        } else {
-            unreachable!()
-        };
-        dest_path.to_string_lossy()
-    }
-
-    fn remote_user_from_args(ssh_args: &'a SendSshArgs) -> &'a str {
-        if let Some(TargetComponents { ref user, .. }) = ssh_args.target {
-            user
-        } else if let Some(ref user) = ssh_args.user {
-            user
-        } else {
-            unreachable!()
-        }
-    }
-
-    fn remote_from_args(ssh_args: &'a SendSshArgs) -> Remote {
-        if let Some(TargetComponents { ref host, .. }) = ssh_args.target {
-            return Remote::new(host)
-                .with_context(|| format!("Failed to resolve IP for hostname {host}"))
-                .unwrap();
-        }
-
-        #[cfg(feature = "mdns")]
-        if let Some(ref h) = ssh_args.hostname {
-            return Remote::new(h)
-                .with_context(|| format!("Failed to resolve IP for hostname {h}"))
-                .unwrap();
-        }
-        if let Some(ref ip) = ssh_args.ip {
-            Remote::Ip(ip)
-        } else {
-            unreachable!()
-        }
-    }
-
-    pub fn from_args(ssh_args: &'a SendSshArgs) -> Self {
-        let user: &str = Self::remote_user_from_args(ssh_args);
-        let remote_destination = Self::remote_destination_from_args(ssh_args);
-        let remote: Remote = Self::remote_from_args(ssh_args);
-
-        #[cfg(feature = "mdns")]
-        let resolved_ip = remote
-            .to_resolved_ip_str(ssh_args.mdns_resolve_timeout_ms)
-            .expect("Failed to resolve IP for the specified hostname");
-        #[cfg(not(feature = "mdns"))]
-        let resolved_ip = remote.to_ip_str();
-
-        Self::new(user, ssh_args.ssh_port, resolved_ip, remote_destination)
-    }
-}
 
 pub fn handle_send_ssh(
     cfg: &Config,
@@ -173,7 +39,7 @@ pub fn handle_send_ssh(
     use_mmap: bool,
     tcp_conect_mode: TcpConnectMode,
 ) -> Result<()> {
-    let remote_info = RemoteInfo::from_args(args);
+    let remote_info = remote_info::RemoteInfo::from_args(args);
     let SendSshArgs {
         user: _,
         #[cfg(feature = "mdns")]
