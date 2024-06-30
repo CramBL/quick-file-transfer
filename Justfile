@@ -36,7 +36,7 @@ lint-feature-combination *ARGS:
 
 # Run pre-commit and formatting/linting
 [group("Code Quality"), no-exit-message]
-pre-commit: && check-version
+pre-commit:
     pre-commit run
     cargo fmt
     cargo {{check}}
@@ -126,5 +126,4 @@ ci-lint: \
     (check "--verbose") \
     (lint "--verbose --all --all-targets -- -D warnings --no-deps") \
     (format "-- --check --verbose") \
-    (doc "--verbose --no-deps") \
-    check-version \
+    (doc "--verbose --no-deps")

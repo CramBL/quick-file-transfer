@@ -11,7 +11,16 @@ defaults:
     shell: bash
 
 jobs:
+  release-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+      - name: Check version
+        run: just --verbose check-version
+
   release:
+    needs: release-guard
     strategy:
       matrix:
         target:
@@ -98,13 +107,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-crates-io:
+        needs: release-guard
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
               with:
                 fetch-depth: 0
-            - uses: extractions/setup-just@v2
-            - name: Check version
-              run: just --verbose check-version
             - name: Publish
               run: cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}
