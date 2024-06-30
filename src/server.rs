@@ -139,12 +139,24 @@ fn command_handler(
             return Ok(f_count);
         }
         ServerCommand::GetFreePort => todo!(),
-        ServerCommand::Prealloc(fsize) => {
+        ServerCommand::Prealloc(fsize, fname) => {
             log::debug!(
                 "Preallocating file of size {} [{fsize} B]",
                 format_data_size(fsize)
             );
-            create_file_with_len(listen_args.output.as_deref().unwrap(), fsize)?;
+            if let Some(out_dir) = listen_args.output_dir.as_deref() {
+                if !out_dir.is_dir() && out_dir.exists() {
+                    bail!("Output directory path {out_dir:?} is invalid - has to point at a directory or non-existent path")
+                }
+                if !out_dir.exists() {
+                    fs::create_dir(out_dir)?;
+                }
+                let out_file = out_dir.join(fname);
+                log::trace!("Preallocating for path: {out_dir:?}");
+                create_file_with_len(&out_file, fsize)?;
+            } else if let Some(out_file) = listen_args.output.as_deref() {
+                create_file_with_len(out_file, fsize)?;
+            }
         }
     }
 

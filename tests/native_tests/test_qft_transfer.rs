@@ -165,7 +165,7 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
 }
 
 #[test]
-pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
+pub fn test_file_transfer_no_compression_with_no_prealloc() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
     let file_to_receive = dir.child("f2.txt");
@@ -177,7 +177,7 @@ pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
         false,
-        ["ip", "--prealloc", IP, "--port", port.as_str(), "-vv"],
+        ["ip", "--no-prealloc", IP, "--port", port.as_str(), "-vv"],
     );
 
     let server_thread = spawn_server_thread(
@@ -207,7 +207,7 @@ pub fn test_file_transfer_no_compression_with_prealloc() -> TestResult {
 }
 
 #[test]
-pub fn test_file_transfer_bzip2_default_with_prealloc() -> TestResult {
+pub fn test_file_transfer_bzip2_default_with_no_prealloc() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
     let file_to_receive = dir.child("f2.txt");
@@ -226,7 +226,7 @@ pub fn test_file_transfer_bzip2_default_with_prealloc() -> TestResult {
         "-vv",
         "--file",
         file_to_transfer.path().to_str().unwrap(),
-        "--prealloc",
+        "--no-prealloc",
         "bzip2",
     ]);
     let client_thread = spawn_cmd_thread(
@@ -269,7 +269,7 @@ pub fn test_file_transfer_bzip2_default_with_prealloc() -> TestResult {
 }
 
 #[test]
-pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
+pub fn test_file_transfer_gzip_default_with_no_prealloc() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
     let file_to_receive = dir.child("f2.txt");
@@ -288,7 +288,7 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
         "-vv",
         "--file",
         file_to_transfer.path().to_str().unwrap(),
-        "--prealloc",
+        "--no-prealloc",
         "gzip",
     ]);
     let client_thread = spawn_cmd_thread(
@@ -334,7 +334,7 @@ pub fn test_file_transfer_gzip_default_with_prealloc() -> TestResult {
 }
 
 #[test]
-pub fn test_file_transfer_lz4_default_with_prealloc() -> TestResult {
+pub fn test_file_transfer_lz4_default_with_no_prealloc() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
     let file_to_receive = dir.child("f2.txt");
@@ -353,7 +353,7 @@ pub fn test_file_transfer_lz4_default_with_prealloc() -> TestResult {
         "-vv",
         "--file",
         file_to_transfer.path().to_str().unwrap(),
-        "--prealloc",
+        "--no-prealloc",
         "lz4",
     ]);
     let client_thread = spawn_cmd_thread(
@@ -396,7 +396,7 @@ pub fn test_file_transfer_lz4_default_with_prealloc() -> TestResult {
 }
 
 #[test]
-pub fn test_file_transfer_xz_default_with_prealloc() -> TestResult {
+pub fn test_file_transfer_xz_default_with_no_prealloc() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
     let file_to_receive = dir.child("f2.txt");
@@ -415,7 +415,7 @@ pub fn test_file_transfer_xz_default_with_prealloc() -> TestResult {
         "-vv",
         "--file",
         file_to_transfer.path().to_str().unwrap(),
-        "--prealloc",
+        "--no-prealloc",
         "xz",
     ]);
     let client_thread = spawn_cmd_thread(

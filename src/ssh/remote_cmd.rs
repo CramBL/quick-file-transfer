@@ -3,7 +3,6 @@
 pub(super) fn remote_qft_command_str(
     destination: &str,
     tcp_port: u16,
-    prealloc: bool,
     compression: Option<&crate::config::compression::Compression>,
     verbosity: &str,
     multiple_transfers: bool,
@@ -13,9 +12,6 @@ pub(super) fn remote_qft_command_str(
     cmd.push_str(" --port ");
     cmd.push_str(tcp_port.to_string().as_str());
 
-    if prealloc {
-        cmd.push_str(" --prealloc");
-    }
     if multiple_transfers {
         cmd.push_str(" --output-dir ");
     } else {
