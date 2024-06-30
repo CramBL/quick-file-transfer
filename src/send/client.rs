@@ -27,7 +27,7 @@ pub fn run_client(
     port: u16,
     use_mmap: bool,
     input_files: &[PathBuf],
-    no_prealloc: bool,
+    prealloc: bool,
     compression: Option<Compression>,
     connect_mode: TcpConnectMode,
 ) -> Result<()> {
@@ -50,13 +50,19 @@ pub fn run_client(
 
             fcount -= 1;
             let fname: String = f.file_name().unwrap().to_str().unwrap().to_owned();
-            if !no_prealloc {
+            if prealloc {
                 let file_size = File::open(f)?.metadata()?.len();
                 log::debug!(
                     "Requesting preallocation of file of size {} [{file_size} B]",
                     format_data_size(file_size)
                 );
-                send_command(&mut tcp_stream, &ServerCommand::Prealloc(file_size))?;
+                send_command(
+                    &mut tcp_stream,
+                    &ServerCommand::Prealloc(
+                        file_size,
+                        f.file_name().unwrap().to_string_lossy().into(),
+                    ),
+                )?;
             }
 
             let cmd_receive_data =

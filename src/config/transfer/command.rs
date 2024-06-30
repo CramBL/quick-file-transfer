@@ -8,7 +8,7 @@ use crate::config::compression::CompressionVariant;
 #[allow(variant_size_differences)]
 pub enum ServerCommand {
     GetFreePort,
-    Prealloc(u64),
+    Prealloc(u64, String),
     ReceiveData(u32, String, Option<CompressionVariant>),
 }
 
