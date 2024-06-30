@@ -4,10 +4,7 @@ use crate::{
         transfer::{send::ssh::SendSshArgs, util::TcpConnectMode},
         Config,
     },
-    util::{
-        verbosity_to_args, IANA_RECOMMEND_DYNAMIC_PORT_RANGE_END,
-        IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START,
-    },
+    util::verbosity_to_args,
 };
 use anyhow::{bail, Result};
 use std::{
@@ -22,6 +19,7 @@ use std::{
 mod mdns_util;
 pub mod private_key;
 mod remote_cmd;
+pub mod remote_find_free_port;
 pub mod remote_info;
 pub(crate) mod util;
 
@@ -131,47 +129,7 @@ fn run_ssh(
 
     let tcp_port = match tcp_port {
         Some(tp) => tp,
-        None => {
-            const GET_FREE_PORT_CMD_PREFIX: &str = "qft get-free-port";
-            const START_PORT_OPTION: &str = "--start-port";
-            const END_PORT_OPTION: &str = "--end-port";
-            if start_port < crate::util::IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START {
-                log::warn!("Specified start port range of {start_port} is outside of the IANA recommended range for dynamic ports ({}-{})", IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START, IANA_RECOMMEND_DYNAMIC_PORT_RANGE_END);
-            }
-            let get_free_port_cmd = format!("{GET_FREE_PORT_CMD_PREFIX} {START_PORT_OPTION} {start_port} {END_PORT_OPTION} {end_port} -q",            );
-            log::debug!(
-                "No TCP port specified, querying remote for a free port with '{get_free_port_cmd}'"
-            );
-            let mut exec = session.open_exec()?;
-            exec.send_command(&get_free_port_cmd)?;
-            let exit_status = exec.exit_status()?;
-            let terminate_msg = exec.terminate_msg()?;
-            log::debug!("Exit status: {exit_status}");
-            if !terminate_msg.is_empty() {
-                log::debug!("Terminate message: {exit_status}");
-            }
-            let raw_out = exec.get_result()?;
-            log::trace!("Receivied raw output {raw_out:?}");
-            log::trace!(
-                "Receivied output as lossy utf8:{}",
-                String::from_utf8_lossy(&raw_out)
-            );
-            // Take the first N-bytes that are ascii digits and parse them to u16
-            let free_port = raw_out
-                .iter()
-                .take_while(|&&byte| byte.is_ascii_digit())
-                .fold(String::new(), |mut acc, &byte| {
-                    acc.push(byte as char);
-                    acc
-                })
-                .parse::<u16>()
-                .expect("Failed to parse u16");
-            log::trace!(
-                "'{get_free_port_cmd}' output as utf8: {}",
-                String::from_utf8_lossy(&raw_out)
-            );
-            free_port
-        }
+        None => remote_find_free_port::remote_find_free_port(&mut session, start_port, end_port)?,
     };
 
     log::debug!("Using TCP port: {tcp_port}");

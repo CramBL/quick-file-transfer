@@ -10,11 +10,11 @@ use super::Compression;
 #[cfg(feature = "ssh")]
 pub struct SendSshArgs {
     /// Source files or directories
-    #[arg(required = true)]
+    #[arg(required(true))]
     pub sources: Vec<String>,
 
     /// Destination file or directory
-    #[arg(required = true)]
+    #[arg(required(true))]
     pub destination: String,
 
     /// Port that will be used to do the transfer via TCP. Prefer leaving this value empty. If no port is specified, the remote will attempt to find a free port. Don't use this unless you have very specific needs.
