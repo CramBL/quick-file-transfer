@@ -25,9 +25,9 @@ pub struct SendArgs {
     )]
     pub file: Vec<PathBuf>,
 
-    /// Client will send the size of the file to the server allowing the server to preallocate for the expected size
-    #[arg(long, action = ArgAction::SetTrue, requires = "INPUT_FILE", global(true))]
-    pub prealloc: bool,
+    /// Disables that client sends the size of files to the server allowing the server to preallocate for the expected size
+    #[arg(long,action = ArgAction::SetTrue, requires = "INPUT_FILE", global(true))]
+    pub no_prealloc: bool,
 
     /// Use memory mapping mode
     #[arg(long, action = ArgAction::SetTrue, requires = "INPUT_FILE", global(true))]
@@ -73,6 +73,14 @@ impl SendArgs {
                 ))
             };
             TcpConnectMode::poll_from_ms(self.poll, abort_cond)
+        }
+    }
+
+    pub fn prealloc(&self) -> bool {
+        if self.file.is_empty() {
+            false
+        } else {
+            !self.no_prealloc
         }
     }
 }

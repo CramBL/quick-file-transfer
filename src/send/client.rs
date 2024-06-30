@@ -56,7 +56,13 @@ pub fn run_client(
                     "Requesting preallocation of file of size {} [{file_size} B]",
                     format_data_size(file_size)
                 );
-                send_command(&mut tcp_stream, &ServerCommand::Prealloc(file_size))?;
+                send_command(
+                    &mut tcp_stream,
+                    &ServerCommand::Prealloc(
+                        file_size,
+                        f.file_name().unwrap().to_string_lossy().into(),
+                    ),
+                )?;
             }
 
             let cmd_receive_data =

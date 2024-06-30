@@ -178,7 +178,6 @@ fn run_ssh(
     let remote_cmd = remote_cmd::remote_qft_command_str(
         remote_destination,
         tcp_port,
-        prealloc,
         compression.into(),
         verbosity_to_args(cfg),
         input_files.len() > 1,
