@@ -84,7 +84,7 @@ pub fn handle_send_ssh(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn run_ssh(
+pub fn run_ssh(
     cfg: &Config,
     username: &str,
     private_key: Option<&Path>,

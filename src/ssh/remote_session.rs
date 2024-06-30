@@ -20,11 +20,9 @@ impl RemoteSshSession {
     where
         A: ToSocketAddrs,
     {
-        let ssh_private_key = crate::ssh::private_key::get_ssh_private_key_path(
-            private_key_path.as_deref(),
-            private_key_dir.as_deref(),
-        )
-        .expect("Failed locating SSH private key path");
+        let ssh_private_key =
+            crate::ssh::private_key::get_ssh_private_key_path(private_key_path, private_key_dir)
+                .expect("Failed locating SSH private key path");
         log::trace!("Private key path: {ssh_private_key:?}");
         let passwd = super::util::get_remote_password_from_env();
 
