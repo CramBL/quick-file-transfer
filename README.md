@@ -18,7 +18,9 @@
   - [Supported compression formats](#supported-compression-formats)
   - [Install](#install)
     - [Prebuilt binaries](#prebuilt-binaries)
-    - [Comparison/Benchmarks](#comparisonbenchmarks)
+  - [Comparison/Benchmarks](#comparisonbenchmarks)
+    - [netcat-like mode](#netcat-like-mode)
+    - [scp-like mode](#scp-like-mode)
 
 ## Purpose
 
@@ -295,19 +297,30 @@ curl -L -H "Accept: application/vnd.github.v3.raw" \
         | bash -s -- --to ~/bin
 ```
 
+## Comparison/Benchmarks
 
-### Comparison/Benchmarks
+Benchmarks are done with `hyperfine` default settings.
 
-Simple benchmark comparison with netcat on Ubuntu 22.04 to give an idea about transfer speeds. `f.raucb` is a 430MB file and the `&& sleep 1` allows the servers to spin down/up again after a completed transfer, that second is subtracted from the results table.
+Using a 7.2 MiB JSON-file (not prettified) I had nearby with real data.
 
-```shell
-hyperfine  "qft send ip 127.0.0.1 --file testbundle.raucb && sleep 1" \
-           "qft send ip 127.0.0.2 --prealloc --file testbundle.raucb && sleep 1" \
-           "nc -N 0.0.0.0 1234 < testbundle.raucb && sleep 1"
-```
+Targeting a `Raspberry Pi Zero W` that is connected with ethernet to a gigabit network.
+
+### netcat-like mode
+
+The RPI-0W was running `qft listen -p <PORT> --output 7mb.json` and `nc -l <PORT> > 7mb.json` on repeat for the duration of the benchmark.
 
 | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
 |:---|---:|---:|---:|---:|
-| `qft send ip 127.0.0.1 --file f.raucb` | 218 ± 8 | 208 | 231 | 1.04 ± 0.01 |
-| `qft send ip 127.0.0.2 --prealloc --file f.raucb` | 176 ± 4 | 174 | 185 | 1.00 |
-| `nc -N 0.0.0.0 1234 < f.raucb` | 248 ± 4 | 241 | 252 | 1.06 ± 0.00 |
+| `qft send ip <IP> -p <PORT> -f 7mb.json` | 895 ± 52 | 766 | 935 | 1.31 ± 0.11 |
+| `qft send ip <IP> -p <PORT> -f 7mb.json lz4` | 486 ± 60 | 404 | 584 | 1.03 ± 0.09 |
+| `qft send ip <IP> -p <PORT> -f 7mb.json gzip` | 444 ± 120 | 325 | 685 | 1.00 |
+| `nc -N <IP> <PORT> < 7mb.json` | 1049 ± 8 | 1036 | 1056 | 1.42 ± 0.12 |
+
+### scp-like mode
+
+| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
+|:---|---:|---:|---:|---:|
+| `qft ssh 7mb.json <user>@<IP>:~/7mb.json` | 2.295 ± 0.131 | 2.108 | 2.399 | 1.14 ± 0.10 |
+| `qft ssh 7mb.json <user>@<IP>:~/7mb.json lz4` | 2.004 ± 0.122 | 1.797 | 2.194 | 1.00 |
+| `qft ssh 7mb.json <user>@<IP>:~/7mb.json gzip 4` | 2.026 ± 0.120 | 1.847 | 2.122 | 1.01 ± 0.09 |
+| `scp 7mb.json <user>@<IP>:~/7mb.json` | 2.448 ± 0.039 | 2.404 | 2.532 | 1.22 ± 0.08 |
