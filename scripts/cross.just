@@ -7,7 +7,7 @@ setup-armv7-musl-deps:
 
 [group("Cross Compile"), no-exit-message]
 build-armv7-musl:
-	cargo build --target=armv7-unknown-linux-musleabihf
+	cargo {{build}} --target=armv7-unknown-linux-musleabihf
 
 
 [group("Cross Compile"), no-exit-message]
@@ -27,4 +27,4 @@ setup-x86_64-linux-musl-deps:
 
 [group("Cross Compile"), no-exit-message]
 build-x86_64-linux-musl $RUSTFLAGS="" *ARGS="": setup-x86_64-linux-musl-deps
-	cargo build --target=x86_64-unknown-linux-musl {{ARGS}}
+	cargo {{build}} --target=x86_64-unknown-linux-musl {{ARGS}}

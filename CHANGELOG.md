@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 0.6.0 - 2024-06-29
+
 ### Added
 
 - `get-free-port` command to retrieve a free port from `0.0.0.0` or a specified IP.
@@ -16,6 +18,10 @@
 ### Changed
 
 - Multiple changes to how command-line arguments are parsed (and which order/combination is valid). Note: This is not the last time this will be changed.
+
+### Misc
+
+- Update dependencies
 
 ## 0.5.0 - 2024-06-21
 

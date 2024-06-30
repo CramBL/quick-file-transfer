@@ -12,3 +12,12 @@ SUCCESS := ECHO + " success"
 # Prints with the specified RGB color to stdout and allows for interpolation of variables with %0, %1, %2, etc.
 # e.g. {{PRINT_RGB}} "Hello %0, this is %1" "world" "a test"
 PRINT_RGB := ECHO + " print_rgb_interpolated"
+
+cargo_binaries := join(home_directory(), ".cargo/bin/")
+
+check := if path_exists(join(cargo_binaries, "cargo-lcheck")) == "true" { "lcheck" } else { "check" }
+clippy := if path_exists(join(cargo_binaries, "cargo-lclippy")) == "true" { "lclippy" } else { "clippy" }
+run := if path_exists(join(cargo_binaries, "cargo-lrun")) == "true" { "lrun" } else { "run" }
+build := if path_exists(join(cargo_binaries, "cargo-lbuild")) == "true" { "lbuild" } else { "build" }
+test := if path_exists(join(cargo_binaries, "cargo-ltest")) == "true" { "ltest" } else { "test" }
+doc := if path_exists(join(cargo_binaries, "cargo-ldoc")) == "true" { "ldoc" } else { "doc" }
