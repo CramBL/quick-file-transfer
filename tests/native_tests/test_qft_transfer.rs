@@ -487,15 +487,7 @@ pub fn test_file_transfer_bzip2_compr_level_1() -> TestResult {
     );
     let server_thread = spawn_server_thread(
         Some(file_to_receive.path()),
-        [
-            "--ip",
-            IP,
-            "--port",
-            port.as_str(),
-            "-vv",
-            "--decompression",
-            "bzip2",
-        ],
+        ["--ip", IP, "--port", port.as_str(), "-vv"],
     );
 
     let (

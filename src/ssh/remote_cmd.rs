@@ -3,7 +3,6 @@
 pub(super) fn remote_qft_command_str(
     destination: &str,
     tcp_port: u16,
-    compression: Option<&crate::config::compression::Compression>,
     verbosity: &str,
     multiple_transfers: bool,
 ) -> String {
@@ -19,9 +18,5 @@ pub(super) fn remote_qft_command_str(
     }
     cmd.push_str(destination);
 
-    if let Some(compression) = compression {
-        cmd.push(' ');
-        cmd.push_str(compression.variant_as_str());
-    }
     cmd
 }

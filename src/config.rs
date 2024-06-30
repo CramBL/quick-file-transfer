@@ -5,6 +5,8 @@ mod util;
 use util::*;
 
 pub mod compression;
+#[cfg(feature = "ssh")]
+pub mod ssh;
 pub mod transfer;
 
 pub const BIN_NAME: &str = "qft";
@@ -109,4 +111,10 @@ pub enum Command {
     EvaluateCompression(evaluate_compression::EvaluateCompressionArgs),
     /// Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port.
     GetFreePort(get_free_port::GetFreePortArgs),
+    /// SCP-like - Send to a target that might not have qft actively listening, authenticating over SSH and transferring over TCP.
+    #[cfg(feature = "ssh")]
+    #[command(long_about("SCP-like transfer to a remote target that might not have qft actively listening.\n\
+    Authentication uses SSH (key based auth only) and while the transfer occurs over TCP, UNENCRYPTED!.\n\
+    Just like the rest of QTF, this is not suitable for transforring sensitive information."))]
+    Ssh(ssh::SendSshArgs),
 }
