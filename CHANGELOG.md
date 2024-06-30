@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## 0.07 - 2024-06-30
+
+### Changed
+
+- Moving `qft send ssh` functionality to `qft ssh` and making it similar in syntax to `scp/rsync`.
 
 ### Fix
 
