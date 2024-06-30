@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fix
+
+- Crash when sending multiple files over SSH with prealloc on
+
 ## 0.6.0 - 2024-06-29
 
 ### Added
