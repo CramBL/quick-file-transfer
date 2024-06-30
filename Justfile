@@ -27,21 +27,21 @@ env:
 # Lint the code
 [group("Code Quality"), no-exit-message]
 lint *ARGS="--all --all-targets -- -D warnings --no-deps":
-    cargo clippy {{ ARGS }}
+    cargo {{clippy}} {{ ARGS }}
 
 # Lint all feature combinations
 [group("Code Quality"), no-exit-message]
 lint-feature-combination *ARGS:
-    cargo hack clippy --feature-powerset --no-dev-deps {{ARGS}}
+    cargo hack {{clippy}} --feature-powerset --no-dev-deps {{ARGS}}
 
 # Run pre-commit and formatting/linting
 [group("Code Quality"), no-exit-message]
 pre-commit: && check-version
     pre-commit run
     cargo fmt
-    cargo check
-    cargo clippy
-    cargo doc
+    cargo {{check}}
+    cargo {{clippy}}
+    cargo {{doc}}
 
 # Format the code
 [group("Code Quality"), no-exit-message]
@@ -51,22 +51,22 @@ format *ARGS:
 # Check if it compiles without compiling
 [group("Code Quality"), no-exit-message]
 check *ARGS:
-    cargo check {{ ARGS }}
+    cargo {{check}} {{ ARGS }}
 
 # Check all feature combinations
 [group("Code Quality"), no-exit-message]
 check-feature-combination *ARGS:
-    cargo hack check --feature-powerset --no-dev-deps {{ARGS}}
+    cargo hack {{check}} --feature-powerset --no-dev-deps {{ARGS}}
 
 # Run the tests
 [group("Test"), no-exit-message]
 test *ARGS:
-    cargo test {{ ARGS }}
+    cargo {{test}} {{ ARGS }}
 
 # Run the tests with all feature combinations
 [group("Test"), no-exit-message]
 test-feature-combination *ARGS:
-    cargo hack test --feature-powerset {{ ARGS }}
+    cargo hack {{test}} --feature-powerset {{ ARGS }}
 
 # Run tests using the docker test container
 [group("Docker"), group("Test"), no-exit-message]
@@ -74,17 +74,17 @@ d-test ARGS="-- --ignored ":
     mkdir -m777 -p {{CONTAINER_MOUNTED_TMP_DIR}}
     just d-setup-for-transfer-tests
     RUST_TEST_THREADS="1" \
-        cargo test container_tests {{ARGS}}
+        cargo {{test}} container_tests {{ARGS}}
 
 # Build the application
 [no-exit-message]
 build *ARGS:
-    cargo build {{ ARGS }}
+    cargo {{build}} {{ ARGS }}
 
 # Run the application (use `--` to pass arguments to the application)
 [no-exit-message]
 run ARGS:
-    cargo run {{ ARGS }}
+    cargo {{run}} {{ ARGS }}
 
 # Clean the `target` directory
 clean:
@@ -93,7 +93,7 @@ clean:
 # Build the documentation (use `--open` to open in the browser)
 [group("Code Quality"), no-exit-message]
 doc *ARGS:
-    cargo doc {{ ARGS }}
+    cargo {{doc}} {{ ARGS }}
 
 # Publish the crate
 [no-exit-message]
