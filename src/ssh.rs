@@ -9,8 +9,7 @@ use crate::{
 use anyhow::Result;
 use remote_session::RemoteSshSession;
 use std::{
-    ffi::OsStr,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
     thread::ScopedJoinHandle,
     time::Duration,
@@ -61,17 +60,11 @@ pub fn handle_send_ssh(
         tcp_delay_ms,
     } = args;
 
-    let ssh_private_key = private_key::get_ssh_private_key_path(
-        ssh_private_key_path.as_deref(),
-        ssh_key_dir.as_deref(),
-    )?
-    .into_os_string();
-    log::info!("{ssh_private_key:?}");
-
     run_ssh(
         cfg,
         remote_info.user,
-        &ssh_private_key,
+        ssh_private_key_path.as_deref(),
+        ssh_key_dir.as_deref(),
         &remote_info.resolved_ip,
         remote_info.destination.as_ref(),
         remote_info.ssh_port,
@@ -94,7 +87,8 @@ pub fn handle_send_ssh(
 fn run_ssh(
     cfg: &Config,
     username: &str,
-    priv_key_path: &OsStr,
+    private_key: Option<&Path>,
+    private_key_dir: Option<&Path>,
     remote_ip: &str,
     remote_destination: &str,
     ssh_port: u16,
@@ -112,9 +106,10 @@ fn run_ssh(
     log::debug!("Connecting to {remote_ip} with a timeout of {ssh_timeout_ms} ms");
     let mut session = RemoteSshSession::new(
         username,
-        priv_key_path,
         (remote_ip, ssh_port),
         Some(Duration::from_millis(ssh_timeout_ms)),
+        private_key,
+        private_key_dir,
     )?;
 
     let tcp_port = match tcp_port {

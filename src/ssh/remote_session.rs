@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, net::ToSocketAddrs, time::Duration};
+use std::{net::ToSocketAddrs, path::Path, time::Duration};
 
 use ssh::{ExecBroker, SessionBroker, SshError, SshResult};
 
@@ -12,19 +12,26 @@ pub struct RemoteSshSession {
 impl RemoteSshSession {
     pub fn new<A>(
         username: &str,
-        private_key_path: &OsStr,
         addr: A,
         timeout: Option<Duration>,
+        private_key_path: Option<&Path>,
+        private_key_dir: Option<&Path>,
     ) -> Result<Self, SshError>
     where
         A: ToSocketAddrs,
     {
+        let ssh_private_key = crate::ssh::private_key::get_ssh_private_key_path(
+            private_key_path.as_deref(),
+            private_key_dir.as_deref(),
+        )
+        .expect("Failed locating SSH private key path");
+        log::trace!("Private key path: {ssh_private_key:?}");
         let passwd = super::util::get_remote_password_from_env();
 
         let session = ssh::create_session()
             .username(username)
             .password(passwd.as_deref().unwrap_or("root"))
-            .private_key_path(private_key_path)
+            .private_key_path(ssh_private_key)
             .connect_with_timeout(addr, timeout)?;
         Ok(Self {
             session: session.run_backend(),
