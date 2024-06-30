@@ -32,14 +32,14 @@ pub fn run(_cfg: &Config) -> anyhow::Result<()> {
                 } else {
                     crate::config::ssh::parse_scp_style_uri(args.sources.first().unwrap())
                 }?;
-                println!("URI: {remote_uri_components:?}");
+                log::trace!("URI: {remote_uri_components:?}");
 
-                println!("Sources: {:?}", args.sources);
-                println!("Destination: {}", args.destination);
+                log::trace!("Sources: {:?}", args.sources);
+                log::trace!("Destination: {}", args.destination);
                 //println!("Recursive: {}", args.recursive);
                 //println!("Preserve Times: {}", args.preserve_times);
                 //println!("Verbose: {}", args.verbose);
-                println!(
+                log::trace!(
                     "Operation: {}",
                     if is_remote_to_local {
                         "Remote to Local"
