@@ -6,7 +6,8 @@ use crate::{
     },
     util::verbosity_to_args,
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
+use remote_session::RemoteSshSession;
 use std::{
     ffi::OsStr,
     path::PathBuf,
@@ -21,6 +22,7 @@ pub mod private_key;
 mod remote_cmd;
 pub mod remote_find_free_port;
 pub mod remote_info;
+pub mod remote_session;
 pub(crate) mod util;
 
 pub const ENV_REMOTE_PASSWORD: &str = "QFT_REMOTE_PASSWORD";
@@ -68,12 +70,7 @@ pub fn handle_send_ssh(
 
     run_ssh(
         cfg,
-        (
-            remote_info.user,
-            util::get_remote_password_from_env()
-                .as_deref()
-                .unwrap_or("root"),
-        ),
+        remote_info.user,
         &ssh_private_key,
         &remote_info.resolved_ip,
         remote_info.destination.as_ref(),
@@ -96,7 +93,7 @@ pub fn handle_send_ssh(
 #[allow(clippy::too_many_arguments)]
 fn run_ssh(
     cfg: &Config,
-    (username, password): (&str, &str),
+    username: &str,
     priv_key_path: &OsStr,
     remote_ip: &str,
     remote_destination: &str,
@@ -113,23 +110,16 @@ fn run_ssh(
     tcp_conect_mode: TcpConnectMode,
 ) -> Result<()> {
     log::debug!("Connecting to {remote_ip} with a timeout of {ssh_timeout_ms} ms");
-    let connection_result = ssh::create_session()
-        .username(username)
-        .password(password)
-        .private_key_path(priv_key_path)
-        .connect_with_timeout(
-            format!("{remote_ip}:{ssh_port}"),
-            Some(Duration::from_millis(ssh_timeout_ms)),
-        );
-
-    let mut session = match connection_result {
-        Ok(session) => session.run_backend(),
-        Err(e) => bail!("{e}"),
-    };
+    let mut session = RemoteSshSession::new(
+        username,
+        priv_key_path,
+        (remote_ip, ssh_port),
+        Some(Duration::from_millis(ssh_timeout_ms)),
+    )?;
 
     let tcp_port = match tcp_port {
         Some(tp) => tp,
-        None => remote_find_free_port::remote_find_free_port(&mut session, start_port, end_port)?,
+        None => session.find_free_port(start_port, end_port)?,
     };
 
     log::debug!("Using TCP port: {tcp_port}");
@@ -146,20 +136,16 @@ fn run_ssh(
     let server_ready_flag = AtomicBool::new(false);
     let server_output = std::thread::scope(|scope| {
         let server_h: ScopedJoinHandle<Result<Vec<u8>>> = scope.spawn(|| {
-            let mut exec = session.open_exec()?;
-            exec.send_command(&remote_cmd)?;
-            let (exit_status, terminate_msg) = (exec.exit_status()?, exec.terminate_msg()?);
-            log::debug!("Remote command exit status: {exit_status}");
-            if !terminate_msg.is_empty() {
-                log::debug!("Remote command terminate message: {terminate_msg}");
-            }
+            session.run_cmd(&remote_cmd)?;
+
             log::trace!("Sleeping {tcp_delay_ms} before allowing client to initiate transfer");
             std::thread::sleep(Duration::from_millis(tcp_delay_ms));
             server_ready_flag.store(true, Ordering::Relaxed);
-            let res = exec.get_result()?;
-            log::debug!("{}", String::from_utf8_lossy(&res));
+            let out = session
+                .get_cmd_output()
+                .expect("No command output for remote sesion");
             session.close();
-            Ok(res)
+            Ok(out)
         });
 
         let client_h = scope.spawn(|| {
@@ -189,12 +175,10 @@ fn run_ssh(
         log::trace!("Joining server thread");
         server_h.join().expect("Failed joining server thread")
     });
-    log::debug!("End");
 
-    let server_raw_output = server_output?;
     log::debug!(
         "remote server output: {}",
-        String::from_utf8(server_raw_output)?
+        String::from_utf8_lossy(&server_output?)
     );
 
     // Close session.
