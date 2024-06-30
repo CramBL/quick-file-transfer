@@ -210,7 +210,7 @@ fn run_ssh(
             log::trace!("use mmap: {use_mmap}");
             log::trace!("file(s): {input_files:?}");
             log::trace!("prealloc: {prealloc}");
-            log::trace!("compression: {:?}", compression);
+            log::trace!("compression: {compression:?}");
             while !server_ready_flag.load(Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(2));
             }
