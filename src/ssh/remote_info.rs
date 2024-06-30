@@ -1,11 +1,7 @@
 use anyhow::{bail, Context};
 
-use crate::{
-    config::transfer::send::ssh::{SendSshArgs, TargetComponents},
-    ssh::mdns_util,
-};
+use crate::config::transfer::send::ssh::{SendSshArgs, TargetComponents};
 
-#[cfg(feature = "mdns")]
 use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy)]
@@ -21,7 +17,7 @@ impl<'a> Remote<'a> {
             return Ok(Self::Ip(host));
         }
         #[cfg(feature = "mdns")]
-        if mdns_util::is_mdns_hostname(host) {
+        if crate::ssh::mdns_util::is_mdns_hostname(host) {
             return Ok(Self::MdnsHostname(host));
         }
         bail!("'{host}' is not an IP or a mDNS/DNS-SD hostname");
@@ -32,7 +28,7 @@ impl<'a> Remote<'a> {
         match self {
             Remote::Ip(ip) => Ok(Cow::Borrowed(ip)),
             Remote::MdnsHostname(hn) => {
-                let ip = mdns_util::get_remote_ip_from_hostname(
+                let ip = super::mdns_util::get_remote_ip_from_hostname(
                     hn,
                     timeout_ms,
                     crate::config::misc::IpVersion::V4,

@@ -150,10 +150,13 @@ fn run_ssh(
 
         let client_h = scope.spawn(|| {
             log::debug!("Starting client thread targetting {remote_ip}:{tcp_port}");
-            log::trace!("use mmap: {use_mmap}");
-            log::trace!("file(s): {input_files:?}");
-            log::trace!("prealloc: {prealloc}");
-            log::trace!("compression: {compression:?}");
+            log::trace!(
+                "\
+            use mmap: {use_mmap}\
+            \nfile(s): {input_files:?}\
+            \nprealloc: {prealloc}\
+            \ncompression: {compression:?}"
+            );
             while !server_ready_flag.load(Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(2));
             }

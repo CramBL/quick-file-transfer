@@ -1,6 +1,6 @@
 use anyhow::bail;
 
-use crate::config::{ssh::parse_scp_style_uri, Command, Config};
+use crate::config::{Command, Config};
 
 pub fn run(_cfg: &Config) -> anyhow::Result<()> {
     if let Some(ref cmd) = _cfg.command {
@@ -24,9 +24,9 @@ pub fn run(_cfg: &Config) -> anyhow::Result<()> {
                 let is_remote_to_local = !args.is_sending();
 
                 let remote_uri_components = if is_local_to_remote {
-                    parse_scp_style_uri(&args.destination)
+                    crate::config::ssh::parse_scp_style_uri(&args.destination)
                 } else {
-                    parse_scp_style_uri(args.sources.first().unwrap())
+                    crate::config::ssh::parse_scp_style_uri(args.sources.first().unwrap())
                 }?;
                 println!("URI: {remote_uri_components:?}");
 

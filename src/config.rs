@@ -5,6 +5,7 @@ mod util;
 use util::*;
 
 pub mod compression;
+#[cfg(feature = "ssh")]
 pub mod ssh;
 pub mod transfer;
 
