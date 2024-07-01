@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.07 - 2024-06-30
+## Unreleased
+
+### Changed
+
+- `qft mdns discover` default timeout from `5s` -> `4s`
+- `qft mdns resolve` default timeout from `10s` -> `1s`
+
+## 0.7.0 - 2024-06-30
 
 ### Changed
 
