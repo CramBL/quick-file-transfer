@@ -4,3 +4,6 @@ target
 *.raucb
 qft_release
 qft_debug
+book/src
+book/build
+crates/generate-book/Cargo.lock
