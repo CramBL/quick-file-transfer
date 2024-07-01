@@ -47,10 +47,8 @@ jobs:
       - name: Clippy feature combinations
         run: cargo hack clippy --feature-powerset --no-dev-deps
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install shellcheck
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install shellcheck
 
       - name: Check Install Script
         run: shellcheck www/install.sh
