@@ -300,9 +300,7 @@ cargo install quick-file-transfer
 #### Prebuilt binaries
 
 ```shell
-curl -L -H "Accept: application/vnd.github.v3.raw" \
-        https://api.github.com/repos/CramBL/quick-file-transfer/contents/scripts/install.sh \
-        | bash -s -- --to ~/bin
+curl --proto '=https' --tlsv1.2 -sSf https://crambl.github.io/quick-file-transfer/install.sh | bash -s -- --to <DEST>
 ```
 
 ## Comparison/Benchmarks
