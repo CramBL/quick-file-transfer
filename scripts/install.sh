@@ -55,6 +55,19 @@ need() {
     fi
 }
 
+need_one_of() {
+    has_one="false"
+    for cmd in "$@"; do
+        if command -v "$cmd" > /dev/null 2>&1; then
+        has_one="true"
+        break
+        fi
+    done
+    if [ $has_one = "false" ]; then
+        err "need one of $* (none of the commands were found)"
+    fi
+}
+
 download() {
     url="$1"
     output="$2"
@@ -63,6 +76,17 @@ download() {
         curl --proto =https --tlsv1.2 -sSfL "$url" "-o$output"
     else
         wget --https-only --secure-protocol=TLSv1_2 --quiet "$url" "-O$output"
+    fi
+}
+
+install_bin() {
+    src="$1"
+    dst="$2"
+    if command -v install > /dev/null; then
+        install -m 755 "$src" "$dest"
+    else
+        cp "$src" "$dst"
+        chmod 755 "$dst"
     fi
 }
 
@@ -94,11 +118,10 @@ while test $# -gt 0; do
     shift
 done
 
-need curl
-need install
+need_one_of curl wget
+need_one_of tar unzip
 need mkdir
 need mktemp
-need tar
 
 if [ -z "${tag-}" ]; then
     need grep
@@ -130,6 +153,8 @@ if [ -z "${target-}" ]; then
 
     case $uname_target in
         aarch64-Linux)     target=aarch64-unknown-linux-musl;;
+        armv7l-Linux)      target=armv7-unknown-linux-musleabihf;;
+        armv6l-Linux)      target=arm-unknown-linux-musleabihf;;
         arm64-Darwin)      target=aarch64-apple-darwin;;
         x86_64-Darwin)     target=x86_64-apple-darwin;;
         x86_64-Linux)      target=x86_64-unknown-linux-musl;;
@@ -143,8 +168,8 @@ if [ -z "${target-}" ]; then
 fi
 
 case $target in
-    x86_64-pc-windows-msvc) extension=zip; need unzip;;
-    *)                      extension=tar.gz;;
+    x86_64-pc-windows-msvc) extension=zip;    need unzip;;
+    *)                      extension=tar.gz; need tar;;
 esac
 
 archive="$RELEASES/download/$tag/$BIN_NAME-$tag-$target.$extension"
@@ -170,7 +195,7 @@ if [ -e "$dest/${BIN_NAME}" ] && [ "$force" = false ]; then
     err "\`$dest/${BIN_NAME}\` already exists"
 else
     mkdir -p "$dest"
-    install -m 755 "$td/${BIN_NAME}" "$dest"
+    install_bin "$td/${BIN_NAME}" "$dest"
 fi
 
 rm -rf "$td"
