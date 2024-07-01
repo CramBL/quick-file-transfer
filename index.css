@@ -1,0 +1,66 @@
+/* General body styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #0e0e0e;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+/* Style for the logo containers */
+#book {
+    width: 100px;
+    height: 100px;
+    background: url('logo.svg') no-repeat center center;
+    background-size: cover;
+    margin: 20px;
+    border: 1px solid #0e0e0e;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Hover effect for logos */
+#book:hover {
+    transform: scale(1.1);
+}
+
+/* Styling for the anchor tags */
+a {
+    text-decoration: none;
+    color: #0057B7;
+    font-size: 16px;
+    margin: 10px;
+    transition: color 0.3s ease;
+}
+
+/* Hover effect for text links */
+a:hover {
+    color: #ff4500;
+}
+
+/* Extra styling for specific links if needed */
+a[href*="github"] {
+    font-weight: bold;
+}
+
+a[href*="crates"] {
+    font-weight: bold;
+}
+
+a[href*="man"] {
+    font-weight: bold;
+}
+
+html {
+    background-color: black;
+    color: white;
+    overflow: hidden;
+    text-align: center;
+    font-family: monospace;
+    font-size: var(--size);
+    line-height: var(--size);
+}
