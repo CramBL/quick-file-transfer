@@ -35,13 +35,11 @@ If you are worried about a man-in-the-middle, you can simply check your data on 
 
 ## Features
 
-<ul>
-<li><input checked="" disabled="" type="checkbox"> Send files via TCP by specifying either IP or mDNS/DNS-SD hostname</li>
-<li><input checked="" disabled="" type="checkbox"> Evaluate [supported compression formats](#supported-compression-formats) on your input data</li>
-<li><input checked="" disabled="" type="checkbox"> Discover, resolve, and/or register mDNS/DNS-SD services</li>
-<li><input checked="" disabled="" type="checkbox"> SCP like transfers `qft send ssh <user>@<host>:<path> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.</li>
-<li><input checked="" disabled="" type="checkbox"> Shell completions for bash, elvish, fish, powershell, and zsh.</li>
-</ul>
+* Send files via TCP by specifying either IP or mDNS/DNS-SD hostname
+* Evaluate [supported compression formats](#supported-compression-formats) on your input data
+* Discover, resolve, and/or register mDNS/DNS-SD services
+* SCP like transfers `qft ssh FILES... <user>@<host>:<path>`. Where auth occurs via SSH but transfer is bare bone TCP.
+* Shell completions for `bash`, `elvish`, `fish`, `powershell`, and `zsh`.
 
 ## Usage
 
@@ -76,7 +74,7 @@ In a CI script using key based SSH auth, it looks very similar to SCP.
 #### Host #1
 
 ```shell
-qft send ssh foo@bar.local:/tmp/data --file received.data
+qft ssh file.data foo@bar.local:/tmp/
 ```
 
 #### CI script with no SSH auth
@@ -86,11 +84,10 @@ Something like a Raspberry Pi could orchestrate the testing of an embedded syste
 ```bash
 #!/usr/bin/env bash
 set -eu
-HOST1_HOSTNAME="foo.local."
+REMOTE_HOSTNAME="foo.local."
 FIRMWARE="fw.raucb"
-ssh -f user@${HOST1_HOSTNAME} "sh -c 'nohup qft listen --file ${FIRMWARE} > qft_listen.log 2>&1 &'"
-qft send mdns ${HOST1_HOSTNAME} --file ${FIRMWARE} --prealloc
-ssh user@${HOST1_HOSTNAME} -t "rauc install ${FIRMWARE}"
+qft ssh ${FIRMWARE} root@${REMOTE_HOSTNAME}:/
+ssh root@${REMOTE_HOSTNAME} -t "rauc install /${FIRMWARE}"
 ...
 ```
 
