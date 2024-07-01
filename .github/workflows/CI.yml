@@ -47,6 +47,11 @@ jobs:
       - name: Clippy feature combinations
         run: cargo hack clippy --feature-powerset --no-dev-deps
 
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install shellcheck
+
+      - name: Check Install Script
+        run: shellcheck www/install.sh
 
   Test:
     strategy:
@@ -96,5 +101,32 @@ jobs:
 
     - name: Test install.sh
       run: |
-        bash scripts/install.sh --to /tmp --tag 0.2.0
+        bash www/install.sh --to /tmp --tag 0.2.0
         /tmp/qft --version
+
+  Docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Install `mdbook` & `mdbook-linkcheck`
+      run: cargo install mdbook mdbook-linkcheck
+
+    - name: Build book - Generate chapters
+      working-directory: crates/generate-book
+      run: cargo run
+
+    - name: Build book - build site
+      run: mdbook build book
+
+    - name: Deploy Pages
+      uses: peaceiris/actions-gh-pages@v4
+      #if: github.ref == 'refs/heads/master'
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        publish_branch: gh-pages
+        publish_dir: www

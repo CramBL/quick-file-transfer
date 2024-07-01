@@ -1,0 +1,15 @@
+[book]
+authors = ["Marc Beck König"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Quick File Transfer User Manual"
+
+
+[build]
+build-dir = "build"
+
+[output.html]
+git-repository-url = "https://github.com/CramBL/quick-file-transfer"
+
+[output.linkcheck]
