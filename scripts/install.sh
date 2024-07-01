@@ -55,6 +55,19 @@ need() {
     fi
 }
 
+need_one_of() {
+    has_one="false"
+    for cmd in "$@"; do
+        if command -v "$cmd" > /dev/null 2>&1; then
+        has_one="true"
+        break
+        fi
+    done
+    if [ $has_one = "false" ]; then
+        err "need one of $* (none of the commands were found)"
+    fi
+}
+
 download() {
     url="$1"
     output="$2"
@@ -105,7 +118,8 @@ while test $# -gt 0; do
     shift
 done
 
-need curl
+need_one_of curl wget
+need_one_of tar unzip
 need mkdir
 need mktemp
 
@@ -154,7 +168,7 @@ if [ -z "${target-}" ]; then
 fi
 
 case $target in
-    x86_64-pc-windows-msvc) extension=zip; need unzip;;
+    x86_64-pc-windows-msvc) extension=zip;    need unzip;;
     *)                      extension=tar.gz; need tar;;
 esac
 
