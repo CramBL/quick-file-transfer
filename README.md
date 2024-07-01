@@ -1,26 +1,25 @@
-# Quick File Transfer (qft)
+<div align=right>Table of Contents↗️</div>
 
-[![CI](https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml/badge.svg)](https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml)
+<h1 align=center>Quick File Transfer
 
-- [Quick File Transfer (qft)](#quick-file-transfer-qft)
-  - [Purpose](#purpose)
-  - [Features](#features)
-  - [Usage](#usage)
-  - [Examples](#examples)
-    - [File transfer](#file-transfer)
-    - [Host #1](#host-1)
-    - [CI script with no SSH auth](#ci-script-with-no-ssh-auth)
-    - [Evaluate compression](#evaluate-compression)
-    - [mDNS utilities](#mdns-utilities)
-      - [Discover services](#discover-services)
-      - [Resolve mDNS hostname](#resolve-mdns-hostname)
-      - [Register mDNS service (for testing or transferring by addressing the registered hostname)](#register-mdns-service-for-testing-or-transferring-by-addressing-the-registered-hostname)
-  - [Supported compression formats](#supported-compression-formats)
-  - [Install](#install)
-    - [Prebuilt binaries](#prebuilt-binaries)
-  - [Comparison/Benchmarks](#comparisonbenchmarks)
-    - [netcat-like mode](#netcat-like-mode)
-    - [scp-like mode](#scp-like-mode)
+<code>qft</code>
+
+</h1>
+
+
+<div align=center>
+  <a href=https://crates.io/crates/quick-file-transfer>
+    <img src=https://img.shields.io/crates/v/quick-file-transfer.svg alt="crates.io version">
+  </a>
+  <a href=https://github.com/CramBL/quick-file-transfer/actions>
+    <img src=https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml/badge.svg alt="build status">
+  </a>
+  <a href=https://github.com/CramBL/just/releases>
+    <img src=https://img.shields.io/github/downloads/CramBL/quick-file-transfer/total.svg alt=downloads>
+  </a>
+</div>
+<br>
+
 
 ## Purpose
 
@@ -34,11 +33,13 @@ If you are worried about a man-in-the-middle, you can simply check your data on 
 
 ## Features
 
-- [x] Send files via TCP by specifying either IP or mDNS/DNS-SD hostname
-- [x] Evaluate [supported compression formats](#supported-compression-formats) on your input data
-- [x] Discover, resolve, and/or register mDNS/DNS-SD services
-- [x] SCP like transfers `qft send ssh <user>@<host>:<path> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.
-- [x] Shell completions for bash, elvish, fish, powershell, and zsh.
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Send files via TCP by specifying either IP or mDNS/DNS-SD hostname</li>
+<li><input checked="" disabled="" type="checkbox"> Evaluate [supported compression formats](#supported-compression-formats) on your input data</li>
+<li><input checked="" disabled="" type="checkbox"> Discover, resolve, and/or register mDNS/DNS-SD services</li>
+<li><input checked="" disabled="" type="checkbox"> SCP like transfers `qft send ssh <user>@<host>:<path> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.</li>
+<li><input checked="" disabled="" type="checkbox"> Shell completions for bash, elvish, fish, powershell, and zsh.</li>
+</ul>
 
 ## Usage
 
@@ -65,18 +66,18 @@ Options:
 
 ## Examples
 
-### File transfer
+#### File transfer
 
 In a CI script using key based SSH auth, it looks very similar to SCP.
 > Both hosts need qft installed!
 
-### Host #1
+#### Host #1
 
 ```shell
 qft send ssh foo@bar.local:/tmp/data --file received.data
 ```
 
-### CI script with no SSH auth
+#### CI script with no SSH auth
 
 Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.
 
@@ -278,18 +279,23 @@ qft mdns resolve foo-name[.local.] --short-circuit
 
 ## Supported compression formats
 
-- [x] bzip2
-- [x] gzip
-- [x] lz4
-- [x] xz
+<ul>
+<li><input checked="" disabled="" type="checkbox"> bzip2</li>
+<li><input checked="" disabled="" type="checkbox"> gzip</li>
+<li><input checked="" disabled="" type="checkbox"> lz4</li>
+<li><input checked="" disabled="" type="checkbox"> xz</li>
+</ul>
+
 
 ## Install
+
+Build from source (preferred if you have the Rust toolchain installed).
 
 ```shell
 cargo install quick-file-transfer
 ```
 
-### Prebuilt binaries
+#### Prebuilt binaries
 
 ```shell
 curl -L -H "Accept: application/vnd.github.v3.raw" \
@@ -305,22 +311,22 @@ Using a 7.2 MiB JSON-file (not prettified) I had nearby with real data.
 
 Targeting a `Raspberry Pi Zero W` that is connected with ethernet to a gigabit network.
 
-### netcat-like mode
+#### netcat-like mode
 
 The RPI-0W was running `qft listen -p <PORT> --output 7mb.json` and `nc -l <PORT> > 7mb.json` on repeat for the duration of the benchmark.
 
-| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
-|:---|---:|---:|---:|---:|
-| `qft send ip <IP> -p <PORT> -f 7mb.json` | 895 ± 52 | 766 | 935 | 1.31 ± 0.11 |
-| `qft send ip <IP> -p <PORT> -f 7mb.json lz4` | 486 ± 60 | 404 | 584 | 1.03 ± 0.09 |
-| `qft send ip <IP> -p <PORT> -f 7mb.json gzip` | 444 ± 120 | 325 | 685 | 1.00 |
-| `nc -N <IP> <PORT> < 7mb.json` | 1049 ± 8 | 1036 | 1056 | 1.42 ± 0.12 |
+| Command                                       | Mean [ms] | Min [ms] | Max [ms] |    Relative |
+| :-------------------------------------------- | --------: | -------: | -------: | ----------: |
+| `qft send ip <IP> -p <PORT> -f 7mb.json`      |  895 ± 52 |      766 |      935 | 1.31 ± 0.11 |
+| `qft send ip <IP> -p <PORT> -f 7mb.json lz4`  |  486 ± 60 |      404 |      584 | 1.03 ± 0.09 |
+| `qft send ip <IP> -p <PORT> -f 7mb.json gzip` | 444 ± 120 |      325 |      685 |        1.00 |
+| `nc -N <IP> <PORT> < 7mb.json`                |  1049 ± 8 |     1036 |     1056 | 1.42 ± 0.12 |
 
-### scp-like mode
+#### scp-like mode
 
-| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
-|:---|---:|---:|---:|---:|
-| `qft ssh 7mb.json <user>@<IP>:~/7mb.json` | 2.295 ± 0.131 | 2.108 | 2.399 | 1.14 ± 0.10 |
-| `qft ssh 7mb.json <user>@<IP>:~/7mb.json lz4` | 2.004 ± 0.122 | 1.797 | 2.194 | 1.00 |
-| `qft ssh 7mb.json <user>@<IP>:~/7mb.json gzip 4` | 2.026 ± 0.120 | 1.847 | 2.122 | 1.01 ± 0.09 |
-| `scp 7mb.json <user>@<IP>:~/7mb.json` | 2.448 ± 0.039 | 2.404 | 2.532 | 1.22 ± 0.08 |
+| Command                                          |     Mean [ms] | Min [ms] | Max [ms] |    Relative |
+| :----------------------------------------------- | ------------: | -------: | -------: | ----------: |
+| `qft ssh 7mb.json <user>@<IP>:~/7mb.json`        | 2.295 ± 0.131 |    2.108 |    2.399 | 1.14 ± 0.10 |
+| `qft ssh 7mb.json <user>@<IP>:~/7mb.json lz4`    | 2.004 ± 0.122 |    1.797 |    2.194 |        1.00 |
+| `qft ssh 7mb.json <user>@<IP>:~/7mb.json gzip 4` | 2.026 ± 0.120 |    1.847 |    2.122 | 1.01 ± 0.09 |
+| `scp 7mb.json <user>@<IP>:~/7mb.json`            | 2.448 ± 0.039 |    2.404 |    2.532 | 1.22 ± 0.08 |
