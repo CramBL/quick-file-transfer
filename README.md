@@ -208,7 +208,7 @@ Best Decompression Time:  Lz4      Compression/Decompression:    83.29µs/   32.
 
 ### mDNS utilities
 
-The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and much slower than e.g. `avahi` is.
+The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and have much slower (but more complete) defaults than e.g. `avahi` does.
 
 #### Discover services
 
@@ -220,11 +220,11 @@ Example Output
 
 ```text
 INFO Browsing for _googlecast._tcp.local.
-INFO Resolved a new service: uie4027lgu-0b9b5630aa2b87f6945638a0128bfedd._googlecast._tcp.local.
+INFO Resolved a new service: SERVICE_NAME._googlecast._tcp.local.
 INFO Discovered 1 service!
-Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+Hostname:  SERVICE_NAME.local.
 Type Name: _googlecast._tcp.local.
-Full Name: uie4027lgu-0b9b5670aa2b87d6945638a0128bfedd._googlecast._tcp.local.
+Full Name: SERVICE_NAME._googlecast._tcp.local.
 IP(s): fe80::d912:463a:8c88:deca
        192.168.121.21
 ```
@@ -241,9 +241,9 @@ qft mdns resolve foo.local.
 
 Example output
 
-```text 0b9b5670-aa2b-87d6-9456-38a0128bfedd
-INFO Resolving address for 0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
-Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+```text
+INFO Resolving address for foo.local.
+Hostname:  foo.local.
 IP(s): fe80::d912:463a:8c88:deca
        192.168.121.21
 ```
