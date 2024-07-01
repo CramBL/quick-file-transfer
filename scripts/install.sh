@@ -66,6 +66,17 @@ download() {
     fi
 }
 
+install_bin() {
+    src="$1"
+    dst="$2"
+    if command -v install > /dev/null; then
+        install -m 755 "$src" "$dest"
+    else
+        cp "$src" "$dst"
+        chmod 755 "$dst"
+    fi
+}
+
 force=false
 while test $# -gt 0; do
     case $1 in
@@ -95,10 +106,8 @@ while test $# -gt 0; do
 done
 
 need curl
-need install
 need mkdir
 need mktemp
-need tar
 
 if [ -z "${tag-}" ]; then
     need grep
@@ -146,7 +155,7 @@ fi
 
 case $target in
     x86_64-pc-windows-msvc) extension=zip; need unzip;;
-    *)                      extension=tar.gz;;
+    *)                      extension=tar.gz; need tar;;
 esac
 
 archive="$RELEASES/download/$tag/$BIN_NAME-$tag-$target.$extension"
@@ -172,7 +181,7 @@ if [ -e "$dest/${BIN_NAME}" ] && [ "$force" = false ]; then
     err "\`$dest/${BIN_NAME}\` already exists"
 else
     mkdir -p "$dest"
-    install -m 755 "$td/${BIN_NAME}" "$dest"
+    install_bin "$td/${BIN_NAME}" "$dest"
 fi
 
 rm -rf "$td"
