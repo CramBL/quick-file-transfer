@@ -200,11 +200,11 @@
 <p>If you are worried about a man-in-the-middle, you can simply check your data on the receiving end before continuing. There should be no additional security concerns (if you disagree, please create an issue highlighting the concern).</p>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
-<li><input checked="" disabled="" type="checkbox"> Send files via TCP by specifying either IP or mDNS/DNS-SD hostname</li>
-<li><input checked="" disabled="" type="checkbox"> Evaluate [supported compression formats](#supported-compression-formats) on your input data</li>
-<li><input checked="" disabled="" type="checkbox"> Discover, resolve, and/or register mDNS/DNS-SD services</li>
-<li><input checked="" disabled="" type="checkbox"> SCP like transfers `qft send ssh <user>@<host>:<path> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.</li>
-<li><input checked="" disabled="" type="checkbox"> Shell completions for bash, elvish, fish, powershell, and zsh.</li>
+<li>Send files via TCP by specifying either IP or mDNS/DNS-SD hostname</li>
+<li>Evaluate <a href="chapter_8.html">supported compression formats</a> on your input data</li>
+<li>Discover, resolve, and/or register mDNS/DNS-SD services</li>
+<li>SCP like transfers <code>qft ssh FILES... &lt;user&gt;@&lt;host&gt;:&lt;path&gt;</code>. Where auth occurs via SSH but transfer is bare bone TCP.</li>
+<li>Shell completions for <code>bash</code>, <code>elvish</code>, <code>fish</code>, <code>powershell</code>, and <code>zsh</code>.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <pre><code class="language-markdown">$ qft -h
@@ -233,17 +233,16 @@ Options:
 <p>Both hosts need qft installed!</p>
 </blockquote>
 <h4 id="host-1"><a class="header" href="#host-1">Host #1</a></h4>
-<pre><code class="language-shell">qft send ssh foo@bar.local:/tmp/data --file received.data
+<pre><code class="language-shell">qft ssh file.data foo@bar.local:/tmp/
 </code></pre>
 <h4 id="ci-script-with-no-ssh-auth"><a class="header" href="#ci-script-with-no-ssh-auth">CI script with no SSH auth</a></h4>
 <p>Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.</p>
 <pre><code class="language-bash">#!/usr/bin/env bash
 set -eu
-HOST1_HOSTNAME="foo.local."
+REMOTE_HOSTNAME="foo.local."
 FIRMWARE="fw.raucb"
-ssh -f user@${HOST1_HOSTNAME} "sh -c 'nohup qft listen --file ${FIRMWARE} &gt; qft_listen.log 2&gt;&amp;1 &amp;'"
-qft send mdns ${HOST1_HOSTNAME} --file ${FIRMWARE} --prealloc
-ssh user@${HOST1_HOSTNAME} -t "rauc install ${FIRMWARE}"
+qft ssh ${FIRMWARE} root@${REMOTE_HOSTNAME}:/
+ssh root@${REMOTE_HOSTNAME} -t "rauc install /${FIRMWARE}"
 ...
 </code></pre>
 <p>It is also possible to ad-hoc register a service with <code>qft mdns register</code> AND run the <code>qft listen</code> side-by-side and then send to the listening process by addressing the registered hostname from a remote host.</p>
@@ -352,17 +351,17 @@ Best Compression Time:    Lz4      Compression/Decompression:    83.29µs/   32.
 Best Decompression Time:  Lz4      Compression/Decompression:    83.29µs/   32.53µs   2.42:1 (41.25% of original)
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h3 id="mdns-utilities"><a class="header" href="#mdns-utilities">mDNS utilities</a></h3>
-<p>The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and much slower than e.g. <code>avahi</code> is.</p>
+<p>The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and have much slower (but more complete) defaults than e.g. <code>avahi</code> does.</p>
 <h4 id="discover-services"><a class="header" href="#discover-services">Discover services</a></h4>
 <pre><code class="language-shell">qft mdns discover --service-label googlecast --service-protocol tcp
 </code></pre>
 <p>Example Output</p>
 <pre><code class="language-text">INFO Browsing for _googlecast._tcp.local.
-INFO Resolved a new service: uie4027lgu-0b9b5630aa2b87f6945638a0128bfedd._googlecast._tcp.local.
+INFO Resolved a new service: SERVICE_NAME._googlecast._tcp.local.
 INFO Discovered 1 service!
-Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+Hostname:  SERVICE_NAME.local.
 Type Name: _googlecast._tcp.local.
-Full Name: uie4027lgu-0b9b5670aa2b87d6945638a0128bfedd._googlecast._tcp.local.
+Full Name: SERVICE_NAME._googlecast._tcp.local.
 IP(s): fe80::d912:463a:8c88:deca
        192.168.121.21
 </code></pre>
@@ -373,8 +372,8 @@ qft mdns resolve foo.local
 qft mdns resolve foo.local.
 </code></pre>
 <p>Example output</p>
-<pre><code class="language-text 0b9b5670-aa2b-87d6-9456-38a0128bfedd">INFO Resolving address for 0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
-Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+<pre><code class="language-text">INFO Resolving address for foo.local.
+Hostname:  foo.local.
 IP(s): fe80::d912:463a:8c88:deca
        192.168.121.21
 </code></pre>

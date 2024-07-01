@@ -177,17 +177,17 @@
                 <div id="content" class="content">
                     <main>
                         <h3 id="mdns-utilities"><a class="header" href="#mdns-utilities">mDNS utilities</a></h3>
-<p>The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and much slower than e.g. <code>avahi</code> is.</p>
+<p>The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and have much slower (but more complete) defaults than e.g. <code>avahi</code> does.</p>
 <h4 id="discover-services"><a class="header" href="#discover-services">Discover services</a></h4>
 <pre><code class="language-shell">qft mdns discover --service-label googlecast --service-protocol tcp
 </code></pre>
 <p>Example Output</p>
 <pre><code class="language-text">INFO Browsing for _googlecast._tcp.local.
-INFO Resolved a new service: uie4027lgu-0b9b5630aa2b87f6945638a0128bfedd._googlecast._tcp.local.
+INFO Resolved a new service: SERVICE_NAME._googlecast._tcp.local.
 INFO Discovered 1 service!
-Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+Hostname:  SERVICE_NAME.local.
 Type Name: _googlecast._tcp.local.
-Full Name: uie4027lgu-0b9b5670aa2b87d6945638a0128bfedd._googlecast._tcp.local.
+Full Name: SERVICE_NAME._googlecast._tcp.local.
 IP(s): fe80::d912:463a:8c88:deca
        192.168.121.21
 </code></pre>
@@ -198,8 +198,8 @@ qft mdns resolve foo.local
 qft mdns resolve foo.local.
 </code></pre>
 <p>Example output</p>
-<pre><code class="language-text 0b9b5670-aa2b-87d6-9456-38a0128bfedd">INFO Resolving address for 0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
-Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+<pre><code class="language-text">INFO Resolving address for foo.local.
+Hostname:  foo.local.
 IP(s): fe80::d912:463a:8c88:deca
        192.168.121.21
 </code></pre>

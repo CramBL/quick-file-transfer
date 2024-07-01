@@ -183,17 +183,16 @@
 <p>Both hosts need qft installed!</p>
 </blockquote>
 <h4 id="host-1"><a class="header" href="#host-1">Host #1</a></h4>
-<pre><code class="language-shell">qft send ssh foo@bar.local:/tmp/data --file received.data
+<pre><code class="language-shell">qft ssh file.data foo@bar.local:/tmp/
 </code></pre>
 <h4 id="ci-script-with-no-ssh-auth"><a class="header" href="#ci-script-with-no-ssh-auth">CI script with no SSH auth</a></h4>
 <p>Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.</p>
 <pre><code class="language-bash">#!/usr/bin/env bash
 set -eu
-HOST1_HOSTNAME="foo.local."
+REMOTE_HOSTNAME="foo.local."
 FIRMWARE="fw.raucb"
-ssh -f user@${HOST1_HOSTNAME} "sh -c 'nohup qft listen --file ${FIRMWARE} &gt; qft_listen.log 2&gt;&amp;1 &amp;'"
-qft send mdns ${HOST1_HOSTNAME} --file ${FIRMWARE} --prealloc
-ssh user@${HOST1_HOSTNAME} -t "rauc install ${FIRMWARE}"
+qft ssh ${FIRMWARE} root@${REMOTE_HOSTNAME}:/
+ssh root@${REMOTE_HOSTNAME} -t "rauc install /${FIRMWARE}"
 ...
 </code></pre>
 <p>It is also possible to ad-hoc register a service with <code>qft mdns register</code> AND run the <code>qft listen</code> side-by-side and then send to the listening process by addressing the registered hostname from a remote host.</p>
