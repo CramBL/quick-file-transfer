@@ -181,9 +181,7 @@
 <pre><code class="language-shell">cargo install quick-file-transfer
 </code></pre>
 <h4 id="prebuilt-binaries"><a class="header" href="#prebuilt-binaries">Prebuilt binaries</a></h4>
-<pre><code class="language-shell">curl -L -H "Accept: application/vnd.github.v3.raw" \
-        https://api.github.com/repos/CramBL/quick-file-transfer/contents/scripts/install.sh \
-        | bash -s -- --to ~/bin
+<pre><code class="language-shell">curl --proto '=https' --tlsv1.2 -sSf https://crambl.github.io/quick-file-transfer/install.sh | bash -s -- --to &lt;DEST&gt;
 </code></pre>
 
                     </main>

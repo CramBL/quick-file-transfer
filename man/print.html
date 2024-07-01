@@ -407,9 +407,7 @@ INFO Keeping alive for: 123.456s
 <pre><code class="language-shell">cargo install quick-file-transfer
 </code></pre>
 <h4 id="prebuilt-binaries"><a class="header" href="#prebuilt-binaries">Prebuilt binaries</a></h4>
-<pre><code class="language-shell">curl -L -H "Accept: application/vnd.github.v3.raw" \
-        https://api.github.com/repos/CramBL/quick-file-transfer/contents/scripts/install.sh \
-        | bash -s -- --to ~/bin
+<pre><code class="language-shell">curl --proto '=https' --tlsv1.2 -sSf https://crambl.github.io/quick-file-transfer/install.sh | bash -s -- --to &lt;DEST&gt;
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="comparisonbenchmarks"><a class="header" href="#comparisonbenchmarks">Comparison/Benchmarks</a></h2>
 <p>Benchmarks are done with <code>hyperfine</code> default settings.</p>
