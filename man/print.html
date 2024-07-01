@@ -1,0 +1,477 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Quick File Transfer User Manual</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="chapter_1.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="chapter_2.html"><strong aria-hidden="true">1.1.</strong> Purpose</a></li><li class="chapter-item expanded "><a href="chapter_3.html"><strong aria-hidden="true">1.2.</strong> Features</a></li><li class="chapter-item expanded "><a href="chapter_4.html"><strong aria-hidden="true">1.3.</strong> Usage</a></li><li class="chapter-item expanded "><a href="chapter_5.html"><strong aria-hidden="true">1.4.</strong> Examples</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="chapter_6.html"><strong aria-hidden="true">1.4.1.</strong> Evaluate compression</a></li><li class="chapter-item expanded "><a href="chapter_7.html"><strong aria-hidden="true">1.4.2.</strong> mDNS utilities</a></li></ol></li><li class="chapter-item expanded "><a href="chapter_8.html"><strong aria-hidden="true">1.5.</strong> Supported compression formats</a></li><li class="chapter-item expanded "><a href="chapter_9.html"><strong aria-hidden="true">1.6.</strong> Install</a></li><li class="chapter-item expanded "><a href="chapter_10.html"><strong aria-hidden="true">1.7.</strong> Comparison/Benchmarks</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Quick File Transfer User Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/CramBL/quick-file-transfer" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 align=center>Quick File Transfer
+<p><code>qft</code></p>
+</h1>
+<div align=center>
+  <a href=https://crates.io/crates/quick-file-transfer>
+    <img src=https://img.shields.io/crates/v/quick-file-transfer.svg alt="crates.io version">
+  </a>
+  <a href=https://github.com/CramBL/quick-file-transfer/actions>
+    <img src=https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml/badge.svg alt="build status">
+  </a>
+  <a href=https://github.com/CramBL/just/releases>
+    <img src=https://img.shields.io/github/downloads/CramBL/quick-file-transfer/total.svg alt=downloads>
+  </a>
+</div>
+<br>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="purpose"><a class="header" href="#purpose">Purpose</a></h2>
+<p>Transfer files as <strong>quickly</strong>, <strong>safely</strong>, and <strong>painlessly</strong> as possible on a local network.</p>
+<p><code>qft</code> optimizes for a scenario where embedded systems regularly transfer large files across a local network, such as a continuous integration pipeline where firmware (e.g. Rauc) can take significant time to transfer with tools such as <code>rsync</code>, <code>scp</code>, or <code>netcat</code>.</p>
+<p>To accomplish this, <code>qft</code> acts as a server/client that transfers data over TCP. It is very similar to how <code>netcat</code> can be used to transfer files, but <code>qft</code> focuses solely on transferring files, and comes with a variety of customization options such as <a href="chapter_8.html">compression/decompression</a>, memory mapping, preallocation options and more. TCP is chosen for reliable data transfer, and no authentication or encryption is layered on top to reduce the overhead, addressing remote targets by mDNS is also supported.</p>
+<p>If you are worried about a man-in-the-middle, you can simply check your data on the receiving end before continuing. There should be no additional security concerns (if you disagree, please create an issue highlighting the concern).</p>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="features"><a class="header" href="#features">Features</a></h2>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Send files via TCP by specifying either IP or mDNS/DNS-SD hostname</li>
+<li><input checked="" disabled="" type="checkbox"> Evaluate [supported compression formats](#supported-compression-formats) on your input data</li>
+<li><input checked="" disabled="" type="checkbox"> Discover, resolve, and/or register mDNS/DNS-SD services</li>
+<li><input checked="" disabled="" type="checkbox"> SCP like transfers `qft send ssh <user>@<host>:<path> --file f.txt`. Where auth occurs via SSH but transfer is bare bone TCP.</li>
+<li><input checked="" disabled="" type="checkbox"> Shell completions for bash, elvish, fish, powershell, and zsh.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<pre><code class="language-markdown">$ qft -h
+Usage: qft [OPTIONS] [COMMAND]
+
+Commands:
+  listen                Run in Listen (server) mode
+  send                  Run in Send (client) mode
+  mdns                  Use mDNS utilities
+  evaluate-compression  Evaluate which compression works best for file content
+  get-free-port         Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port
+  help                  Print this message or the help of the given subcommand(s)
+
+Options:
+  -v, --verbose...           Pass many times for more log output
+  -q, --quiet                Silence all log output, this will lead to better performance [env: QFT_QUIET=]
+      --color=&lt;WHEN&gt;         [default: auto] [possible values: auto, always, never]
+      --completions &lt;SHELL&gt;  Generate completion scripts for the specified shell. Note: The completion script is printed to stdout [possible values: bash, elvish, fish, powershell, zsh]
+  -h, --help                 Print help (see more with '--help')
+  -V, --version              Print version
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<h4 id="file-transfer"><a class="header" href="#file-transfer">File transfer</a></h4>
+<p>In a CI script using key based SSH auth, it looks very similar to SCP.</p>
+<blockquote>
+<p>Both hosts need qft installed!</p>
+</blockquote>
+<h4 id="host-1"><a class="header" href="#host-1">Host #1</a></h4>
+<pre><code class="language-shell">qft send ssh foo@bar.local:/tmp/data --file received.data
+</code></pre>
+<h4 id="ci-script-with-no-ssh-auth"><a class="header" href="#ci-script-with-no-ssh-auth">CI script with no SSH auth</a></h4>
+<p>Something like a Raspberry Pi could orchestrate the testing of an embedded system, and might use a script like this to transfer a firmware upgrade bundle.</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+set -eu
+HOST1_HOSTNAME="foo.local."
+FIRMWARE="fw.raucb"
+ssh -f user@${HOST1_HOSTNAME} "sh -c 'nohup qft listen --file ${FIRMWARE} &gt; qft_listen.log 2&gt;&amp;1 &amp;'"
+qft send mdns ${HOST1_HOSTNAME} --file ${FIRMWARE} --prealloc
+ssh user@${HOST1_HOSTNAME} -t "rauc install ${FIRMWARE}"
+...
+</code></pre>
+<p>It is also possible to ad-hoc register a service with <code>qft mdns register</code> AND run the <code>qft listen</code> side-by-side and then send to the listening process by addressing the registered hostname from a remote host.</p>
+<div style="break-before: page; page-break-before: always;"></div><h3 id="evaluate-compression"><a class="header" href="#evaluate-compression">Evaluate compression</a></h3>
+<pre><code class="language-markdown">Evaluate which compression works best for file content
+
+Usage: qft evaluate-compression [OPTIONS] --input-file &lt;INPUT_FILE&gt;
+
+Options:
+  -i, --input-file &lt;INPUT_FILE&gt;
+      --omit [&lt;OMIT&gt;...]                List of compression formats to omit from evaluation [possible values: bzip2, gzip, lz4, xz]
+      --omit-levels [&lt;OMIT_LEVELS&gt;...]  List of compression levels to omit from evaluation
+  -v, --verbose...                      Pass many times for more log output
+  -q, --quiet                           Silence all output [env: QFT_QUIET=]
+      --color=&lt;WHEN&gt;                    [default: auto] [possible values: auto, always, never]
+  -h, --help                            Print help (see more with '--help')
+</code></pre>
+<p>Evaluate compression of <code>Cargo.lock</code>. Omit <code>gzip</code> and most compression levels to make this example brief.</p>
+<pre><code class="language-shell">qft evaluate-compression --input-file Cargo.lock --omit gzip --omit-levels 0 2 3 4 5 6 7 8
+</code></pre>
+<p>Example output:</p>
+<pre><code class="language-shell">INFO Omitting:   Gzip
+INFO Evaluating: Bzip2 Lz4 Xz
+INFO Omitting compression levels (where applicable): 0 2 3 4 5 6 7 8
+INFO Buffered reading 34338 B contents in 15.728µs
+INFO Lz4
+╭────────────────────┬─────────────────────╮
+│ Compression Ratio  ┆        2.42:1       │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆   83.29µs/32.53µs   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 13.83 KiB [14163 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆        41.25%       │
+╰────────────────────┴─────────────────────╯
+INFO Bzip2
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         1         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       4.56:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  2.36ms/686.34µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.36 KiB [7533 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       21.94%      │
+╰────────────────────┴───────────────────╯
+INFO Bzip2
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         9         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       4.56:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  2.73ms/771.13µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.36 KiB [7533 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       21.94%      │
+╰────────────────────┴───────────────────╯
+INFO Xz
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         1         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       3.73:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  2.34ms/522.16µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 9.00 KiB [9216 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       26.84%      │
+╰────────────────────┴───────────────────╯
+INFO Xz
+╭────────────────────┬───────────────────╮
+│ Compression level  ┆         9         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆       4.30:1      │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆  9.04ms/523.23µs  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.80 KiB [7984 B] │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆       23.25%      │
+╰────────────────────┴───────────────────╯
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+╭────────────────────┬───────────────────┬───────────────────────┬─────────────────────────╮
+│                    ┆ Best Ratio        ┆ Best Compression Time ┆ Best Decompression Time │
+╞════════════════════╪═══════════════════╪═══════════════════════╪═════════════════════════╡
+│ Format             ┆ Bzip2             ┆ Lz4                   ┆ Lz4                     │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression level  ┆ 1                 ┆ -                     ┆ -                       │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compression Ratio  ┆ 4.56:1            ┆ 2.42:1                ┆ 2.42:1                  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Encode/decode time ┆ 2.36ms/686.34µs   ┆ 83.29µs/32.53µs       ┆ 83.29µs/32.53µs         │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Compressed Size    ┆ 7.36 KiB [7533 B] ┆ 13.83 KiB [14163 B]   ┆ 13.83 KiB [14163 B]     │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ % of Original      ┆ 21.94%            ┆ 41.25%                ┆ 41.25%                  │
+╰────────────────────┴───────────────────┴───────────────────────┴─────────────────────────╯
+
+==&gt; Short summary
+Best Compression Ratio:   Bzip2[1] Compression/Decompression:     2.36ms/  686.34µs   4.56:1 (21.94% of original)
+Best Compression Time:    Lz4      Compression/Decompression:    83.29µs/   32.53µs   2.42:1 (41.25% of original)
+Best Decompression Time:  Lz4      Compression/Decompression:    83.29µs/   32.53µs   2.42:1 (41.25% of original)
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h3 id="mdns-utilities"><a class="header" href="#mdns-utilities">mDNS utilities</a></h3>
+<p>The purpose of the built-in mDNS/DNS-SD utilities are solely for easy network setup/testing/debugging, therefor they are generally more verbose and much slower than e.g. <code>avahi</code> is.</p>
+<h4 id="discover-services"><a class="header" href="#discover-services">Discover services</a></h4>
+<pre><code class="language-shell">qft mdns discover --service-label googlecast --service-protocol tcp
+</code></pre>
+<p>Example Output</p>
+<pre><code class="language-text">INFO Browsing for _googlecast._tcp.local.
+INFO Resolved a new service: uie4027lgu-0b9b5630aa2b87f6945638a0128bfedd._googlecast._tcp.local.
+INFO Discovered 1 service!
+Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+Type Name: _googlecast._tcp.local.
+Full Name: uie4027lgu-0b9b5670aa2b87d6945638a0128bfedd._googlecast._tcp.local.
+IP(s): fe80::d912:463a:8c88:deca
+       192.168.121.21
+</code></pre>
+<h4 id="resolve-mdns-hostname"><a class="header" href="#resolve-mdns-hostname">Resolve mDNS hostname</a></h4>
+<p>Resolves hostname IP(s), all of the following forms are valid.</p>
+<pre><code class="language-shell">qft mdns resolve foo
+qft mdns resolve foo.local
+qft mdns resolve foo.local.
+</code></pre>
+<p>Example output</p>
+<pre><code class="language-text 0b9b5670-aa2b-87d6-9456-38a0128bfedd">INFO Resolving address for 0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+Hostname:  0b9b5670-aa2b-87d6-9456-38a0128bfedd.local.
+IP(s): fe80::d912:463a:8c88:deca
+       192.168.121.21
+</code></pre>
+<h4 id="register-mdns-service-for-testing-or-transferring-by-addressing-the-registered-hostname"><a class="header" href="#register-mdns-service-for-testing-or-transferring-by-addressing-the-registered-hostname">Register mDNS service (for testing or transferring by addressing the registered hostname)</a></h4>
+<pre><code class="language-shell">qft mdns register --hostname foo-name --service-label bar-label --service-protocol tcp --keep-alive-ms 123456
+</code></pre>
+<pre><code class="language-text">INFO Registering:
+    Hostname:  foo-name.local.
+    Type:      _bar-label._tcp.local.
+    Full Name: test_inst._bar-label._tcp.local.
+
+INFO Keeping alive for: 123.456s
+</code></pre>
+<p>You can the find it using the <code>qft mdns</code> subcommands or e.g. with <code>avahi</code>:</p>
+<pre><code class="language-shell">avahi-resolve --name foo-name.local
+# foo-name.local  172.17.0.1
+</code></pre>
+<p>But that only outputs the first received address. Using <code>qft mdns resolve</code> will output all the associated IPs. If you need speed use the <code>--short-circuit</code> flag to return as soon as the first IP associated with the hostname is resolved e.g.</p>
+<pre><code class="language-shell">qft mdns resolve foo-name[.local.] --short-circuit
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="supported-compression-formats"><a class="header" href="#supported-compression-formats">Supported compression formats</a></h2>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> bzip2</li>
+<li><input checked="" disabled="" type="checkbox"> gzip</li>
+<li><input checked="" disabled="" type="checkbox"> lz4</li>
+<li><input checked="" disabled="" type="checkbox"> xz</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="install"><a class="header" href="#install">Install</a></h2>
+<p>Build from source (preferred if you have the Rust toolchain installed).</p>
+<pre><code class="language-shell">cargo install quick-file-transfer
+</code></pre>
+<h4 id="prebuilt-binaries"><a class="header" href="#prebuilt-binaries">Prebuilt binaries</a></h4>
+<pre><code class="language-shell">curl -L -H "Accept: application/vnd.github.v3.raw" \
+        https://api.github.com/repos/CramBL/quick-file-transfer/contents/scripts/install.sh \
+        | bash -s -- --to ~/bin
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="comparisonbenchmarks"><a class="header" href="#comparisonbenchmarks">Comparison/Benchmarks</a></h2>
+<p>Benchmarks are done with <code>hyperfine</code> default settings.</p>
+<p>Using a 7.2 MiB JSON-file (not prettified) I had nearby with real data.</p>
+<p>Targeting a <code>Raspberry Pi Zero W</code> that is connected with ethernet to a gigabit network.</p>
+<h4 id="netcat-like-mode"><a class="header" href="#netcat-like-mode">netcat-like mode</a></h4>
+<p>The RPI-0W was running <code>qft listen -p &lt;PORT&gt; --output 7mb.json</code> and <code>nc -l &lt;PORT&gt; &gt; 7mb.json</code> on repeat for the duration of the benchmark.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Command</th><th style="text-align: right">Mean [ms]</th><th style="text-align: right">Min [ms]</th><th style="text-align: right">Max [ms]</th><th style="text-align: right">Relative</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>qft send ip &lt;IP&gt; -p &lt;PORT&gt; -f 7mb.json</code></td><td style="text-align: right">895 ± 52</td><td style="text-align: right">766</td><td style="text-align: right">935</td><td style="text-align: right">1.31 ± 0.11</td></tr>
+<tr><td style="text-align: left"><code>qft send ip &lt;IP&gt; -p &lt;PORT&gt; -f 7mb.json lz4</code></td><td style="text-align: right">486 ± 60</td><td style="text-align: right">404</td><td style="text-align: right">584</td><td style="text-align: right">1.03 ± 0.09</td></tr>
+<tr><td style="text-align: left"><code>qft send ip &lt;IP&gt; -p &lt;PORT&gt; -f 7mb.json gzip</code></td><td style="text-align: right">444 ± 120</td><td style="text-align: right">325</td><td style="text-align: right">685</td><td style="text-align: right">1.00</td></tr>
+<tr><td style="text-align: left"><code>nc -N &lt;IP&gt; &lt;PORT&gt; &lt; 7mb.json</code></td><td style="text-align: right">1049 ± 8</td><td style="text-align: right">1036</td><td style="text-align: right">1056</td><td style="text-align: right">1.42 ± 0.12</td></tr>
+</tbody></table>
+</div>
+<h4 id="scp-like-mode"><a class="header" href="#scp-like-mode">scp-like mode</a></h4>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Command</th><th style="text-align: right">Mean [ms]</th><th style="text-align: right">Min [ms]</th><th style="text-align: right">Max [ms]</th><th style="text-align: right">Relative</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>qft ssh 7mb.json &lt;user&gt;@&lt;IP&gt;:~/7mb.json</code></td><td style="text-align: right">2.295 ± 0.131</td><td style="text-align: right">2.108</td><td style="text-align: right">2.399</td><td style="text-align: right">1.14 ± 0.10</td></tr>
+<tr><td style="text-align: left"><code>qft ssh 7mb.json &lt;user&gt;@&lt;IP&gt;:~/7mb.json lz4</code></td><td style="text-align: right">2.004 ± 0.122</td><td style="text-align: right">1.797</td><td style="text-align: right">2.194</td><td style="text-align: right">1.00</td></tr>
+<tr><td style="text-align: left"><code>qft ssh 7mb.json &lt;user&gt;@&lt;IP&gt;:~/7mb.json gzip 4</code></td><td style="text-align: right">2.026 ± 0.120</td><td style="text-align: right">1.847</td><td style="text-align: right">2.122</td><td style="text-align: right">1.01 ± 0.09</td></tr>
+<tr><td style="text-align: left"><code>scp 7mb.json &lt;user&gt;@&lt;IP&gt;:~/7mb.json</code></td><td style="text-align: right">2.448 ± 0.039</td><td style="text-align: right">2.404</td><td style="text-align: right">2.532</td><td style="text-align: right">1.22 ± 0.08</td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+    </div>
+    </body>
+</html>
