@@ -194,6 +194,7 @@
 <br>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="purpose"><a class="header" href="#purpose">Purpose</a></h2>
 <p>Transfer files as <strong>quickly</strong>, <strong>safely</strong>, and <strong>painlessly</strong> as possible on a local network.</p>
+<p>This readme is also available as a <a href="https://crambl.github.io/quick-file-transfer/man/">book</a>.</p>
 <p><code>qft</code> optimizes for a scenario where embedded systems regularly transfer large files across a local network, such as a continuous integration pipeline where firmware (e.g. Rauc) can take significant time to transfer with tools such as <code>rsync</code>, <code>scp</code>, or <code>netcat</code>.</p>
 <p>To accomplish this, <code>qft</code> acts as a server/client that transfers data over TCP. It is very similar to how <code>netcat</code> can be used to transfer files, but <code>qft</code> focuses solely on transferring files, and comes with a variety of customization options such as <a href="chapter_8.html">compression/decompression</a>, memory mapping, preallocation options and more. TCP is chosen for reliable data transfer, and no authentication or encryption is layered on top to reduce the overhead, addressing remote targets by mDNS is also supported.</p>
 <p>If you are worried about a man-in-the-middle, you can simply check your data on the receiving end before continuing. There should be no additional security concerns (if you disagree, please create an issue highlighting the concern).</p>
