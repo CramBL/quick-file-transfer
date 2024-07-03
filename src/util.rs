@@ -1,4 +1,4 @@
-use crate::config::transfer::command::ServerCommand;
+use crate::config::transfer::command::{ServerCommand, ServerResponse};
 use crate::config::Config;
 use anyhow::{bail, Result};
 use std::io::{Read, Write};
@@ -186,6 +186,25 @@ pub fn read_server_cmd(
     }
     let command: ServerCommand = bincode::deserialize(&cmd_buf[..inc_cmd_len])?;
     Ok(Some(command))
+}
+
+pub fn read_server_response(
+    socket: &mut TcpStream,
+    resp_buf: &mut [u8],
+) -> anyhow::Result<ServerResponse> {
+    let mut header_buf = [0; ServerResponse::HEADER_SIZE];
+    // Read the header to determine the size of the incoming command/data
+    if let Err(e) = socket.read_exact(&mut header_buf) {
+        bail!("{e}");
+    }
+    let inc_cmd_len = ServerResponse::size_from_bytes(header_buf);
+
+    // Read the actual command/data based on the size
+    if let Err(e) = socket.read_exact(&mut resp_buf[..inc_cmd_len]) {
+        anyhow::bail!("Error reading command into buffer: {e}");
+    }
+    let resp: ServerResponse = bincode::deserialize(&resp_buf[..inc_cmd_len])?;
+    Ok(resp)
 }
 
 /// This is for generating pseudo-random number for application client/server hand shake.

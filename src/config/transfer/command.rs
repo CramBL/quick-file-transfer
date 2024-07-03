@@ -25,6 +25,28 @@ impl ServerCommand {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, EnumIter, PartialEq)]
+pub enum ServerResponse {
+    Ok,
+    Err(Box<str>),
+}
+
+impl ServerResponse {
+    pub const HEADER_SIZE: usize = 2;
+
+    pub fn err<S>(err_msg: S) -> Self
+    where
+        S: Into<Box<str>>,
+    {
+        Self::Err(err_msg.into())
+    }
+
+    /// Takes an array of bytes describing the header size and returns how size of the incoming command in bytes
+    pub fn size_from_bytes(raw_header: [u8; Self::HEADER_SIZE]) -> usize {
+        u16::from_be_bytes(raw_header) as usize
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -45,6 +67,16 @@ mod tests {
             assert!(serialized_size < 128);
         }
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_server_response_err() -> TestResult {
+        let msg = "some error";
+        let msg_str = msg.to_string();
+        let r = ServerResponse::err(msg);
+        let r2 = ServerResponse::err(msg_str);
+        assert_eq!(r, r2);
         Ok(())
     }
 }
