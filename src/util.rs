@@ -1,4 +1,4 @@
-use crate::config::transfer::command::{ServerCommand, ServerResponse};
+use crate::config::transfer::command::{ServerCommand, ServerResult};
 use crate::config::Config;
 use anyhow::{bail, Result};
 use std::io::{Read, Write};
@@ -191,19 +191,19 @@ pub fn read_server_cmd(
 pub fn read_server_response(
     socket: &mut TcpStream,
     resp_buf: &mut [u8],
-) -> anyhow::Result<ServerResponse> {
-    let mut header_buf = [0; ServerResponse::HEADER_SIZE];
+) -> anyhow::Result<ServerResult> {
+    let mut header_buf = [0; ServerResult::HEADER_SIZE];
     // Read the header to determine the size of the incoming command/data
     if let Err(e) = socket.read_exact(&mut header_buf) {
         bail!("{e}");
     }
-    let inc_cmd_len = ServerResponse::size_from_bytes(header_buf);
+    let inc_cmd_len = ServerResult::size_from_bytes(header_buf);
 
     // Read the actual command/data based on the size
     if let Err(e) = socket.read_exact(&mut resp_buf[..inc_cmd_len]) {
         anyhow::bail!("Error reading command into buffer: {e}");
     }
-    let resp: ServerResponse = bincode::deserialize(&resp_buf[..inc_cmd_len])?;
+    let resp: ServerResult = bincode::deserialize(&resp_buf[..inc_cmd_len])?;
     Ok(resp)
 }
 
