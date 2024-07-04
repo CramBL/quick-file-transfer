@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, Write},
+    io::{self, Read, Write},
     net::{IpAddr, TcpStream},
     path::{Path, PathBuf},
 };
@@ -19,8 +19,6 @@ use crate::{
     TCP_STREAM_BUFSIZE,
 };
 
-use anyhow::Result;
-
 /// If poll is specified, poll the server with the specified interval, else exut on the first failure to establish a connection.
 pub fn run_client(
     ip: IpAddr,
@@ -30,9 +28,20 @@ pub fn run_client(
     prealloc: bool,
     compression: Option<Compression>,
     connect_mode: TcpConnectMode,
-) -> Result<()> {
+) -> anyhow::Result<()> {
+    let mut initial_tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
+
+    let cmd_free_port = ServerCommand::GetFreePort((None, None));
+    send_command(&mut initial_tcp_stream, &cmd_free_port)?;
+    let mut free_port_buf: [u8; 2] = [0; 2];
+    initial_tcp_stream
+        .read_exact(&mut free_port_buf)
+        .expect("Failed to read the free port response");
+    let free_port = u16::from_be_bytes(free_port_buf);
+    log::info!("Got free port: {free_port}");
+
     if input_files.is_empty() {
-        let mut tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
+        let mut tcp_stream = qft_connect_to_server((ip, free_port), connect_mode)?;
         let cmd_receive_data =
             ServerCommand::ReceiveData(0, "stdin".to_string(), compression.map(|c| c.variant()));
         send_command(&mut tcp_stream, &cmd_receive_data)?;
@@ -46,7 +55,7 @@ pub fn run_client(
         let mut fcount = input_files.len();
         log::info!("Sending {fcount} files");
         for f in input_files {
-            let mut tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
+            let mut tcp_stream = qft_connect_to_server((ip, free_port), connect_mode)?;
 
             fcount -= 1;
             let fname: String = f.file_name().unwrap().to_str().unwrap().to_owned();
@@ -89,7 +98,7 @@ fn transfer_data(
     compression: Option<Compression>,
     file: Option<&Path>,
     use_mmap: bool,
-) -> Result<u64> {
+) -> anyhow::Result<u64> {
     log::info!("Connecting to: {ip}:{port}");
 
     let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
