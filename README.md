@@ -23,6 +23,8 @@
 
 ## Purpose
 
+> Note! This is a work in progress and is in no means production ready
+
 Transfer files as **quickly**, **safely**, and **painlessly** as possible on a local network.
 
 This readme is also available as a [book](https://crambl.github.io/quick-file-transfer/man/).
