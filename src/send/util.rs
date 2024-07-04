@@ -41,6 +41,7 @@ pub fn send_command(stream: &mut TcpStream, command: &ServerCommand) -> anyhow::
     // Send the header followed by the command
     stream.write_all(&header)?;
     stream.write_all(&command_bytes)?;
+    stream.flush()?;
     Ok(())
 }
 
