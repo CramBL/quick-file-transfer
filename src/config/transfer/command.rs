@@ -7,7 +7,7 @@ use crate::config::compression::CompressionVariant;
 #[derive(Debug, Serialize, Deserialize, EnumIter)]
 #[allow(variant_size_differences)]
 pub enum ServerCommand {
-    GetFreePort,
+    GetFreePort((Option<u16>, Option<u16>)),
     Prealloc(u64, String),
     ReceiveData(u32, String, Option<CompressionVariant>),
 }
@@ -26,12 +26,12 @@ impl ServerCommand {
 }
 
 #[derive(Debug, Serialize, Deserialize, EnumIter, PartialEq)]
-pub enum ServerResponse {
+pub enum ServerResult {
     Ok,
     Err(Box<str>),
 }
 
-impl ServerResponse {
+impl ServerResult {
     pub const HEADER_SIZE: usize = 2;
 
     pub fn err<S>(err_msg: S) -> Self
@@ -74,8 +74,8 @@ mod tests {
     fn test_server_response_err() -> TestResult {
         let msg = "some error";
         let msg_str = msg.to_string();
-        let r = ServerResponse::err(msg);
-        let r2 = ServerResponse::err(msg_str);
+        let r = ServerResult::err(msg);
+        let r2 = ServerResult::err(msg_str);
         assert_eq!(r, r2);
         Ok(())
     }
