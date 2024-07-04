@@ -69,14 +69,4 @@ mod tests {
 
         Ok(())
     }
-
-    #[test]
-    fn test_server_response_err() -> TestResult {
-        let msg = "some error";
-        let msg_str = msg.to_string();
-        let r = ServerResult::err(msg);
-        let r2 = ServerResult::err(msg_str);
-        assert_eq!(r, r2);
-        Ok(())
-    }
 }

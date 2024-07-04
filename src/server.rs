@@ -16,10 +16,7 @@ use std::{
 use crate::{
     config::{
         compression::CompressionVariant,
-        transfer::{
-            command::{ServerCommand, ServerResult},
-            listen::ListenArgs,
-        },
+        transfer::{command::ServerCommand, listen::ListenArgs},
         Config,
     },
     util::{
@@ -29,17 +26,6 @@ use crate::{
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 use anyhow::{bail, Result};
-
-pub fn send_response(tcp_socket: &mut TcpStream, resp: ServerResult) -> anyhow::Result<()> {
-    let command_bytes = bincode::serialize(&resp)?;
-    debug_assert!(command_bytes.len() <= u16::MAX as usize);
-    let size = command_bytes.len() as u16;
-    let header = size.to_be_bytes();
-    // Send the header followed by the command
-    tcp_socket.write_all(&header)?;
-    tcp_socket.write_all(&command_bytes)?;
-    Ok(())
-}
 
 pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     let ListenArgs {
