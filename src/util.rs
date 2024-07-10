@@ -172,9 +172,15 @@ pub fn server_handshake(socket: &mut TcpStream) -> anyhow::Result<()> {
     let handshake_u32 = rnd_u32(std::process::id() as u64);
     let expect_handshake = rnd_u32(handshake_u32 as u64);
 
-    socket.write_all(&handshake_u32.to_be_bytes())?;
+    if let Err(e) = socket.write_all(&handshake_u32.to_be_bytes()) {
+        log::warn!("{e}, retrying...");
+        socket.write_all(&handshake_u32.to_be_bytes())?
+    }
     let mut handshake_buf: [u8; 4] = [0; 4];
-    socket.read_exact(&mut handshake_buf)?;
+    if let Err(e) = socket.read_exact(&mut handshake_buf) {
+        log::warn!("{e}, retrying...");
+        socket.read_exact(&mut handshake_buf)?;
+    }
     let handshake: u32 = u32::from_be_bytes(handshake_buf);
 
     if handshake != expect_handshake {

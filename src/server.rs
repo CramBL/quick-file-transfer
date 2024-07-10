@@ -155,8 +155,10 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                                                     std::thread::park_timeout(Duration::from_millis(100));
                                                 }
                                             }
-
-                                            Err(e) => bail!(e),
+                                            Err(e) => {
+                                                log::error!("{e}");
+                                                bail!(e)
+                                            },
                                         };
                                         if local_stop_flag.load(Ordering::Relaxed) {
                                             break;
