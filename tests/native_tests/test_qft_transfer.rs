@@ -59,10 +59,8 @@ pub fn test_stdout_transfer_no_compression_simple() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -94,6 +92,10 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
         ClientHandle(client_thread?),
     )?;
 
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
     assert_no_errors_or_warn(server_out.stderr())?;
     assert_no_errors_or_warn(client_out.stderr())?;
 
@@ -124,10 +126,8 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
         ClientHandle(client_thread?),
     )?;
 
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -164,10 +164,8 @@ pub fn test_file_transfer_no_compression_with_no_prealloc() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
 
@@ -224,10 +222,8 @@ pub fn test_file_transfer_bzip2_default_with_no_prealloc() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -282,10 +278,8 @@ pub fn test_file_transfer_gzip_default_with_no_prealloc() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -340,10 +334,8 @@ pub fn test_file_transfer_lz4_default_with_no_prealloc() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -398,10 +390,8 @@ pub fn test_file_transfer_xz_default_with_no_prealloc() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -448,10 +438,8 @@ pub fn test_file_transfer_bzip2_compr_level_1() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -501,10 +489,8 @@ pub fn test_file_transfer_gzip_compr_level_1() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
@@ -555,10 +541,8 @@ pub fn test_file_transfer_xz_compr_level_1() -> TestResult {
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-    if server_out.failed() {
+    if server_out.failed() || client_out.failed() {
         server_out.display_diagnostics();
-    }
-    if client_out.failed() {
         client_out.display_diagnostics();
     }
     assert_no_errors_or_warn(server_out.stderr())?;
