@@ -174,13 +174,13 @@ pub fn server_handshake(socket: &mut TcpStream) -> anyhow::Result<()> {
     let expect_handshake = rnd_u32(handshake_u32 as u64);
 
     if let Err(e) = socket.write_all(&handshake_u32.to_be_bytes()) {
-        log::warn!("{e}, retrying in 100 ms ...");
+        log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
         std::thread::sleep(Duration::from_millis(100));
         socket.write_all(&handshake_u32.to_be_bytes())?
     }
     let mut handshake_buf: [u8; 4] = [0; 4];
     if let Err(e) = socket.read_exact(&mut handshake_buf) {
-        log::warn!("{e}, retrying in 100 ms ...");
+        log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
         std::thread::sleep(Duration::from_millis(100));
         socket.read_exact(&mut handshake_buf)?;
     }
@@ -201,18 +201,23 @@ pub fn read_server_cmd(
     let mut header_buf = [0; ServerCommand::HEADER_SIZE];
     // Read the header to determine the size of the incoming command/data
     if let Err(e) = socket.read_exact(&mut header_buf) {
+        log::trace!("{e}");
         if e.kind() == io::ErrorKind::UnexpectedEof {
             // Ok but no command indicates the client disconnected
             return Ok(None);
         } else {
-            bail!("{e}");
+            log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
+            std::thread::sleep(Duration::from_millis(100));
+            socket.read_exact(&mut header_buf)?;
         }
     }
     let inc_cmd_len = ServerCommand::size_from_bytes(header_buf);
 
     // Read the actual command/data based on the size
     if let Err(e) = socket.read_exact(&mut cmd_buf[..inc_cmd_len]) {
-        anyhow::bail!("Error reading command into buffer: {e}");
+        log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
+        std::thread::sleep(Duration::from_millis(100));
+        socket.read_exact(&mut cmd_buf[..inc_cmd_len])?;
     }
     let command: ServerCommand = bincode::deserialize(&cmd_buf[..inc_cmd_len])?;
     Ok(Some(command))
