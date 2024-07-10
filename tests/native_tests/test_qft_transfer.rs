@@ -30,8 +30,8 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
         ClientHandle(client_thread?),
     )?;
 
-    assert_no_errors_or_warn(&server_out.stderr())?;
-    assert_no_errors_or_warn(&client_out.stderr())?;
+    assert_no_errors_or_warn(server_out.stderr())?;
+    assert_no_errors_or_warn(client_out.stderr())?;
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -171,8 +171,8 @@ pub fn test_file_transfer_no_compression_with_no_prealloc() -> TestResult {
         client_out.display_diagnostics();
     }
 
-    assert_no_errors_or_warn(&server_out.stderr())?;
-    assert_no_errors_or_warn(&client_out.stderr())?;
+    assert_no_errors_or_warn(server_out.stderr())?;
+    assert_no_errors_or_warn(client_out.stderr())?;
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
     assert!(server_out.success() && client_out.success());
 
@@ -230,8 +230,8 @@ pub fn test_file_transfer_bzip2_default_with_no_prealloc() -> TestResult {
     if client_out.failed() {
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(&server_out.stderr())?;
-    assert_no_errors_or_warn(&client_out.stderr())?;
+    assert_no_errors_or_warn(server_out.stderr())?;
+    assert_no_errors_or_warn(client_out.stderr())?;
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
