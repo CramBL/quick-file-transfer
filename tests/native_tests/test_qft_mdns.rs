@@ -39,12 +39,12 @@ fn test_qft_mdns_register_resolve() -> TestResult {
     let StdoutStderr {
         stdout: _reg_service_stdout,
         stderr: reg_service_stderr,
-    } = process_output_to_stdio(reg_service_handle?.join().unwrap()?)?;
+    } = process_output_to_stdio_if_success(reg_service_handle?.join().unwrap()?)?;
 
     let StdoutStderr {
         stdout: resolve_hostname_stdout,
         stderr: resolve_hostname_stderr,
-    } = process_output_to_stdio(resolve_hostname_handle?.join().unwrap()?)?;
+    } = process_output_to_stdio_if_success(resolve_hostname_handle?.join().unwrap()?)?;
 
     assert_no_errors_or_warn(&reg_service_stderr)?;
     assert_no_errors_or_warn(&resolve_hostname_stderr)?;
@@ -101,12 +101,12 @@ fn test_qft_mdns_register_discover() -> TestResult {
     let StdoutStderr {
         stdout: _reg_service_stdout,
         stderr: reg_service_stderr,
-    } = process_output_to_stdio(reg_service_handle?.join().unwrap()?)?;
+    } = process_output_to_stdio_if_success(reg_service_handle?.join().unwrap()?)?;
 
     let StdoutStderr {
         stdout: discover_stdout,
         stderr: discover_stderr,
-    } = process_output_to_stdio(discover_handle?.join().unwrap()?)?;
+    } = process_output_to_stdio_if_success(discover_handle?.join().unwrap()?)?;
 
     eprintln!("{discover_stdout}");
     eprintln!("{discover_stderr}");

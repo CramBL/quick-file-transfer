@@ -25,24 +25,19 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
         ["--ip", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
 
-    eprintln!("Client:\nstdout:\n{client_stdout}\nstderr:\n{client_stderr}");
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -66,23 +61,23 @@ pub fn test_stdout_transfer_no_compression_simple() -> TestResult {
 
     let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
 
-    let (
-        ServerOutput {
-            server_stdout,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
-    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_stdout);
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
+    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
 
     Ok(())
 }
@@ -104,24 +99,25 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
 
     let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
 
-    let (
-        ServerOutput {
-            server_stdout,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
 
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
 
-    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_stdout);
+    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
 
     Ok(())
 }
@@ -143,23 +139,26 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
 
     let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
 
-    let (
-        ServerOutput {
-            server_stdout,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
 
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
-    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_stdout);
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
+    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
+
+    assert!(server_out.success() && client_out.success());
 
     Ok(())
 }
@@ -185,23 +184,25 @@ pub fn test_file_transfer_no_compression_with_no_prealloc() -> TestResult {
         ["--ip", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
 
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
+    assert!(server_out.success() && client_out.success());
 
     Ok(())
 }
@@ -247,22 +248,22 @@ pub fn test_file_transfer_bzip2_default_with_no_prealloc() -> TestResult {
         ],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -309,25 +310,22 @@ pub fn test_file_transfer_gzip_default_with_no_prealloc() -> TestResult {
         ],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    eprintln!("=== COMMAND STDOUT ===\n{client_stdout}\n^^^COMMAND STDOUT^^^\n");
-    eprintln!("=== COMMAND STDERR ===\n{client_stderr}\n^^^COMMAND STDERR^^^\n");
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -374,22 +372,22 @@ pub fn test_file_transfer_lz4_default_with_no_prealloc() -> TestResult {
         ],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -436,22 +434,22 @@ pub fn test_file_transfer_xz_default_with_no_prealloc() -> TestResult {
         ],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -490,22 +488,22 @@ pub fn test_file_transfer_bzip2_compr_level_1() -> TestResult {
         ["--ip", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -547,22 +545,22 @@ pub fn test_file_transfer_gzip_compr_level_1() -> TestResult {
         ],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -605,22 +603,22 @@ pub fn test_file_transfer_xz_compr_level_1() -> TestResult {
         ],
     );
 
-    let (
-        ServerOutput {
-            server_stdout: _,
-            server_stderr,
-        },
-        ClientOutput {
-            client_stdout: _,
-            client_stderr,
-        },
-    ) = join_server_and_client_get_outputs(
+    let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
         ClientHandle(client_thread?),
     )?;
-
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if server_out.failed() || client_out.failed() {
+        server_out.display_diagnostics();
+        client_out.display_diagnostics();
+    }
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -674,15 +672,21 @@ pub fn test_file_transfer_output_dir_single_file() -> TestResult {
     let StdoutStderr {
         stdout: _client_stdout,
         stderr: client_stderr,
-    } = process_output_to_stdio(cmd.output()?)?;
+    } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     let StdoutStderr {
         stdout: _server_stdout,
         stderr: server_stderr,
-    } = join_thread_and_get_output(server_thread)?;
+    } = join_thread_and_get_output_if_success(server_thread)?;
 
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(&server_stderr)?;
+        assert_no_errors_or_warn(&client_stderr)?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(&server_stderr, ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(&client_stderr, ignore_retrying_warn)?;
+    }
 
     eprintln!("Dir contents");
     eprintln!("{dir:?}");
@@ -750,12 +754,12 @@ pub fn test_file_transfer_output_dir_multiple_files() -> TestResult {
     let StdoutStderr {
         stdout: _client_stdout,
         stderr: client_stderr,
-    } = process_output_to_stdio(cmd.output()?)?;
+    } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     let StdoutStderr {
         stdout: _server_stdout,
         stderr: server_stderr,
-    } = join_thread_and_get_output(server_thread)?;
+    } = join_thread_and_get_output_if_success(server_thread)?;
 
     eprintln!("=== SERVER ===");
     eprintln!("=== COMMAND STDOUT ===\n{_server_stdout}\n^^^COMMAND STDOUT^^^\n");
@@ -765,8 +769,14 @@ pub fn test_file_transfer_output_dir_multiple_files() -> TestResult {
     eprintln!("=== COMMAND STDOUT ===\n{_client_stdout}\n^^^COMMAND STDOUT^^^\n");
     eprintln!("=== COMMAND STDERR ===\n{client_stderr}\n^^^COMMAND STDERR^^^\n");
 
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(&server_stderr)?;
+        assert_no_errors_or_warn(&client_stderr)?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(&server_stderr, ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(&client_stderr, ignore_retrying_warn)?;
+    }
 
     eprintln!("Dir contents");
     eprintln!("{dir:?}");

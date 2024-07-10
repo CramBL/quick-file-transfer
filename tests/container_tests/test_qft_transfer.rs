@@ -30,7 +30,7 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
         file_to_transfer.path().to_str().unwrap(),
     ];
     cmd.args(args);
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);

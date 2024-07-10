@@ -31,14 +31,14 @@ fn setup_test_container(command: &str, args: &[&str], include_ssh_keys: bool) ->
             out.stdout, out.stderr
         );
     }
-    process_output_to_stdio(output).unwrap()
+    process_output_to_stdio_if_success(output).unwrap()
 }
 
 fn run_stop_container_recipe() -> Result<()> {
     let output = Command::new("just")
         .args([JUST_CONTAINER_STOP_RECIPE])
         .output()?;
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(output)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(output)?;
 
     eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDOUT:\n{stdout}\n");
     eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDERR:\n{stderr}\n");
@@ -75,7 +75,7 @@ fn perform_cleanup() -> Result<()> {
     let output = Command::new("just")
         .args([JUST_CONTAINER_STOP_RECIPE])
         .output()?;
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(output)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(output)?;
 
     eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDOUT:\n{stdout}\n");
     eprintln!("===> Cleanup ({JUST_CONTAINER_STOP_RECIPE}) STDERR:\n{stderr}\n");
@@ -141,7 +141,7 @@ where
     }
 
     let output = cmd.output()?;
-    process_output_to_stdio(output)
+    process_output_to_stdio_if_success(output)
 }
 
 fn check_and_relocate_path(original_path: &Path) -> Result<PathBuf> {

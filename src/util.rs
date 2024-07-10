@@ -1,9 +1,10 @@
-use crate::config::transfer::command::ServerCommand;
+use crate::config::transfer::command::{ServerCommand, ServerResult};
 use crate::config::Config;
 use anyhow::{bail, Result};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
+use std::time::Duration;
 use std::{fmt, fs, io};
 use tiny_rnd::rnd_u32;
 
@@ -71,13 +72,15 @@ pub fn incremental_rw<const BUFSIZE: usize>(
     let mut total_read = 0;
     loop {
         let bytes_read = reader.read(&mut buf)?;
-        log::debug!("Read {bytes_read}");
+        log::trace!("Read {bytes_read}");
         if bytes_read == 0 {
+            log::trace!("Breaking out of transfer");
             break;
         }
         total_read += bytes_read;
 
         let written_bytes = stream_writer.write(&buf[..bytes_read])?;
+        log::trace!("wrote {written_bytes}");
         debug_assert_eq!(
             bytes_read, written_bytes,
             "Mismatch between bytes read/written, read={bytes_read}, written={written_bytes}"
@@ -132,6 +135,25 @@ pub fn get_free_port_in_range(ip: &str, start_port: u16, end_port: u16) -> Optio
     None
 }
 
+/// Bind to any available port within the specified range on `ip`,
+/// then return the socket
+///
+/// # Note
+///
+/// See [get_free_port_in_range] for notes about port ranges
+pub fn bind_listen_to_free_port_in_range(
+    ip: &str,
+    start_port: u16,
+    end_port: u16,
+) -> Option<TcpListener> {
+    for port in start_port..=end_port {
+        if let Ok(listener) = TcpListener::bind((ip, port)) {
+            return Some(listener);
+        }
+    }
+    None
+}
+
 /// Converts the verbosity from the config back to the command-line arguments that would produce that verbosity
 pub fn verbosity_to_args(cfg: &Config) -> &str {
     if cfg.quiet {
@@ -151,9 +173,17 @@ pub fn server_handshake(socket: &mut TcpStream) -> anyhow::Result<()> {
     let handshake_u32 = rnd_u32(std::process::id() as u64);
     let expect_handshake = rnd_u32(handshake_u32 as u64);
 
-    socket.write_all(&handshake_u32.to_be_bytes())?;
+    if let Err(e) = socket.write_all(&handshake_u32.to_be_bytes()) {
+        log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
+        std::thread::sleep(Duration::from_millis(100));
+        socket.write_all(&handshake_u32.to_be_bytes())?
+    }
     let mut handshake_buf: [u8; 4] = [0; 4];
-    socket.read_exact(&mut handshake_buf)?;
+    if let Err(e) = socket.read_exact(&mut handshake_buf) {
+        log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
+        std::thread::sleep(Duration::from_millis(100));
+        socket.read_exact(&mut handshake_buf)?;
+    }
     let handshake: u32 = u32::from_be_bytes(handshake_buf);
 
     if handshake != expect_handshake {
@@ -171,21 +201,45 @@ pub fn read_server_cmd(
     let mut header_buf = [0; ServerCommand::HEADER_SIZE];
     // Read the header to determine the size of the incoming command/data
     if let Err(e) = socket.read_exact(&mut header_buf) {
+        log::trace!("{e}");
         if e.kind() == io::ErrorKind::UnexpectedEof {
             // Ok but no command indicates the client disconnected
             return Ok(None);
         } else {
-            bail!("{e}");
+            log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
+            std::thread::sleep(Duration::from_millis(100));
+            socket.read_exact(&mut header_buf)?;
         }
     }
     let inc_cmd_len = ServerCommand::size_from_bytes(header_buf);
 
     // Read the actual command/data based on the size
     if let Err(e) = socket.read_exact(&mut cmd_buf[..inc_cmd_len]) {
-        anyhow::bail!("Error reading command into buffer: {e}");
+        log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
+        std::thread::sleep(Duration::from_millis(100));
+        socket.read_exact(&mut cmd_buf[..inc_cmd_len])?;
     }
     let command: ServerCommand = bincode::deserialize(&cmd_buf[..inc_cmd_len])?;
     Ok(Some(command))
+}
+
+pub fn read_server_response(
+    socket: &mut TcpStream,
+    resp_buf: &mut [u8],
+) -> anyhow::Result<ServerResult> {
+    let mut header_buf = [0; ServerResult::HEADER_SIZE];
+    // Read the header to determine the size of the incoming command/data
+    if let Err(e) = socket.read_exact(&mut header_buf) {
+        bail!("{e}");
+    }
+    let inc_cmd_len = ServerResult::size_from_bytes(header_buf);
+
+    // Read the actual command/data based on the size
+    if let Err(e) = socket.read_exact(&mut resp_buf[..inc_cmd_len]) {
+        anyhow::bail!("Error reading command into buffer: {e}");
+    }
+    let resp: ServerResult = bincode::deserialize(&resp_buf[..inc_cmd_len])?;
+    Ok(resp)
 }
 
 /// This is for generating pseudo-random number for application client/server hand shake.

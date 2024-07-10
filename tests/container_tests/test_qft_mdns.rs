@@ -21,7 +21,7 @@ pub fn test_mdns_discover_service_in_container() -> TestResult {
         SERVICE_PROTOCOL,
     ];
     cmd.args(args);
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);

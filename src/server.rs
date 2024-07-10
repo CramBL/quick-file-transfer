@@ -2,9 +2,15 @@ use flate2::read::GzDecoder;
 use lz4_flex::frame::FrameDecoder;
 use std::{
     fs::{self, File},
-    io::{self, BufReader, BufWriter, StdoutLock},
-    net::{TcpListener, TcpStream},
+    io::{self, BufReader, BufWriter, StdoutLock, Write},
+    net::{IpAddr, TcpListener, TcpStream},
     path::Path,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread::JoinHandle,
+    time::Duration,
 };
 
 use crate::{
@@ -14,7 +20,8 @@ use crate::{
         Config,
     },
     util::{
-        create_file_with_len, format_data_size, incremental_rw, read_server_cmd, server_handshake,
+        bind_listen_to_free_port_in_range, create_file_with_len, format_data_size, incremental_rw,
+        read_server_cmd, server_handshake,
     },
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
@@ -25,52 +32,165 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         ip,
         port,
         output: _,
-        decompression,
+        decompression: _,
         output_dir: _,
     } = listen_args;
 
+    let stop_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+
     let port = port.unwrap();
-    let listener = TcpListener::bind(format!("{ip}:{port}"))?;
-    log::info!(
-        "Listening on: {ip}:{port} for a {describe_contents}",
-        describe_contents = match decompression {
-            Some(c) => {
-                match c {
-                    CompressionVariant::Bzip2 => "bzip2 compressed file",
-                    CompressionVariant::Gzip => "gzip compressed file",
-                    CompressionVariant::Lz4 => "lz4 compressed file",
-                    CompressionVariant::Xz => "xz compressed file",
-                }
-            }
-            None => "raw file",
-        }
-    );
+    let ip: IpAddr = ip.parse()?;
 
-    let mut expect_data_recv_cnt = 1;
-    while expect_data_recv_cnt > 0 {
-        match listener.accept() {
-            Ok((mut socket, addr)) => {
-                expect_data_recv_cnt -= 1;
-                log::debug!("Client accepted at: {addr:?}");
-                server_handshake(&mut socket)?;
+    let initial_listener = TcpListener::bind((ip, port))?;
 
-                let mut cmd_buf: [u8; 256] = [0; 256];
-                // Main command receive event loop
-                loop {
-                    if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
-                        log::trace!("Received command: {cmd:?}");
-                        let expect_more_data = command_handler(&mut socket, cmd, listen_args)?;
-                        log::trace!("Expecting {expect_more_data} more data transfers");
-                        expect_data_recv_cnt = expect_more_data;
-                    } else {
-                        log::info!("Client disconnected...");
-                        break;
+    let mut handles = vec![];
+
+    match initial_listener.accept() {
+        Ok((mut socket, addr)) => {
+            log::debug!("Client accepted at: {addr:?}");
+            server_handshake(&mut socket)?;
+            let mut cmd_buf: [u8; 256] = [0; 256];
+            loop {
+                if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
+                    log::trace!("Received command: {cmd:?}");
+
+                    if matches!(cmd, ServerCommand::GetFreePort(_)) {
+                        let (start_port_range, end_port_range) = match cmd {
+                            ServerCommand::GetFreePort((start_port_range, end_port_range)) => {
+                                (start_port_range, end_port_range)
+                            }
+                            _ => unreachable!(),
+                        };
+                        let start = start_port_range.unwrap_or(49152);
+                        let end = end_port_range.unwrap_or(61000);
+                        let thread_listener: TcpListener = match bind_listen_to_free_port_in_range(
+                            &listen_args.ip,
+                            start,
+                            end,
+                        ) {
+                            Some(listener) => listener,
+                            None => {
+                                log::error!("Unable to find free port in range {start}-{end}, attempting to bind to any free port");
+                                TcpListener::bind((listen_args.ip.as_str(), 0))?
+                            }
+                        };
+                        let free_port = thread_listener
+                            .local_addr()
+                            .expect("Unable to get local address for TCP listener")
+                            .port();
+                        let free_port_be_bytes = free_port.to_be_bytes();
+                        debug_assert_eq!(free_port_be_bytes.len(), 2);
+                        socket.write_all(&free_port_be_bytes)?;
+                        socket.flush()?;
+                        let s = std::thread::Builder::new().name(port.to_string());
+                        let h: JoinHandle<anyhow::Result<()>> = s
+                            .spawn({
+                                let cfg = listen_args.clone();
+                                let local_stop_flag = Arc::clone(&stop_flag);
+                                move || {
+
+                                    thread_listener.set_nonblocking(true)?;
+
+                                    for client in thread_listener.incoming() {
+                                        match client {
+                                            Ok(mut socket) => {
+                                                socket.set_nonblocking(false).expect("Failed putting socket into blocking state");
+                                                log::trace!("{socket:?}");
+                                                log::trace!("Got client at {:?}", socket.local_addr());
+                                                server_handshake(&mut socket)?;
+                                                let mut cmd_buf: [u8; 256] = [0; 256];
+
+                                                loop {
+                                                    log::info!("Ready to receive command");
+                                                    if let Some(cmd) =
+                                                    read_server_cmd(&mut socket, &mut cmd_buf)?
+                                                    {
+                                                        log::trace!("Received command: {cmd:?}");
+                                                        match cmd {
+                                                            ServerCommand::Prealloc(fsize, fname) => {
+                                                                log::debug!(
+                                                                "Preallocating file of size {} [{fsize} B]",
+                                                                format_data_size(fsize)
+                                                            );
+                                                                if let Some(out_dir) = cfg.output_dir.as_deref() {
+                                                                    if !out_dir.is_dir() && out_dir.exists() {
+                                                                        bail!("Output directory path {out_dir:?} is invalid - has to point at a directory or non-existent path")
+                                                                    }
+                                                                    if !out_dir.exists() {
+                                                                        fs::create_dir(out_dir)?;
+                                                                    }
+                                                                    let out_file = out_dir.join(fname);
+                                                                    log::trace!("Preallocating for path: {out_dir:?}");
+                                                                    create_file_with_len(&out_file, fsize)?;
+                                                                } else if let Some(out_file) = cfg.output.as_deref() {
+                                                                    create_file_with_len(out_file, fsize)?;
+                                                                }
+                                                            }
+                                                            ServerCommand::ReceiveData(
+                                                                _f_count,
+                                                                fname,
+                                                                decompr,
+                                                            ) => {
+                                                                log::debug!(
+                                                                    "Received file list: {fname:?}"
+                                                                );
+                                                                handle_receive_data(
+                                                                    &cfg,
+                                                                    &mut socket,
+                                                                    fname,
+                                                                    decompr,
+                                                                )?;
+                                                            }
+                                                            ServerCommand::GetFreePort(_) => todo!(),
+                                                        }
+                                                    } else {
+                                                        log::info!("[thread] Client disconnected...");
+                                                        break;
+                                                    }
+                                                }
+                                            },
+
+                                            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                                                log::trace!("Would block");
+                                                if cfg!(linux) {
+                                                    log::trace!("Would block - yielding thread");
+                                                    std::thread::park_timeout(Duration::from_millis(100));
+                                                }
+                                            }
+                                            Err(e) => {
+                                                log::error!("{e}");
+                                                bail!(e)
+                                            },
+                                        };
+                                        if local_stop_flag.load(Ordering::Relaxed) {
+                                            break;
+                                        }
+                                    }
+
+                                    Ok(())
+                                }
+                            })
+                            .expect("Failed spawning thread");
+                        handles.push(h);
                     }
+                } else {
+                    log::info!("Main Client disconnected...");
+                    break;
                 }
             }
-            Err(e) => bail!(e),
+        }
+        Err(e) => bail!(e),
+    }
+
+    stop_flag.store(true, Ordering::Relaxed);
+    for h in handles {
+        //
+        match h.join().expect("Failed to join thread") {
+            Ok(_) => (),
+            Err(e) => log::error!("Thread joined with error: {e}"),
         }
     }
+
     Ok(())
 }
 
@@ -124,43 +244,6 @@ pub fn file_with_bufwriter(path: &Path) -> Result<BufWriter<File>> {
 pub fn stdout_bufwriter() -> BufWriter<StdoutLock<'static>> {
     let stdout = io::stdout().lock();
     BufWriter::with_capacity(BUFFERED_RW_BUFSIZE, stdout)
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn command_handler(
-    tcp_socket: &mut TcpStream,
-    cmd: ServerCommand,
-    listen_args: &ListenArgs,
-) -> anyhow::Result<u32> {
-    match cmd {
-        ServerCommand::ReceiveData(f_count, fname, decompr) => {
-            log::debug!("Received file list: {fname:?}");
-            handle_receive_data(listen_args, tcp_socket, fname, decompr)?;
-            return Ok(f_count);
-        }
-        ServerCommand::GetFreePort => todo!(),
-        ServerCommand::Prealloc(fsize, fname) => {
-            log::debug!(
-                "Preallocating file of size {} [{fsize} B]",
-                format_data_size(fsize)
-            );
-            if let Some(out_dir) = listen_args.output_dir.as_deref() {
-                if !out_dir.is_dir() && out_dir.exists() {
-                    bail!("Output directory path {out_dir:?} is invalid - has to point at a directory or non-existent path")
-                }
-                if !out_dir.exists() {
-                    fs::create_dir(out_dir)?;
-                }
-                let out_file = out_dir.join(fname);
-                log::trace!("Preallocating for path: {out_dir:?}");
-                create_file_with_len(&out_file, fsize)?;
-            } else if let Some(out_file) = listen_args.output.as_deref() {
-                create_file_with_len(out_file, fsize)?;
-            }
-        }
-    }
-
-    Ok(0)
 }
 
 fn handle_receive_data(
