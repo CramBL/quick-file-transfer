@@ -94,7 +94,8 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                                     for client in thread_listener.incoming() {
                                         match client {
                                             Ok(mut socket) => {
-                                                log::trace!("Got client");
+                                                log::trace!("{socket:?}");
+                                                log::trace!("Got client at {:?}", socket.local_addr());
                                                 server_handshake(&mut socket)?;
                                                 let mut cmd_buf: [u8; 256] = [0; 256];
 

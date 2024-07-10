@@ -4,6 +4,7 @@ use anyhow::{bail, Result};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
+use std::time::Duration;
 use std::{fmt, fs, io};
 use tiny_rnd::rnd_u32;
 
@@ -173,12 +174,14 @@ pub fn server_handshake(socket: &mut TcpStream) -> anyhow::Result<()> {
     let expect_handshake = rnd_u32(handshake_u32 as u64);
 
     if let Err(e) = socket.write_all(&handshake_u32.to_be_bytes()) {
-        log::warn!("{e}, retrying...");
+        log::warn!("{e}, retrying in 100 ms ...");
+        std::thread::sleep(Duration::from_millis(100));
         socket.write_all(&handshake_u32.to_be_bytes())?
     }
     let mut handshake_buf: [u8; 4] = [0; 4];
     if let Err(e) = socket.read_exact(&mut handshake_buf) {
-        log::warn!("{e}, retrying...");
+        log::warn!("{e}, retrying in 100 ms ...");
+        std::thread::sleep(Duration::from_millis(100));
         socket.read_exact(&mut handshake_buf)?;
     }
     let handshake: u32 = u32::from_be_bytes(handshake_buf);
