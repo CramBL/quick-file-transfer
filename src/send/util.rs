@@ -62,10 +62,11 @@ pub fn qft_connect_to_server<A>(
     connect_mode: TcpConnectMode,
 ) -> anyhow::Result<TcpStream>
 where
-    A: ToSocketAddrs,
+    A: ToSocketAddrs + std::fmt::Debug,
 {
     match connect_mode {
         TcpConnectMode::OneShot => {
+            log::debug!("Attempting one shot connection to {socket_addr:?}");
             let mut socket = TcpStream::connect(socket_addr)?;
             qft_client_handshake(&mut socket)?;
             Ok(socket)
@@ -74,6 +75,7 @@ where
             let mut attempts: u32 = 0;
             let now = std::time::Instant::now();
             loop {
+                log::debug!("Attempt #{attempts} to connect to {socket_addr:?}");
                 match TcpStream::connect(&socket_addr) {
                     Ok(mut socket) => {
                         if let Err(e) = qft_client_handshake(&mut socket) {
@@ -91,9 +93,7 @@ where
                             | io::ErrorKind::NotConnected
                             | io::ErrorKind::BrokenPipe
                             | io::ErrorKind::TimedOut
-                            | io::ErrorKind::Interrupted => {
-                                log::debug!("Retrying TCP connection in {:?}", poll_opts.interval)
-                            }
+                            | io::ErrorKind::Interrupted => {}
                             _ => bail!(e),
                         }
                     }
@@ -111,7 +111,9 @@ where
                         }
                     }
                 };
-                std::thread::sleep(poll_opts.interval);
+                let sleep_dur = poll_opts.interval * (1 << attempts);
+                log::debug!("Retrying TCP connection in {sleep_dur:?}");
+                std::thread::sleep(sleep_dur);
             }
         }
     }
