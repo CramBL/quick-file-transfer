@@ -20,7 +20,7 @@ use crate::{
         Config,
     },
     util::{
-        create_file_with_len, format_data_size, get_free_port_in_range, incremental_rw,
+        bind_listen_to_free_port_in_range, create_file_with_len, format_data_size, incremental_rw,
         read_server_cmd, server_handshake,
     },
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
@@ -63,13 +63,21 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                         };
                         let start = start_port_range.unwrap_or(49152);
                         let end = end_port_range.unwrap_or(61000);
-                        let free_port = get_free_port_in_range(&listen_args.ip, start, end);
-                        if free_port.is_none() {
-                            log::error!("Unable to find free port in range {start}-{end}");
-                        }
-                        let free_port = free_port.unwrap_or(0);
-                        let thread_listener: TcpListener =
-                            TcpListener::bind((ip, free_port)).unwrap();
+                        let thread_listener: TcpListener = match bind_listen_to_free_port_in_range(
+                            &listen_args.ip,
+                            start,
+                            end,
+                        ) {
+                            Some(listener) => listener,
+                            None => {
+                                log::error!("Unable to find free port in range {start}-{end}, attempting to bind to any free port");
+                                TcpListener::bind((listen_args.ip.as_str(), 0))?
+                            }
+                        };
+                        let free_port = thread_listener
+                            .local_addr()
+                            .expect("Unable to get local address for TCP listener")
+                            .port();
                         let free_port_be_bytes = free_port.to_be_bytes();
                         debug_assert_eq!(free_port_be_bytes.len(), 2);
                         socket.write_all(&free_port_be_bytes)?;

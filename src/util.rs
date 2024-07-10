@@ -132,6 +132,25 @@ pub fn get_free_port_in_range(ip: &str, start_port: u16, end_port: u16) -> Optio
     None
 }
 
+/// Bind to any available port within the specified range on `ip`,
+/// then return the socket
+///
+/// # Note
+///
+/// See [get_free_port_in_range] for notes about port ranges
+pub fn bind_listen_to_free_port_in_range(
+    ip: &str,
+    start_port: u16,
+    end_port: u16,
+) -> Option<TcpListener> {
+    for port in start_port..=end_port {
+        if let Ok(listener) = TcpListener::bind((ip, port)) {
+            return Some(listener);
+        }
+    }
+    None
+}
+
 /// Converts the verbosity from the config back to the command-line arguments that would produce that verbosity
 pub fn verbosity_to_args(cfg: &Config) -> &str {
     if cfg.quiet {
