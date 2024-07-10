@@ -80,7 +80,6 @@ pub fn run_client(
             let transferred_len =
                 transfer_data((ip, port), &mut tcp_stream, compression, Some(f), use_mmap)?;
             tcp_stream.flush()?;
-            tcp_stream.shutdown(std::net::Shutdown::Write)?;
 
             log::info!(
                 "Sent {} [{transferred_len} B]",
