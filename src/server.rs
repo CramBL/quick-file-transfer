@@ -94,6 +94,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                                     for client in thread_listener.incoming() {
                                         match client {
                                             Ok(mut socket) => {
+                                                socket.set_nonblocking(false).expect("Failed putting socket into blocking state");
                                                 log::trace!("{socket:?}");
                                                 log::trace!("Got client at {:?}", socket.local_addr());
                                                 server_handshake(&mut socket)?;
