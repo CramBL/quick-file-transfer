@@ -88,7 +88,7 @@ pub trait OutputFailPrint {
         self.status().success()
     }
     fn display_diagnostics(&self) {
-        eprintln!(
+        println!(
             "Command failed with status: {status}\n - stdout: {stdout}\n - stderr: {stderr}",
             status = self.status(),
             stdout = self.stdout(),
