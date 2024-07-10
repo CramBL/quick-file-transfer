@@ -150,7 +150,9 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
 
                                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                                                 log::trace!("Would block - yielding thread");
-                                                std::thread::park_timeout(Duration::from_millis(100));
+                                                if cfg!(linux) {
+                                                    std::thread::park_timeout(Duration::from_millis(100));
+                                                }
                                             }
 
                                             Err(e) => bail!(e),
