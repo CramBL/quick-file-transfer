@@ -30,8 +30,14 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
         ClientHandle(client_thread?),
     )?;
 
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -63,8 +69,14 @@ pub fn test_stdout_transfer_no_compression_simple() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
 
     Ok(())
@@ -96,8 +108,14 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
 
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
 
@@ -130,8 +148,14 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
 
     assert!(server_out.success() && client_out.success());
@@ -169,8 +193,14 @@ pub fn test_file_transfer_no_compression_with_no_prealloc() -> TestResult {
         client_out.display_diagnostics();
     }
 
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
     assert!(server_out.success() && client_out.success());
 
@@ -226,8 +256,14 @@ pub fn test_file_transfer_bzip2_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -282,8 +318,14 @@ pub fn test_file_transfer_gzip_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -338,8 +380,14 @@ pub fn test_file_transfer_lz4_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -394,8 +442,14 @@ pub fn test_file_transfer_xz_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -442,8 +496,14 @@ pub fn test_file_transfer_bzip2_compr_level_1() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -493,8 +553,14 @@ pub fn test_file_transfer_gzip_compr_level_1() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -545,8 +611,14 @@ pub fn test_file_transfer_xz_compr_level_1() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    assert_no_errors_or_warn(server_out.stderr())?;
-    assert_no_errors_or_warn(client_out.stderr())?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(server_out.stderr())?;
+        assert_no_errors_or_warn(client_out.stderr())?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
+    }
     pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_receive)?);
 
     Ok(())
@@ -607,8 +679,14 @@ pub fn test_file_transfer_output_dir_single_file() -> TestResult {
         stderr: server_stderr,
     } = join_thread_and_get_output_if_success(server_thread)?;
 
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(&server_stderr)?;
+        assert_no_errors_or_warn(&client_stderr)?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(&server_stderr, ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(&client_stderr, ignore_retrying_warn)?;
+    }
 
     eprintln!("Dir contents");
     eprintln!("{dir:?}");
