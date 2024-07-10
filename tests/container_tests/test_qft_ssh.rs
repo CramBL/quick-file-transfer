@@ -29,7 +29,7 @@ pub fn test_ssh_transfer() -> TestResult {
         CONTAINER_TCP_PORT,
     ];
     cmd.args(args);
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
@@ -72,7 +72,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
         CONTAINER_DYNAMIC_PORTS_END,
     ];
     cmd.args(args);
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
@@ -113,7 +113,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified_scp_args() -> TestResult {
         CONTAINER_DYNAMIC_PORTS_END,
     ];
     cmd.args(args);
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
@@ -172,7 +172,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified_multiple_files() -> TestResult {
         CONTAINER_DYNAMIC_PORTS_END,
     ];
     cmd.args(args);
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);

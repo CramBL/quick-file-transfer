@@ -7,7 +7,7 @@ fn test_evaluate_compression_all() -> TestResult {
     let mut cmd = Command::cargo_bin(BIN_NAME).unwrap();
     cmd.args(["evaluate-compression", "--input-file", LICENSE]);
 
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprintln!("{stderr}");
     eprintln!("{stdout}");
@@ -33,7 +33,7 @@ fn test_evaluate_compression_omit_bzip2() -> TestResult {
         "--omit=bzip2",
     ]);
 
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprintln!("{stderr}");
     eprintln!("{stdout}");
@@ -62,7 +62,7 @@ fn test_evaluate_compression_omit_compression_levels() -> TestResult {
         "9",
     ]);
 
-    let StdoutStderr { stdout, stderr } = process_output_to_stdio(cmd.output()?)?;
+    let StdoutStderr { stdout, stderr } = process_output_to_stdio_if_success(cmd.output()?)?;
 
     eprintln!("{stderr}");
     eprintln!("{stdout}");
