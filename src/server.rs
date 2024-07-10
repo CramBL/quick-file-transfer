@@ -52,8 +52,8 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
                         let child_thread_handle = spawn_server_thread_on_new_port(
                             &mut socket,
                             listen_args,
-                            Arc::clone(&stop_flag),
-                            cmd,
+                            &Arc::clone(&stop_flag),
+                            &cmd,
                         )?;
                         handles.push(child_thread_handle);
                     }
@@ -67,19 +67,18 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     }
 
     stop_flag.store(true, Ordering::Relaxed);
-    join_all_threads(handles)?;
+    join_all_threads(handles);
 
     Ok(())
 }
 
-fn join_all_threads(handles: Vec<JoinHandle<Result<(), anyhow::Error>>>) -> anyhow::Result<()> {
+fn join_all_threads(handles: Vec<JoinHandle<Result<(), anyhow::Error>>>) {
     for h in handles {
         match h.join().expect("Failed to join thread") {
             Ok(_) => (),
             Err(e) => log::error!("Thread joined with error: {e}"),
         }
     }
-    Ok(())
 }
 
 fn handle_cmd(cmd: ServerCommand, cfg: &ListenArgs, socket: &mut TcpStream) -> anyhow::Result<()> {
@@ -105,7 +104,7 @@ fn handle_cmd(cmd: ServerCommand, cfg: &ListenArgs, socket: &mut TcpStream) -> a
         }
         ServerCommand::ReceiveData(_f_count, fname, decompr) => {
             log::debug!("Received file list: {fname:?}");
-            util::handle_receive_data(&cfg, socket, fname, decompr)?;
+            util::handle_receive_data(cfg, socket, fname, decompr)?;
         }
         ServerCommand::GetFreePort(_) => todo!(),
     }
@@ -125,7 +124,7 @@ fn handle_client_socket(cfg: &ListenArgs, socket: &mut TcpStream) -> anyhow::Res
         log::info!("Ready to receive command");
         if let Some(cmd) = read_server_cmd(socket, &mut cmd_buf)? {
             log::trace!("Received command: {cmd:?}");
-            handle_cmd(cmd, &cfg, socket)?;
+            handle_cmd(cmd, cfg, socket)?;
         } else {
             log::info!("[thread] Client disconnected...");
             break;
@@ -135,14 +134,14 @@ fn handle_client_socket(cfg: &ListenArgs, socket: &mut TcpStream) -> anyhow::Res
 }
 
 fn run_server_thread(
-    listener: TcpListener,
+    listener: &TcpListener,
     cfg: &ListenArgs,
-    stop_flag: Arc<AtomicBool>,
+    stop_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     for client in listener.incoming() {
         match client {
             Ok(mut socket) => {
-                handle_client_socket(&cfg, &mut socket)?;
+                handle_client_socket(cfg, &mut socket)?;
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 log::trace!("Would block");
@@ -166,8 +165,8 @@ fn run_server_thread(
 fn spawn_server_thread_on_new_port(
     socket: &mut TcpStream,
     cfg: &ListenArgs,
-    stop_flag: Arc<AtomicBool>,
-    server_cmd_get_free_port: ServerCommand,
+    stop_flag: &Arc<AtomicBool>,
+    server_cmd_get_free_port: &ServerCommand,
 ) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
     let (start_port_range, end_port_range) = match server_cmd_get_free_port {
         ServerCommand::GetFreePort((start_port_range, end_port_range)) => {
@@ -197,10 +196,10 @@ fn spawn_server_thread_on_new_port(
     let handle: JoinHandle<anyhow::Result<()>> = thread_builder
         .spawn({
             let cfg = cfg.clone();
-            let local_stop_flag = Arc::clone(&stop_flag);
+            let local_stop_flag = Arc::clone(stop_flag);
             move || {
                 thread_listener.set_nonblocking(true)?;
-                run_server_thread(thread_listener, &cfg, local_stop_flag)
+                run_server_thread(&thread_listener, &cfg, &local_stop_flag)
             }
         })
         .expect("Failed spawning thread");
