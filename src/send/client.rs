@@ -74,9 +74,11 @@ pub fn run_client(
                 )?;
             }
 
+            log::trace!("Sending receive data command");
             let cmd_receive_data =
                 ServerCommand::ReceiveData(fcount as u32, fname, compression.map(|c| c.variant()));
             send_command(&mut tcp_stream, &cmd_receive_data)?;
+
             let transferred_len =
                 transfer_data((ip, port), &mut tcp_stream, compression, Some(f), use_mmap)?;
             tcp_stream.flush()?;

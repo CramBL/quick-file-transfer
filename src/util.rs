@@ -71,13 +71,15 @@ pub fn incremental_rw<const BUFSIZE: usize>(
     let mut total_read = 0;
     loop {
         let bytes_read = reader.read(&mut buf)?;
-        log::debug!("Read {bytes_read}");
+        log::trace!("Read {bytes_read}");
         if bytes_read == 0 {
+            log::trace!("Breaking out of transfer");
             break;
         }
         total_read += bytes_read;
 
         let written_bytes = stream_writer.write(&buf[..bytes_read])?;
+        log::trace!("wrote {written_bytes}");
         debug_assert_eq!(
             bytes_read, written_bytes,
             "Mismatch between bytes read/written, read={bytes_read}, written={written_bytes}"
