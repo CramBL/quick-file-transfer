@@ -34,10 +34,8 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     } = listen_args;
 
     let stop_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
-
     let port = port.unwrap();
     let ip: IpAddr = ip.parse()?;
-
     let initial_listener = TcpListener::bind((ip, port))?;
 
     let mut handles = vec![];
@@ -50,47 +48,14 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
             loop {
                 if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
                     log::trace!("Received command: {cmd:?}");
-
                     if matches!(cmd, ServerCommand::GetFreePort(_)) {
-                        let (start_port_range, end_port_range) = match cmd {
-                            ServerCommand::GetFreePort((start_port_range, end_port_range)) => {
-                                (start_port_range, end_port_range)
-                            }
-                            _ => unreachable!(),
-                        };
-                        let start = start_port_range.unwrap_or(49152);
-                        let end = end_port_range.unwrap_or(61000);
-                        let thread_listener: TcpListener = match bind_listen_to_free_port_in_range(
-                            &listen_args.ip,
-                            start,
-                            end,
-                        ) {
-                            Some(listener) => listener,
-                            None => {
-                                log::error!("Unable to find free port in range {start}-{end}, attempting to bind to any free port");
-                                TcpListener::bind((listen_args.ip.as_str(), 0))?
-                            }
-                        };
-                        let free_port = thread_listener
-                            .local_addr()
-                            .expect("Unable to get local address for TCP listener")
-                            .port();
-                        let free_port_be_bytes = free_port.to_be_bytes();
-                        debug_assert_eq!(free_port_be_bytes.len(), 2);
-                        socket.write_all(&free_port_be_bytes)?;
-                        socket.flush()?;
-                        let s = std::thread::Builder::new().name(port.to_string());
-                        let h: JoinHandle<anyhow::Result<()>> = s
-                            .spawn({
-                                let cfg = listen_args.clone();
-                                let local_stop_flag = Arc::clone(&stop_flag);
-                                move || {
-                                    thread_listener.set_nonblocking(true)?;
-                                    run_server_thread(thread_listener, &cfg, local_stop_flag)
-                                }
-                            })
-                            .expect("Failed spawning thread");
-                        handles.push(h);
+                        let child_thread_handle = spawn_server_thread_on_new_port(
+                            &mut socket,
+                            listen_args,
+                            Arc::clone(&stop_flag),
+                            cmd,
+                        )?;
+                        handles.push(child_thread_handle);
                     }
                 } else {
                     log::info!("Main Client disconnected...");
@@ -196,4 +161,48 @@ fn run_server_thread(
         }
     }
     Ok(())
+}
+
+fn spawn_server_thread_on_new_port(
+    socket: &mut TcpStream,
+    cfg: &ListenArgs,
+    stop_flag: Arc<AtomicBool>,
+    server_cmd_get_free_port: ServerCommand,
+) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
+    let (start_port_range, end_port_range) = match server_cmd_get_free_port {
+        ServerCommand::GetFreePort((start_port_range, end_port_range)) => {
+            (start_port_range, end_port_range)
+        }
+        _ => unreachable!(),
+    };
+    let start = start_port_range.unwrap_or(49152);
+    let end = end_port_range.unwrap_or(61000);
+    let thread_listener: TcpListener = match bind_listen_to_free_port_in_range(&cfg.ip, start, end)
+    {
+        Some(listener) => listener,
+        None => {
+            log::error!("Unable to find free port in range {start}-{end}, attempting to bind to any free port");
+            TcpListener::bind((cfg.ip.as_str(), 0))?
+        }
+    };
+    let free_port = thread_listener
+        .local_addr()
+        .expect("Unable to get local address for TCP listener")
+        .port();
+    let free_port_be_bytes = free_port.to_be_bytes();
+    debug_assert_eq!(free_port_be_bytes.len(), 2);
+    socket.write_all(&free_port_be_bytes)?;
+    socket.flush()?;
+    let s = std::thread::Builder::new().name(free_port.to_string());
+    let h: JoinHandle<anyhow::Result<()>> = s
+        .spawn({
+            let cfg = cfg.clone();
+            let local_stop_flag = Arc::clone(&stop_flag);
+            move || {
+                thread_listener.set_nonblocking(true)?;
+                run_server_thread(thread_listener, &cfg, local_stop_flag)
+            }
+        })
+        .expect("Failed spawning thread");
+    Ok(h)
 }
