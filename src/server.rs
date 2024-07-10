@@ -193,8 +193,8 @@ fn spawn_server_thread_on_new_port(
     debug_assert_eq!(free_port_be_bytes.len(), 2);
     socket.write_all(&free_port_be_bytes)?;
     socket.flush()?;
-    let s = std::thread::Builder::new().name(free_port.to_string());
-    let h: JoinHandle<anyhow::Result<()>> = s
+    let thread_builder = std::thread::Builder::new().name(format!("ThreadOn#{free_port}"));
+    let handle: JoinHandle<anyhow::Result<()>> = thread_builder
         .spawn({
             let cfg = cfg.clone();
             let local_stop_flag = Arc::clone(&stop_flag);
@@ -204,5 +204,5 @@ fn spawn_server_thread_on_new_port(
             }
         })
         .expect("Failed spawning thread");
-    Ok(h)
+    Ok(handle)
 }
