@@ -23,4 +23,4 @@ USER ${USERNAME}
 
 WORKDIR /usr/src/qft
 
-CMD cargo build --target x86_64-unknown-linux-musl
+CMD ["cargo", "build", "--target", "x86_64-unknown-linux-musl"]
