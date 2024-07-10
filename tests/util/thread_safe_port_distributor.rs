@@ -6,6 +6,8 @@ use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 use std::sync::{Mutex, OnceLock};
 
+use rand::Rng;
+
 // Stores taken ports
 static PORTS: OnceLock<Mutex<HashSet<u16>>> = OnceLock::new();
 
@@ -43,15 +45,20 @@ pub fn get_free_port(ip: &str) -> Option<PortGuard> {
         .map_err(|e| format!("Invalid IP address: {e}"))
         .unwrap();
     let ports: &Mutex<HashSet<u16>> = get_ports();
+
+    let mut rng = rand::thread_rng();
+    let start_port = rng.gen_range(49152..=61000);
+    // Create a wrapping iterator that starts from `start_port` and wraps around until `start_port - 1`
+    let port_range = (start_port..=61000).chain(49152..start_port);
     // This range is valid for later windows and should be for most or all unix.
-    for port in 49152..61000 {
+    for port in port_range {
         if is_port_available(ip, port) {
             let mut ports = ports.lock().unwrap();
             if !ports.contains(&port) {
                 ports.insert(port);
                 let port_wrapper = PortGuard {
                     port_num: port,
-                    // Leak the port string to get static liftime, the memory will be freed once the test process finishes
+                    // Leak the port string to get static lifetime, the memory will be freed once the test process finishes
                     port_str: Box::leak(port.to_string().into_boxed_str()),
                 };
                 return Some(port_wrapper);
