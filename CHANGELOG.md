@@ -2,10 +2,13 @@
 
 ## Unreleased
 
+## 0.8.0 - 2024-07-10
+
 ### Changed
 
 - `qft mdns discover` default timeout from `5s` -> `4s`
 - `qft mdns resolve` default timeout from `10s` -> `1s`
+- Rework communication model for a multi-threaded approach. Now, for sending `N`-files, `N+1`-threads are spawned and `N+1`-sockets are used in total.
 
 ## 0.7.0 - 2024-06-30
 
