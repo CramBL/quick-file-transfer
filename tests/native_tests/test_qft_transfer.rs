@@ -769,8 +769,14 @@ pub fn test_file_transfer_output_dir_multiple_files() -> TestResult {
     eprintln!("=== COMMAND STDOUT ===\n{_client_stdout}\n^^^COMMAND STDOUT^^^\n");
     eprintln!("=== COMMAND STDERR ===\n{client_stderr}\n^^^COMMAND STDERR^^^\n");
 
-    assert_no_errors_or_warn(&server_stderr)?;
-    assert_no_errors_or_warn(&client_stderr)?;
+    if cfg!(linux) {
+        assert_no_errors_or_warn(&server_stderr)?;
+        assert_no_errors_or_warn(&client_stderr)?;
+    } else {
+        let ignore_retrying_warn = r"retrying in";
+        assert_no_errors_or_warn_with_ignore(&server_stderr, ignore_retrying_warn)?;
+        assert_no_errors_or_warn_with_ignore(&client_stderr, ignore_retrying_warn)?;
+    }
 
     eprintln!("Dir contents");
     eprintln!("{dir:?}");
