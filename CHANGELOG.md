@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fix
+
+- #25 Excessive logging caused by tracing in the `ssh-rs`-crate
+
 ## 0.8.0 - 2024-07-10
 
 ### Changed
