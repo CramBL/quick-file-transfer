@@ -1,5 +1,6 @@
 use anyhow::Result;
 use stderrlog::LogLevelNum;
+use tracing::Level;
 use transfer::{listen::ListenArgs, send::SendArgs};
 mod util;
 use util::*;
@@ -75,6 +76,7 @@ impl Config {
             clap::ColorChoice::Never => stderrlog::ColorChoice::Never,
         };
 
+        set_tracing(&log_level);
         stderrlog::new()
             .verbosity(log_level)
             .quiet(cfg.quiet)
@@ -117,4 +119,42 @@ pub enum Command {
     Authentication uses SSH (key based auth only) and while the transfer occurs over TCP, UNENCRYPTED!.\n\
     Just like the rest of QTF, this is not suitable for transforring sensitive information."))]
     Ssh(ssh::SendSshArgs),
+}
+
+fn set_tracing(trace_level: &LogLevelNum) {
+    use tracing::Level;
+
+    let log_level: Level = match trace_level {
+        LogLevelNum::Info => Level::INFO,
+        LogLevelNum::Debug => Level::DEBUG,
+        LogLevelNum::Trace => Level::TRACE,
+        LogLevelNum::Off => Level::ERROR,
+        _ => Level::ERROR,
+    };
+
+    #[cfg(debug_assertions)]
+    set_dev_tracing(log_level);
+    #[cfg(not(debug_assertions))]
+    set_prod_tracing();
+}
+
+#[cfg(not(debug_assertions))]
+fn set_prod_tracing() -> anyhow::Result<()> {
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .with_writer(std::io::stderr)
+        .with_max_level(tracing::Level::ERROR)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    Ok(())
+}
+
+#[cfg(debug_assertions)]
+fn set_dev_tracing(log_level: Level) {
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .with_writer(std::io::stderr)
+        .with_max_level(log_level)
+        .with_line_number(true)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }
