@@ -3,6 +3,8 @@ use std::{
     io::{self, Read, Write},
     net::{IpAddr, TcpStream},
     path::{Path, PathBuf},
+    thread,
+    time::Duration,
 };
 
 use crate::{
@@ -34,9 +36,11 @@ pub fn run_client(
     let cmd_free_port = ServerCommand::GetFreePort((None, None));
     send_command(&mut initial_tcp_stream, &cmd_free_port)?;
     let mut free_port_buf: [u8; 2] = [0; 2];
-    initial_tcp_stream
-        .read_exact(&mut free_port_buf)
-        .expect("Failed to read the free port response");
+    if let Err(e) = initial_tcp_stream.read_exact(&mut free_port_buf) {
+        log::trace!("Initial tcp read of free port response failed: {e}, retrying in 100 ms...");
+        thread::sleep(Duration::from_millis(100));
+        initial_tcp_stream.read_exact(&mut free_port_buf)?;
+    }
     let free_port = u16::from_be_bytes(free_port_buf);
     log::info!("Got free port: {free_port}");
 

@@ -28,7 +28,7 @@ pub const BUFFERED_RW_BUFSIZE: usize = 32 * 1024;
 fn main() -> anyhow::Result<()> {
     let cfg = config::Config::init()?;
 
-    log::trace!("{cfg:?}");
+    tracing::trace!("{cfg:?}");
 
     if let Some(shell) = cfg.completions {
         config::Config::generate_completion_script(shell);

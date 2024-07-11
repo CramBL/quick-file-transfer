@@ -32,7 +32,7 @@ pub fn tcp_bufwriter(socket: &TcpStream) -> BufWriter<&TcpStream> {
 
 /// Send a [ServerCommand] to the server
 pub fn send_command(stream: &mut TcpStream, command: &ServerCommand) -> anyhow::Result<()> {
-    log::trace!("Sending command: {command:?}");
+    tracing::trace!("Sending command: {command:?}");
     let command_bytes = bincode::serialize(command)?;
     debug_assert!(command_bytes.len() <= u8::MAX as usize);
     let size = command_bytes.len() as u8;
