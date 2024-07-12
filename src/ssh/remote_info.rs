@@ -17,6 +17,7 @@ pub enum Remote<'a> {
 
 impl<'a> Remote<'a> {
     pub fn new(host: &'a str) -> anyhow::Result<Self> {
+        tracing::trace!("Resolving remote: '{host}'");
         if host.parse::<std::net::IpAddr>().is_ok() {
             return Ok(Self::Ip(host));
         }
@@ -25,7 +26,7 @@ impl<'a> Remote<'a> {
             return Ok(Self::MdnsHostname(host));
         }
 
-        let addrs_iter = match host.to_socket_addrs() {
+        let addrs_iter = match (host, 0).to_socket_addrs() {
             Ok(addrs_iter) => addrs_iter,
             Err(e) => {
                 #[cfg(feature = "mdns")]
