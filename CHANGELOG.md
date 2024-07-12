@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+### Changed
+
+- Remove obsolete `qft send ssh` subcommand in favor of `qft ssh`.
+
 ### Fix
 
 - #25 Excessive logging caused by tracing in the `ssh-rs`-crate
+- #24 Support regular hostnames for scp-like mode
+- #23 Support mDNS hostnames for scp-like mode
 
 ## 0.8.0 - 2024-07-10
 
