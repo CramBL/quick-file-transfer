@@ -12,6 +12,7 @@
 - #25 Excessive logging caused by tracing in the `ssh-rs`-crate
 - #24 Support regular hostnames for scp-like mode
 - #23 Support mDNS hostnames for scp-like mode
+- Exponential backoff on TCP connection attempts only applying when the condition to stop trying is max connection attempts (as opposed to timeout).
 
 ## 0.8.0 - 2024-07-10
 

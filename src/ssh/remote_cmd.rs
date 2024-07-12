@@ -18,7 +18,5 @@ pub(super) fn remote_qft_command_str(
     }
     cmd.push_str(destination);
 
-    tracing::debug!(cmd);
-
     cmd
 }
