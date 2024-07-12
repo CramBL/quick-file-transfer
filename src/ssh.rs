@@ -42,7 +42,7 @@ pub fn run_ssh(
     end_port: u16,
     ssh_timeout_ms: u64,
     tcp_delay_ms: u64,
-    tcp_conect_mode: TcpConnectMode,
+    tcp_connect_mode: TcpConnectMode,
 ) -> Result<()> {
     log::debug!(
         "Connecting to {remote_ip} as {user} with a timeout of {ssh_timeout_ms} ms",
@@ -62,7 +62,8 @@ pub fn run_ssh(
         None => session.find_free_port(start_port, end_port)?,
     };
 
-    log::debug!("Using TCP port: {tcp_port}");
+    tracing::debug!("Using TCP port: {tcp_port}");
+
     let remote_cmd = remote_cmd::remote_qft_command_str(
         remote.dest().to_str().unwrap(),
         tcp_port,
@@ -70,7 +71,7 @@ pub fn run_ssh(
         input_files.len() > 1,
     );
 
-    log::debug!("Sending remote qft command {remote_cmd}");
+    tracing::info!("Sending remote qft command '{remote_cmd}'");
 
     let server_ready_flag = AtomicBool::new(false);
     let server_output = std::thread::scope(|scope| {
@@ -78,11 +79,11 @@ pub fn run_ssh(
             session.run_cmd(&remote_cmd)?;
 
             log::trace!("Sleeping {tcp_delay_ms} before allowing client to initiate transfer");
-            std::thread::sleep(Duration::from_millis(tcp_delay_ms));
             server_ready_flag.store(true, Ordering::Relaxed);
             let out = session
                 .get_cmd_output()
                 .expect("No command output for remote sesion");
+
             session.close();
             Ok(out)
         });
@@ -109,15 +110,12 @@ pub fn run_ssh(
                 input_files,
                 prealloc,
                 *compression,
-                tcp_conect_mode,
+                tcp_connect_mode,
             )
         });
-        log::trace!("Joining client thread");
-        client_h
-            .join()
-            .expect("Failed joining client thread")
-            .unwrap();
-        log::trace!("Joining server thread");
+        tracing::trace!("Joining client thread");
+        client_h.join().expect("Failed joining client thread")?;
+        tracing::trace!("Joining server thread");
         server_h.join().expect("Failed joining server thread")
     });
 

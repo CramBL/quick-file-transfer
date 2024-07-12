@@ -5,12 +5,15 @@
 ### Changed
 
 - Remove obsolete `qft send ssh` subcommand in favor of `qft ssh`.
+- Meaningful error message when using `qft ssh` targeting a remote that does not have `qft` in path.
 
 ### Fix
 
 - #25 Excessive logging caused by tracing in the `ssh-rs`-crate
 - #24 Support regular hostnames for scp-like mode
 - #23 Support mDNS hostnames for scp-like mode
+- Exponential backoff on TCP connection attempts only applying when the condition to stop trying is max connection attempts (as opposed to timeout).
+- Remove 300ms sleep when initiating TCP connection after server is spawned over SSH (rely on polling with backoff instead).
 
 ## 0.8.0 - 2024-07-10
 

@@ -100,7 +100,6 @@ where
                 }
                 match poll_opts.abort_condition {
                     PollAbortCondition::Attempts(att) => {
-                        attempts += 1;
                         if attempts == att {
                             bail!("Failed establishing a TCP connection after {att} attempts")
                         }
@@ -114,6 +113,7 @@ where
                 let sleep_dur = poll_opts.interval * (1 << attempts);
                 log::debug!("Retrying TCP connection in {sleep_dur:?}");
                 std::thread::sleep(sleep_dur);
+                attempts += 1;
             }
         }
     }

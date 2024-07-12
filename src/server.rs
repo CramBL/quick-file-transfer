@@ -84,7 +84,7 @@ fn join_all_threads(handles: Vec<JoinHandle<Result<(), anyhow::Error>>>) {
 fn handle_cmd(cmd: ServerCommand, cfg: &ListenArgs, socket: &mut TcpStream) -> anyhow::Result<()> {
     match cmd {
         ServerCommand::Prealloc(fsize, fname) => {
-            log::debug!(
+            tracing::debug!(
                 "Preallocating file of size {} [{fsize} B]",
                 format_data_size(fsize)
             );
