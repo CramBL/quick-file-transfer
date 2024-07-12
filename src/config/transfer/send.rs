@@ -4,8 +4,6 @@ use crate::{config::util::*, util::IANA_RECOMMEND_DYNAMIC_PORT_RANGE_START};
 
 #[cfg(feature = "mdns")]
 pub mod mdns;
-#[cfg(feature = "ssh")]
-pub mod ssh;
 
 /// Holds the Send subcommands
 #[derive(Debug, Args)]
@@ -94,13 +92,6 @@ pub enum SendCommand {
     /// Send to target by specifying mDNS hostname e.g. `foo.local`
     #[cfg(feature = "mdns")]
     Mdns(mdns::SendMdnsArgs),
-
-    /// SCP-like - Send to a target that might not have qft actively listening, authenticating over SSH and transferring over TCP.
-    #[cfg(feature = "ssh")]
-    #[command(long_about("SCP-like transfer to a remote target that might not have qft actively listening.\n\
-    Authentication uses SSH (key based auth only) and while the transfer occurs over TCP, UNENCRYPTED!.\n\
-    Just like the rest of QTF, this is not suitable for transforring sensitive information."))]
-    Ssh(ssh::SendSshArgs),
 }
 
 #[derive(Debug, Args, Clone)]
