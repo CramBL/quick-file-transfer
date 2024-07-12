@@ -1,5 +1,14 @@
 use crate::{container_tests::util::*, util::*};
 
+// Specific assert with ignore for container SSH tests because they utilize docker which has some quirks in this case
+fn assert_no_errors_or_warn_container_specific(stderr: &str) -> TestResult {
+    // Ignore this pattern as a connection will be established to the container but before the server
+    // is up and so it will attempt a handshake when it is just talking to the docker interface
+    // which essentially sinkholes received data.
+    let ignore_warn = "WARN Handshake failed: failed to fill whole buffer ... retrying";
+    assert_no_errors_or_warn_with_ignore(&stderr, &ignore_warn)
+}
+
 #[test]
 #[ignore = "Needs to be run with container test (just d-test)"]
 pub fn test_ssh_transfer() -> TestResult {
@@ -28,7 +37,7 @@ pub fn test_ssh_transfer() -> TestResult {
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
-    assert_no_errors_or_warn(&stderr)?;
+    assert_no_errors_or_warn_container_specific(&stderr)?;
     let f = assert_file_exists_in_container(&file_to_receive)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);
 
@@ -65,8 +74,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified() -> TestResult {
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
-    //ERROR Failed to send to [
-    assert_no_errors_or_warn(&stderr)?;
+    assert_no_errors_or_warn_container_specific(&stderr)?;
 
     let f = assert_file_exists_in_container(&file_to_receive)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);
@@ -116,8 +124,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified_multiple_files() -> TestResult {
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
-    //ERROR Failed to send to [
-    assert_no_errors_or_warn(&stderr)?;
+    assert_no_errors_or_warn_container_specific(&stderr)?;
 
     let f1 = assert_file_exists_in_container(&file1_to_receive)?;
     let f2 = assert_file_exists_in_container(&file2_to_receive)?;
@@ -158,8 +165,7 @@ pub fn test_ssh_transfer_no_tcp_port_specified_compression_gzip() -> TestResult 
     eprint_docker_logs()?;
     eprint_cmd_args_stderr_stdout_formatted(&args, &stdout, &stderr);
 
-    //ERROR Failed to send to [
-    assert_no_errors_or_warn(&stderr)?;
+    assert_no_errors_or_warn_container_specific(&stderr)?;
 
     let f = assert_file_exists_in_container(&file_to_receive)?;
     pretty_assert_str_eq!(fs::read_to_string(f)?, TRANSFERED_CONTENTS);
