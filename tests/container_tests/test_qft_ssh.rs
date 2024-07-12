@@ -6,7 +6,7 @@ fn assert_no_errors_or_warn_container_specific(stderr: &str) -> TestResult {
     // is up and so it will attempt a handshake when it is just talking to the docker interface
     // which essentially sinkholes received data.
     let ignore_warn = "WARN Handshake failed: failed to fill whole buffer ... retrying";
-    assert_no_errors_or_warn_with_ignore(&stderr, &ignore_warn)
+    assert_no_errors_or_warn_with_ignore(stderr, ignore_warn)
 }
 
 #[test]

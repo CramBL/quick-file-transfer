@@ -65,7 +65,7 @@ pub fn run_client(
             let fname: String = f.file_name().unwrap().to_str().unwrap().to_owned();
             if prealloc {
                 let file_size = File::open(f)?.metadata()?.len();
-                log::debug!(
+                tracing::debug!(
                     "Requesting preallocation of file of size {} [{file_size} B]",
                     format_data_size(file_size)
                 );
