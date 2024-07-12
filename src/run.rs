@@ -75,7 +75,6 @@ pub fn run(_cfg: &Config) -> anyhow::Result<()> {
                     args.start_port,
                     args.end_port,
                     args.ssh_timeout_ms,
-                    args.tcp_delay_ms,
                     TcpConnectMode::poll_from_ms(
                         20_u8,
                         PollAbortCondition::Timeout(Duration::from_secs(10)),

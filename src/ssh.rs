@@ -41,7 +41,6 @@ pub fn run_ssh(
     start_port: u16,
     end_port: u16,
     ssh_timeout_ms: u64,
-    tcp_delay_ms: u64,
     tcp_connect_mode: TcpConnectMode,
 ) -> Result<()> {
     log::debug!(
@@ -78,7 +77,6 @@ pub fn run_ssh(
         let server_h: ScopedJoinHandle<Result<Vec<u8>>> = scope.spawn(|| {
             session.run_cmd(&remote_cmd)?;
 
-            log::trace!("Sleeping {tcp_delay_ms} before allowing client to initiate transfer");
             server_ready_flag.store(true, Ordering::Relaxed);
             let out = session
                 .get_cmd_output()

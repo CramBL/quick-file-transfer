@@ -29,13 +29,6 @@ pub struct SendSshArgs {
     #[arg(long, default_value_t = 10000)]
     pub ssh_timeout_ms: u64,
 
-    /// Time (ms) to wait from starting the server on the remote, to initiating the data transfer from the client.
-    /// Use case: When the used (TCP) port is forwarded, it might be possible to initiate a data transfer before
-    /// the server on the remote is listening, and thus sinkholing the data (e.g. if server is in a docker container).
-    /// In such a case, waiting for a few hundred ms should be enough to reliable perform the transfer.
-    #[arg(long, default_value_t = 300)]
-    pub tcp_delay_ms: u64,
-
     /// Preferred IP version (attempts to fall back to another variant if the preferred version is not found)
     #[cfg(feature = "mdns")]
     #[arg(long, default_value_t = crate::config::misc::IpVersion::V4)]
