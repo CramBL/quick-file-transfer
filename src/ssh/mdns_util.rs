@@ -3,7 +3,7 @@ use std::net::IpAddr;
 
 use crate::config::misc::IpVersion;
 
-pub fn get_remote_ip_from_hostname(
+pub fn get_remote_ip_from_mdns_hostname(
     hostname: &str,
     timeout_ms: u64,
     ip_version: IpVersion,
