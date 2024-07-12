@@ -19,18 +19,23 @@ pub fn run(_cfg: &Config) -> anyhow::Result<()> {
 
             #[cfg(feature = "ssh")]
             Command::Ssh(ref args) => {
-                use crate::config::transfer::util::{PollAbortCondition, TcpConnectMode};
-                use std::path::PathBuf;
-                use std::time::Duration;
+                use crate::{
+                    config::{
+                        ssh::parse_scp_style_uri,
+                        transfer::util::{PollAbortCondition, TcpConnectMode},
+                    },
+                    ssh::remote_info::RemoteInfo,
+                };
+                use std::{path::PathBuf, time::Duration};
 
                 // Determine if the operation is local to remote or remote to local
                 let is_local_to_remote = args.is_sending();
                 let is_remote_to_local = !args.is_sending();
 
                 let remote_uri_components = if is_local_to_remote {
-                    crate::config::ssh::parse_scp_style_uri(&args.destination)
+                    parse_scp_style_uri(&args.destination)
                 } else {
-                    crate::config::ssh::parse_scp_style_uri(args.sources.first().unwrap())
+                    parse_scp_style_uri(args.sources.first().unwrap())
                 }?;
                 tracing::trace!("URI: {remote_uri_components:?}");
 
@@ -55,14 +60,13 @@ pub fn run(_cfg: &Config) -> anyhow::Result<()> {
                     .map(PathBuf::from)
                     .collect();
 
+                let remote_info = RemoteInfo::from_args(args, &remote_uri_components);
+
                 crate::ssh::run_ssh(
                     _cfg,
-                    &remote_uri_components.user,
+                    &remote_info,
                     args.ssh_private_key_path.as_deref(),
                     args.ssh_key_dir.as_deref(),
-                    &remote_uri_components.host,
-                    remote_uri_components.destination.to_str().unwrap(),
-                    args.ssh_port,
                     args.tcp_port,
                     false,
                     &input_files,

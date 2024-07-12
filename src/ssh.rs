@@ -1,12 +1,9 @@
 use crate::{
-    config::{
-        compression::Compression,
-        transfer::{send::ssh::SendSshArgs, util::TcpConnectMode},
-        Config,
-    },
+    config::{compression::Compression, transfer::util::TcpConnectMode, Config},
     util::verbosity_to_args,
 };
 use anyhow::Result;
+use remote_info::RemoteInfo;
 use remote_session::RemoteSshSession;
 use std::{
     path::{Path, PathBuf},
@@ -30,68 +27,12 @@ pub const ENV_SSH_PRIVATE_KEY: &str = "QFT_SSH_PRIVATE_KEY";
 
 pub const ENV_REMOTE_USER: &str = "QFT_REMOTE_USER";
 
-pub fn handle_send_ssh(
-    cfg: &Config,
-    args: &SendSshArgs,
-    input_files: &[PathBuf],
-    prealloc: bool,
-    use_mmap: bool,
-    tcp_conect_mode: TcpConnectMode,
-) -> Result<()> {
-    let remote_info = remote_info::RemoteInfo::from_args(args);
-    let SendSshArgs {
-        user: _,
-        #[cfg(feature = "mdns")]
-            hostname: _,
-        #[cfg(feature = "mdns")]
-            ip_version: _,
-        mdns_resolve_timeout_ms: _,
-        ssh_port: _,
-        compression,
-        ip: _,
-        target: _,
-        destination: _,
-        tcp_port,
-        ssh_private_key_path,
-        ssh_key_dir,
-        start_port,
-        end_port,
-        ssh_timeout_ms,
-        tcp_delay_ms,
-    } = args;
-
-    run_ssh(
-        cfg,
-        remote_info.user,
-        ssh_private_key_path.as_deref(),
-        ssh_key_dir.as_deref(),
-        &remote_info.resolved_ip,
-        remote_info.destination.as_ref(),
-        remote_info.ssh_port,
-        *tcp_port,
-        use_mmap,
-        input_files,
-        prealloc,
-        compression,
-        *start_port,
-        *end_port,
-        *ssh_timeout_ms,
-        *tcp_delay_ms,
-        tcp_conect_mode,
-    )?;
-
-    Ok(())
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn run_ssh(
     cfg: &Config,
-    username: &str,
+    remote: &RemoteInfo,
     private_key: Option<&Path>,
     private_key_dir: Option<&Path>,
-    remote_ip: &str,
-    remote_destination: &str,
-    ssh_port: u16,
     tcp_port: Option<u16>,
     use_mmap: bool,
     input_files: &[PathBuf],
@@ -103,10 +44,14 @@ pub fn run_ssh(
     tcp_delay_ms: u64,
     tcp_conect_mode: TcpConnectMode,
 ) -> Result<()> {
-    log::debug!("Connecting to {remote_ip} with a timeout of {ssh_timeout_ms} ms");
+    log::debug!(
+        "Connecting to {remote_ip} as {user} with a timeout of {ssh_timeout_ms} ms",
+        remote_ip = remote.ip(),
+        user = remote.user(),
+    );
     let mut session = RemoteSshSession::new(
-        username,
-        (remote_ip, ssh_port),
+        remote.user(),
+        (remote.ip(), remote.ssh_port()),
         Some(Duration::from_millis(ssh_timeout_ms)),
         private_key,
         private_key_dir,
@@ -119,7 +64,7 @@ pub fn run_ssh(
 
     log::debug!("Using TCP port: {tcp_port}");
     let remote_cmd = remote_cmd::remote_qft_command_str(
-        remote_destination,
+        remote.dest().to_str().unwrap(),
         tcp_port,
         verbosity_to_args(cfg),
         input_files.len() > 1,
@@ -143,7 +88,10 @@ pub fn run_ssh(
         });
 
         let client_h = scope.spawn(|| {
-            log::debug!("Starting client thread targetting {remote_ip}:{tcp_port}");
+            log::debug!(
+                "Starting client thread targetting {remote_ip}:{tcp_port}",
+                remote_ip = remote.ip()
+            );
             log::trace!(
                 "\
             use mmap: {use_mmap}\
@@ -155,7 +103,7 @@ pub fn run_ssh(
                 std::thread::sleep(Duration::from_millis(2));
             }
             crate::send::client::run_client(
-                remote_ip.parse()?,
+                remote.ip(),
                 tcp_port,
                 use_mmap,
                 input_files,

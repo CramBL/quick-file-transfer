@@ -48,15 +48,6 @@ pub fn handle_send_cmd(send_args: &SendArgs, _cfg: &Config) -> Result<()> {
                 }
             }
         }
-        #[cfg(feature = "ssh")]
-        SendCommand::Ssh(ref args) => crate::ssh::handle_send_ssh(
-            _cfg,
-            args,
-            send_args.file.as_slice(),
-            send_args.prealloc(),
-            send_args.mmap,
-            send_args.tcp_connect_mode(),
-        )?,
     }
     Ok(())
 }
