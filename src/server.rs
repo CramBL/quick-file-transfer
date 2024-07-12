@@ -31,50 +31,65 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         output: _,
         decompression: _,
         output_dir: _,
+        remote,
     } = listen_args;
 
     let stop_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
-    let port = port.unwrap();
     let ip: IpAddr = ip.parse()?;
-    let initial_listener = TcpListener::bind((ip, port))?;
+    let initial_listener = TcpListener::bind((ip, *port))?;
 
     let mut handles = vec![];
 
+    match run_server(initial_listener, listen_args, &mut handles, &stop_flag) {
+        Ok(()) => join_all_threads(handles),
+        Err(e) => {
+            tracing::warn!("{e}, stopping all threads...");
+            stop_flag.store(true, Ordering::Relaxed);
+            join_all_threads(handles);
+            bail!(e)
+        }
+    }
+
+    Ok(())
+}
+
+fn run_server(
+    initial_listener: TcpListener,
+    args: &ListenArgs,
+    thread_handles: &mut Vec<JoinHandle<anyhow::Result<()>>>,
+    stop_flag: &Arc<AtomicBool>,
+) -> anyhow::Result<()> {
     match initial_listener.accept() {
         Ok((mut socket, addr)) => {
-            log::debug!("Client accepted at: {addr:?}");
+            tracing::info!("Client accepted at: {addr:?}");
             server_handshake(&mut socket)?;
             let mut cmd_buf: [u8; 256] = [0; 256];
             loop {
                 if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
-                    log::trace!("Received command: {cmd:?}");
+                    tracing::trace!("Received command: {cmd:?}");
                     if matches!(cmd, ServerCommand::GetFreePort(_)) {
                         let child_thread_handle = spawn_server_thread_on_new_port(
                             &mut socket,
-                            listen_args,
+                            args,
                             &Arc::clone(&stop_flag),
                             &cmd,
                         )?;
-                        handles.push(child_thread_handle);
+                        thread_handles.push(child_thread_handle);
                     }
                 } else {
-                    log::info!("Main Client disconnected...");
+                    tracing::debug!("Main Client disconnected...");
                     break;
                 }
             }
         }
         Err(e) => bail!(e),
     }
-
-    stop_flag.store(true, Ordering::Relaxed);
-    join_all_threads(handles);
-
     Ok(())
 }
 
-fn join_all_threads(handles: Vec<JoinHandle<Result<(), anyhow::Error>>>) {
+fn join_all_threads(handles: Vec<JoinHandle<anyhow::Result<()>>>) {
     for h in handles {
-        match h.join().expect("Failed to join thread") {
+        match h.join().map_err(|e| format!("{e:?}")) {
             Ok(_) => (),
             Err(e) => log::error!("Thread joined with error: {e}"),
         }
