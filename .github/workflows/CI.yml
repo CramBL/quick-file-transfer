@@ -85,7 +85,7 @@ jobs:
 
     # Test all feature combinations
     - name: Run Native Tests
-      run: cargo hack test --feature-powerset
+      run: cargo hack nextest run --feature-powerset --failure-output=immediate-final
 
     # Run very involved tests targetting a docker container
     # includes e.g.
