@@ -1,7 +1,7 @@
 [package]
 name = "quick-file-transfer"
 description = "Transfer files quickly, safely, and painlessly between hosts on a local network"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 readme = "README.md"
 homepage = "https://crambl.github.io/quick-file-transfer/"

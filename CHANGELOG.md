@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.9.0 - 2024-07-13
+
 ### Added
 
 - Remote path validation for SSH (resolves [#7](https://github.com/CramBL/quick-file-transfer/issues/7))
