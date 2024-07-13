@@ -63,8 +63,7 @@ pub fn run_client(
         match read_server_response(&mut initial_tcp_stream)? {
             ServerResult::Ok => log::trace!("Remote path is valid"),
             ServerResult::Err(e) => {
-                tracing::error!("Remote report invalid path: {e}");
-                bail!(e)
+                bail!(e);
             }
         }
     }
@@ -78,7 +77,7 @@ pub fn run_client(
         initial_tcp_stream.read_exact(&mut free_port_buf)?;
     }
     let free_port = u16::from_be_bytes(free_port_buf);
-    log::info!("Got free port: {free_port}");
+    tracing::info!("Got free port: {free_port}");
 
     if input_files.is_empty() {
         let mut tcp_stream = qft_connect_to_server((ip, free_port), connect_mode)?;
@@ -125,8 +124,9 @@ pub fn run_client(
             tcp_stream.flush()?;
 
             log::info!(
-                "Sent {} [{transferred_len} B]",
-                format_data_size(transferred_len)
+                "Sent {file} {} [{transferred_len} B]",
+                format_data_size(transferred_len),
+                file = f.display()
             );
         }
     }
@@ -155,7 +155,7 @@ pub fn query_server_result(initial_tcp_stream: &mut TcpStream) -> anyhow::Result
         anyhow::bail!("Error reading command into buffer: {e}");
     }
     let resp: ServerResult = bincode::deserialize(&resp_buf[..inc_cmd_len])?;
-    log::info!("Server response: {resp:?}");
+    log::debug!("Server response: {resp:?}");
 
     match resp {
         ServerResult::Ok => Ok(()),
@@ -170,7 +170,7 @@ fn transfer_data(
     file: Option<&Path>,
     use_mmap: bool,
 ) -> anyhow::Result<u64> {
-    log::info!("Connecting to: {ip}:{port}");
+    log::debug!("Sending to: {ip}:{port}");
 
     let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
 

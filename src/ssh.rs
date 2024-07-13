@@ -68,7 +68,7 @@ pub fn run_ssh(
     tracing::info!("Sending remote qft command '{remote_cmd}'");
 
     let server_ready_flag = AtomicBool::new(false);
-    let server_output = std::thread::scope(|scope| {
+    let (server_output, client_result) = std::thread::scope(|scope| {
         let server_h: ScopedJoinHandle<Result<Vec<u8>>> = scope.spawn(|| {
             session.run_cmd(&remote_cmd)?;
 
@@ -108,9 +108,10 @@ pub fn run_ssh(
             )
         });
         tracing::trace!("Joining client thread");
-        client_h.join().expect("Failed joining client thread")?;
+        let client_res = client_h.join().expect("Failed joining client thread");
         tracing::trace!("Joining server thread");
-        server_h.join().expect("Failed joining server thread")
+        let server_output = server_h.join().expect("Failed joining server thread");
+        (server_output, client_res)
     });
 
     #[cfg(debug_assertions)]
@@ -119,6 +120,7 @@ pub fn run_ssh(
             "\n=============================== REMOTE SERVER OUTPUT ===============================\n\n{}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^ END OF REMOTE SERVER OUTPUT ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n:",
             String::from_utf8_lossy(&server_output?)
         );
+        tracing::debug!("Client result: {client_result:?}");
     }
 
     #[cfg(not(debug_assertions))]
@@ -127,7 +129,5 @@ pub fn run_ssh(
         String::from_utf8_lossy(&server_output?)
     );
 
-    // Close session.
-
-    Ok(())
+    client_result
 }

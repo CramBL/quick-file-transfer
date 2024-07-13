@@ -4,16 +4,16 @@ x86_64_LINUX_MUSL_DEBUG_BIN := "target/x86_64-unknown-linux-musl/debug/qft"
 
 
 [group("Cross Compile"), no-exit-message]
-build-armv7-musl:
-	cargo {{build}} --target=armv7-unknown-linux-musleabihf
+build-armv7-musl *ARGS:
+	cargo {{build}} --target=armv7-unknown-linux-musleabihf {{ARGS}}
 
 [group("Cross Compile Dependencies"), no-exit-message]
 setup-armv7-musl-deps:
 	rustup target add armv7-unknown-linux-musleabihf
 
 [group("Cross Compile"), no-exit-message]
-build-aarch64-linux-musl:
-	cargo {{build}} --target=aarch64-unknown-linux-musl
+build-aarch64-linux-musl *ARGS:
+	cargo {{build}} --target=aarch64-unknown-linux-musl {{ARGS}}
 
 [group("Cross Compile Dependencies"), no-exit-message]
 setup-aarch64-linux-musl-deps:

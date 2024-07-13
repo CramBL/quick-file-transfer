@@ -8,6 +8,8 @@
     clippy::maybe_infinite_iter
 )]
 
+use std::process::ExitCode;
+
 pub mod config;
 #[cfg(feature = "evaluate-compression")]
 pub mod evaluate_compression;
@@ -25,16 +27,25 @@ pub mod run;
 pub const TCP_STREAM_BUFSIZE: usize = 2 * 1024;
 pub const BUFFERED_RW_BUFSIZE: usize = 32 * 1024;
 
-fn main() -> anyhow::Result<()> {
-    let cfg = config::Config::init()?;
-
+fn main() -> ExitCode {
+    let cfg = match config::Config::init() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("qft: failed at init {e}");
+            return ExitCode::FAILURE;
+        }
+    };
     tracing::trace!("{cfg:?}");
 
     if let Some(shell) = cfg.completions {
         config::Config::generate_completion_script(shell);
         log::info!("Completions generated for {shell:?}. Exiting...");
-        return Ok(());
+        return ExitCode::SUCCESS;
     }
 
-    run::run(&cfg)
+    if let Err(e) = run::run(&cfg) {
+        eprintln!("qft: {e}");
+        return ExitCode::FAILURE;
+    }
+    ExitCode::SUCCESS
 }
