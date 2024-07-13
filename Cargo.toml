@@ -4,7 +4,7 @@ description = "Transfer files quickly, safely, and painlessly between hosts on a
 version = "0.8.0"
 edition = "2021"
 readme = "README.md"
-
+homepage = "https://crambl.github.io/quick-file-transfer/"
 license = "MIT"
 authors = ["Marc Beck König <mbkj@tutamail.com>"]
 repository = "https://github.com/CramBL/quick-file-transfer"
