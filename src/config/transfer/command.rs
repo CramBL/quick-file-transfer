@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use strum_macros::EnumIter;
+use strum_macros::{Display, EnumIter};
 
 use crate::config::compression::CompressionVariant;
 
-#[derive(Debug, Default, Serialize, Deserialize, EnumIter)]
+#[derive(Debug, Default, Serialize, Deserialize, EnumIter, PartialEq, Display)]
 pub enum DestinationMode {
     /// Transfering a single file to a path where the parent exists (there's no requirement to the basename)
     #[default]
