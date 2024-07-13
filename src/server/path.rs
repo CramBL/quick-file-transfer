@@ -43,8 +43,10 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
 }
 
 /// Validate that a remote path is valid for the host the server runs on.
-pub fn validate_remote_path(mode: &DestinationMode, remote_path: &Path) -> anyhow::Result<()> {
+pub fn validate_remote_path(mode: &DestinationMode, remote_path: &Path) -> anyhow::Result<PathBuf> {
+    tracing::trace!("Validationg path: {remote_path:?} in {mode}");
     let resolved_path = resolve_scp_path(remote_path)?;
+    tracing::trace!("Resolved {remote_path:?} -> {resolved_path:?}");
     if !resolved_path.is_absolute() {
         bail!(
             "Cannot resolve '{}' to an absolute path",
@@ -54,14 +56,14 @@ pub fn validate_remote_path(mode: &DestinationMode, remote_path: &Path) -> anyho
     match mode {
         DestinationMode::SingleFile => {
             if resolved_path.parent().is_some_and(|p| p.exists()) {
-                Ok(())
+                Ok(resolved_path)
             } else {
                 bail!("'{}' doesn't exist", remote_path.to_string_lossy())
             }
         }
         DestinationMode::MultipleFiles => {
             if resolved_path.is_dir() {
-                Ok(())
+                Ok(resolved_path)
             } else {
                 bail!("transferring multiple files requires a destination directory")
             }
@@ -72,7 +74,7 @@ pub fn validate_remote_path(mode: &DestinationMode, remote_path: &Path) -> anyho
                     && resolved_path.extension().is_none()
                     && resolved_path.parent().is_some_and(|p| p.exists()))
             {
-                Ok(())
+                Ok(resolved_path)
             } else {
                 bail!("transferring a directory requires a destination directory")
             }
