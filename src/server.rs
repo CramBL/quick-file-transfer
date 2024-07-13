@@ -18,7 +18,6 @@ use crate::{
         },
         Config,
     },
-    send::util::send_command,
     util::{
         bind_listen_to_free_port_in_range, create_file_with_len, format_data_size, read_server_cmd,
         server_handshake,
@@ -35,7 +34,7 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         output: _,
         decompression: _,
         output_dir: _,
-        remote,
+        remote: _,
     } = listen_args;
 
     let stop_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
