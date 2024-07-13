@@ -40,6 +40,7 @@ fn main() -> ExitCode {
     if let Some(shell) = cfg.completions {
         config::Config::generate_completion_script(shell);
         log::info!("Completions generated for {shell:?}. Exiting...");
+        return ExitCode::SUCCESS;
     }
 
     if let Err(e) = run::run(&cfg) {
