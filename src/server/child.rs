@@ -2,6 +2,7 @@ use std::{
     fs,
     io::{self},
     net::{TcpListener, TcpStream},
+    path::Path,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -21,14 +22,15 @@ pub fn run_child(
     listener: &TcpListener,
     cfg: &ListenArgs,
     stop_flag: &Arc<AtomicBool>,
+    root_dest: Option<&Path>,
 ) -> anyhow::Result<()> {
     for client in listener.incoming() {
         match client {
             Ok(mut socket) => {
-                handle_child_socket(cfg, &mut socket)?;
+                handle_child_socket(cfg, &mut socket, root_dest)?;
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                log::trace!("Would block - yielding thread");
+                tracing::trace!("Would block - yielding thread");
                 std::thread::park_timeout(Duration::from_millis(10));
             }
             Err(e) => {
@@ -43,22 +45,26 @@ pub fn run_child(
     Ok(())
 }
 
-pub fn handle_child_socket(cfg: &ListenArgs, socket: &mut TcpStream) -> anyhow::Result<()> {
+pub fn handle_child_socket(
+    cfg: &ListenArgs,
+    socket: &mut TcpStream,
+    root_dest: Option<&Path>,
+) -> anyhow::Result<()> {
     socket
         .set_nonblocking(false)
         .expect("Failed putting socket into blocking state");
     tracing::trace!("{socket:?}");
-    tracing::trace!("Got client at {:?}", socket.local_addr());
+    tracing::trace!("Got client at {}", socket.local_addr()?);
     server_handshake(socket)?;
     let mut cmd_buf: [u8; 256] = [0; 256];
 
     loop {
-        log::info!("Ready to receive command");
+        tracing::info!("Ready to receive command");
         if let Some(cmd) = read_server_cmd(socket, &mut cmd_buf)? {
             log::trace!("Received command: {cmd:?}");
-            handle_child_cmd(cmd, cfg, socket)?;
+            handle_child_cmd(cmd, cfg, socket, root_dest)?;
         } else {
-            log::info!("[thread] Client disconnected...");
+            tracing::info!("Client disconnected...");
             break;
         }
     }
@@ -69,10 +75,18 @@ pub fn handle_child_cmd(
     cmd: ServerCommand,
     cfg: &ListenArgs,
     socket: &mut TcpStream,
+    root_dest: Option<&Path>,
 ) -> anyhow::Result<()> {
     match cmd {
         ServerCommand::Prealloc(fsize, fname) => {
-            if let Some(out_dir) = cfg.output_dir.as_deref() {
+            if let Some(root_dest) = root_dest {
+                if root_dest.is_dir() {
+                    let dest = root_dest.join(fname);
+                    create_file_with_len(&dest, fsize)?;
+                } else {
+                    create_file_with_len(root_dest, fsize)?;
+                }
+            } else if let Some(out_dir) = cfg.output_dir.as_deref() {
                 if !out_dir.is_dir() && out_dir.exists() {
                     bail!("Output directory path {out_dir:?} is invalid - has to point at a directory or non-existent path")
                 }
@@ -88,7 +102,7 @@ pub fn handle_child_cmd(
         }
         ServerCommand::ReceiveData(_f_count, fname, decompr) => {
             log::debug!("Received file list: {fname:?}");
-            handle_receive_data(cfg, socket, fname, decompr)?;
+            handle_receive_data(cfg, socket, fname, decompr, root_dest)?;
         }
         // TODO: Constrict these to only the main thread.
         ServerCommand::GetFreePort(_) => todo!(),

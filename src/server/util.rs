@@ -2,7 +2,7 @@ use std::{
     fs::{self, File},
     io::{self, BufReader, BufWriter, StdoutLock, Write},
     net::{TcpListener, TcpStream},
-    path::Path,
+    path::{Path, PathBuf},
     sync::{atomic::AtomicBool, Arc},
     thread::JoinHandle,
 };
@@ -80,6 +80,7 @@ pub fn handle_receive_data(
     tcp_socket: &mut TcpStream,
     fname: String,
     decompression: Option<CompressionVariant>,
+    root_dest: Option<&Path>,
 ) -> anyhow::Result<u64> {
     // On-stack dynamic dispatch
     let (mut stdout_write, mut file_write);
@@ -87,8 +88,20 @@ pub fn handle_receive_data(
     let bufwriter: &mut dyn io::Write = match (
         listen_args.output.as_deref(),
         listen_args.output_dir.as_deref(),
+        root_dest,
     ) {
-        (None, Some(d)) => {
+        (_, _, Some(root_dest)) => {
+            file_write = if root_dest.is_file() {
+                tracing::info!("Initiation bufwriter targeting {root_dest:?}");
+                file_with_bufwriter(root_dest)?
+            } else {
+                let full_path = root_dest.join(fname);
+                tracing::info!("Initiation bufwriter targeting {full_path:?}");
+                file_with_bufwriter(&full_path)?
+            };
+            &mut file_write
+        }
+        (None, Some(d), _) => {
             if !d.is_dir() && d.exists() {
                 anyhow::bail!("Output directory path {d:?} is invalid - has to point at a directory or non-existent path")
             }
@@ -99,15 +112,15 @@ pub fn handle_receive_data(
             file_write = file_with_bufwriter(&new_fpath)?;
             &mut file_write
         }
-        (Some(f), None) => {
+        (Some(f), None, _) => {
             file_write = file_with_bufwriter(f)?;
             &mut file_write
         }
-        (None, None) => {
+        (None, None, _) => {
             stdout_write = stdout_bufwriter();
             &mut stdout_write
         }
-        (Some(_), Some(_)) => {
+        (Some(_), Some(_), _) => {
             unreachable!("Specifying both an output name and an output directory is invalid")
         }
     };
@@ -188,6 +201,7 @@ pub fn spawn_child_on_new_port(
     cfg: &ListenArgs,
     stop_flag: &Arc<AtomicBool>,
     server_cmd_get_free_port: &ServerCommand,
+    root_dest: Option<PathBuf>,
 ) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
     let (start_port_range, end_port_range) = match server_cmd_get_free_port {
         ServerCommand::GetFreePort((start_port_range, end_port_range)) => {
@@ -222,7 +236,12 @@ pub fn spawn_child_on_new_port(
             let local_stop_flag = Arc::clone(stop_flag);
             move || {
                 thread_listener.set_nonblocking(true)?;
-                run_child(&thread_listener, &cfg, &local_stop_flag)
+                run_child(
+                    &thread_listener,
+                    &cfg,
+                    &local_stop_flag,
+                    root_dest.as_deref(),
+                )
             }
         })
         .expect("Failed spawning thread");
