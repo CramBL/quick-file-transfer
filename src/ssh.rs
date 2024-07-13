@@ -113,7 +113,16 @@ pub fn run_ssh(
         server_h.join().expect("Failed joining server thread")
     });
 
-    log::debug!(
+    #[cfg(debug_assertions)]
+    {
+        tracing::trace!(
+            "\n=============================== REMOTE SERVER OUTPUT ===============================\n\n{}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^ END OF REMOTE SERVER OUTPUT ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n:",
+            String::from_utf8_lossy(&server_output?)
+        );
+    }
+
+    #[cfg(not(debug_assertions))]
+    log::trace!(
         "remote server output: {}",
         String::from_utf8_lossy(&server_output?)
     );
