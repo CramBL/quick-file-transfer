@@ -212,6 +212,7 @@ pub fn read_server_cmd(
         }
     }
     let inc_cmd_len = ServerCommand::size_from_bytes(header_buf);
+    debug_assert!(inc_cmd_len <= cmd_buf.len());
 
     // Read the actual command/data based on the size
     if let Err(e) = socket.read_exact(&mut cmd_buf[..inc_cmd_len]) {
@@ -223,22 +224,42 @@ pub fn read_server_cmd(
     Ok(Some(command))
 }
 
-pub fn read_server_response(
-    socket: &mut TcpStream,
-    resp_buf: &mut [u8],
-) -> anyhow::Result<ServerResult> {
+fn read_server_response_header(socket: &mut TcpStream) -> anyhow::Result<usize> {
     let mut header_buf = [0; ServerResult::HEADER_SIZE];
     // Read the header to determine the size of the incoming command/data
     if let Err(e) = socket.read_exact(&mut header_buf) {
         bail!("{e}");
     }
-    let inc_cmd_len = ServerResult::size_from_bytes(header_buf);
+    Ok(ServerResult::size_from_bytes(header_buf))
+}
+
+/// Provide your own buffer to allow for buffer reuse
+pub fn read_server_response_with_buf(
+    socket: &mut TcpStream,
+    resp_buf: &mut [u8],
+) -> anyhow::Result<ServerResult> {
+    let inc_resp_len = read_server_response_header(socket)?;
+    debug_assert!(inc_resp_len <= resp_buf.len());
 
     // Read the actual command/data based on the size
-    if let Err(e) = socket.read_exact(&mut resp_buf[..inc_cmd_len]) {
+    if let Err(e) = socket.read_exact(&mut resp_buf[..inc_resp_len]) {
         anyhow::bail!("Error reading command into buffer: {e}");
     }
-    let resp: ServerResult = bincode::deserialize(&resp_buf[..inc_cmd_len])?;
+    let resp: ServerResult = bincode::deserialize(&resp_buf[..inc_resp_len])?;
+    Ok(resp)
+}
+
+pub fn read_server_response(socket: &mut TcpStream) -> anyhow::Result<ServerResult> {
+    let inc_resp_len = read_server_response_header(socket)?;
+
+    // Candidate for unsafe uninitialized read
+    let mut resp_buf: Vec<u8> = vec![0; inc_resp_len];
+
+    // Read the actual command/data based on the size
+    if let Err(e) = socket.read_exact(&mut resp_buf) {
+        anyhow::bail!("Error reading command into buffer: {e}");
+    }
+    let resp: ServerResult = bincode::deserialize(&resp_buf)?;
     Ok(resp)
 }
 
@@ -256,7 +277,7 @@ pub(crate) mod tiny_rnd {
     ///
     /// Adapted (gutted) from: <https://docs.rs/rand_xoshiro/latest/src/rand_xoshiro/splitmix64.rs.html>
     ///
-    /// Stateless  gutted splitmix64 random number generator.
+    /// Stateless gutted splitmix64 random number generator.
     ///
     /// The gutted splitmix algorithm is NOT suitable for cryptographic purposes, but is
     /// very fast and has a 64 bit state.

@@ -104,6 +104,7 @@ pub fn run_ssh(
                 prealloc,
                 *compression,
                 tcp_connect_mode,
+                Some(remote.dest()),
             )
         });
         tracing::trace!("Joining client thread");

@@ -52,6 +52,7 @@ fn run_server(
         Ok((mut socket, addr)) => {
             tracing::info!("Client accepted at: {addr:?}");
             server_handshake(&mut socket)?;
+            let mut root_dest: Option<PathBuf> = None; // Used as root destination if invoked through ssh/scp mode
             let mut cmd_buf: [u8; 256] = [0; 256];
             loop {
                 if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
@@ -63,6 +64,7 @@ fn run_server(
                                 args,
                                 &Arc::clone(stop_flag),
                                 &cmd,
+                                root_dest.clone(),
                             )?;
                             thread_handles.push(child_thread_handle);
                         }
@@ -81,14 +83,13 @@ fn run_server(
                                 }
                             }
                         }
-                        ServerCommand::Prealloc(_, _) => todo!(),
-                        ServerCommand::ReceiveData(_, _, _) => todo!(),
                         ServerCommand::IsDestinationValid(mode, dest) => {
                             let dest = PathBuf::from(dest);
                             tracing::info!("Checking validity of remote path: {dest:?}");
                             match validate_remote_path(&mode, &dest) {
-                                Ok(_) => {
+                                Ok(remote_dest) => {
                                     send_result(&mut socket, &ServerResult::Ok)?;
+                                    root_dest = Some(remote_dest);
                                 }
                                 Err(e) => {
                                     tracing::error!("Invalid remote path: {e}");
@@ -99,6 +100,9 @@ fn run_server(
                                 }
                             }
                         }
+                        // For child threads
+                        ServerCommand::Prealloc(_, _) => todo!(),
+                        ServerCommand::ReceiveData(_, _, _) => todo!(),
                     }
                 } else {
                     tracing::debug!("Main Client disconnected...");
