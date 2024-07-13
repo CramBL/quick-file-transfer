@@ -3,6 +3,17 @@ use strum_macros::EnumIter;
 
 use crate::config::compression::CompressionVariant;
 
+#[derive(Debug, Default, Serialize, Deserialize, EnumIter)]
+pub enum DestinationMode {
+    /// Transfering a single file to a path where the parent exists (there's no requirement to the basename)
+    #[default]
+    SingleFile,
+    /// Transferring multiple files, the path must be to an existent directory
+    MultipleFiles,
+    /// Transferring recursively from a directory, the basename must be an existent directory or the parent is (must not be file or invalid parent).
+    RecusiveDirectory,
+}
+
 /// Defines commands a QFT client can issue to a QFT server
 #[derive(Debug, Serialize, Deserialize, EnumIter)]
 #[allow(variant_size_differences)]
@@ -11,6 +22,7 @@ pub enum ServerCommand {
     Prealloc(u64, String),
     ReceiveData(u32, String, Option<CompressionVariant>),
     EndOfTransfer,
+    IsDestinationValid(DestinationMode, String),
 }
 
 impl ServerCommand {
