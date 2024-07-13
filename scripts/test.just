@@ -22,7 +22,7 @@ mkdir-container-tmp:
 container-tests *ARGS:
 	{{TEST_THREADS}}=1 \
 		cargo {{test}} {{nex_include_ignored_tests}} container_tests \
-		--no-capture --cargo-verbose -- {{include_ignored}} {{ ARGS }}
+			-- {{include_ignored}} {{ ARGS }}
 
 
 [group("Docker"), group("Test"), no-exit-message, windows, macos]
