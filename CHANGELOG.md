@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Configurable parallel jobs when running `qft evaluate-compression`
+- Progress bar to `qft evaluate-compression`
+
+
 ## 0.9.0 - 2024-07-13
 
 ### Added
