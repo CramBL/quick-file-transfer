@@ -58,24 +58,6 @@ check *ARGS:
 check-feature-combination *ARGS:
     cargo hack {{check}} --feature-powerset --no-dev-deps {{ARGS}}
 
-# Run the tests
-[group("Test"), no-exit-message]
-test *ARGS:
-    cargo {{test}} {{ ARGS }}
-
-# Run the tests with all feature combinations
-[group("Test"), no-exit-message]
-test-feature-combination *ARGS:
-    cargo hack {{test}} --feature-powerset {{ ARGS }}
-
-# Run tests using the docker test container
-[group("Docker"), group("Test"), no-exit-message]
-d-test ARGS="-- --ignored ":
-    mkdir -m755 -p {{CONTAINER_MOUNTED_TMP_DIR}}
-    just d-setup-for-transfer-tests
-    RUST_TEST_THREADS="1" \
-        cargo {{test}} container_tests {{ARGS}}
-
 # Build the application
 [no-exit-message]
 build *ARGS:

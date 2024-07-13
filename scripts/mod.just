@@ -3,6 +3,7 @@ import 'check_version.just'
 import 'git.just'
 import 'cross.just'
 import 'docker/mod.just'
+import 'test.just'
 
 # Checks if BINARY is a command/is installed and exits 1 if not
 [private, no-exit-message]
