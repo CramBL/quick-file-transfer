@@ -86,7 +86,7 @@ fn run_server(
                         ServerCommand::IsDestinationValid(mode, dest) => {
                             let dest = PathBuf::from(dest);
                             tracing::info!("Checking validity of remote path: {dest:?}");
-                            match validate_remote_path(mode, &dest) {
+                            match validate_remote_path(&mode, &dest) {
                                 Ok(_) => {
                                     send_result(&mut socket, &ServerResult::Ok)?;
                                 }

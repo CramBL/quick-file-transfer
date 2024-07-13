@@ -18,7 +18,7 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
 
         // Check if we need to resolve the home directory
         // (specifying ~ or an empty string is valid and should resolve to the users home dir)
-        if components.first().is_some_and(|f| f.starts_with("~")) || components.is_empty() {
+        if components.first().is_some_and(|f| f.starts_with('~')) || components.is_empty() {
             // Attempt to obtain the home directory
             let home_dir = env::var("HOME").or_else(|_| {
                 env::var("USERPROFILE").map_err(|_| {
@@ -34,7 +34,7 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
                 resolved_path.push(component);
             }
 
-            return Ok(resolved_path.into());
+            return Ok(resolved_path);
         }
     }
 
@@ -43,8 +43,8 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
 }
 
 /// Validate that a remote path is valid for the host the server runs on.
-pub fn validate_remote_path(mode: DestinationMode, remote_path: &Path) -> anyhow::Result<()> {
-    let resolved_path = resolve_scp_path(&remote_path)?;
+pub fn validate_remote_path(mode: &DestinationMode, remote_path: &Path) -> anyhow::Result<()> {
+    let resolved_path = resolve_scp_path(remote_path)?;
     if !resolved_path.is_absolute() {
         bail!(
             "Cannot resolve '{}' to an absolute path",
@@ -54,14 +54,14 @@ pub fn validate_remote_path(mode: DestinationMode, remote_path: &Path) -> anyhow
     match mode {
         DestinationMode::SingleFile => {
             if resolved_path.parent().is_some_and(|p| p.exists()) {
-                return Ok(());
+                Ok(())
             } else {
                 bail!("'{}' doesn't exist", remote_path.to_string_lossy())
             }
         }
         DestinationMode::MultipleFiles => {
             if resolved_path.is_dir() {
-                return Ok(());
+                Ok(())
             } else {
                 bail!("transferring multiple files requires a destination directory")
             }
@@ -72,7 +72,7 @@ pub fn validate_remote_path(mode: DestinationMode, remote_path: &Path) -> anyhow
                     && resolved_path.extension().is_none()
                     && resolved_path.parent().is_some_and(|p| p.exists()))
             {
-                return Ok(());
+                Ok(())
             } else {
                 bail!("transferring a directory requires a destination directory")
             }
@@ -118,23 +118,22 @@ mod tests {
 
     /// This is valid as it resolves to a file with no file-extension in a directory that exists
     #[test]
-    fn test_is_remote_path_valid_with_unix_home_no_file_extension_valid() -> TestResult {
+    fn test_is_remote_path_valid_with_unix_home_no_file_extension_valid() {
         let path = PathBuf::from("~/non_existing");
         for mode in DestinationMode::iter() {
             match mode {
-                DestinationMode::SingleFile => assert!(validate_remote_path(mode, &path).is_ok()),
+                DestinationMode::SingleFile => assert!(validate_remote_path(&mode, &path).is_ok()),
                 DestinationMode::MultipleFiles => {
                     assert!(
-                        validate_remote_path(mode, &path).is_err(),
+                        validate_remote_path(&mode, &path).is_err(),
                         "Error: Path doesn't exist, {DIAG_HELP_MULTI_F_DEST_DIR_REQ}"
                     )
                 }
                 DestinationMode::RecusiveDirectory => {
-                    assert!(validate_remote_path(mode, &path).is_ok())
+                    assert!(validate_remote_path(&mode, &path).is_ok())
                 }
             }
         }
-        Ok(())
     }
 
     /// Pointing to a directory is valid (here WITHOUT trailing '/')
@@ -146,12 +145,12 @@ mod tests {
 
         for mode in DestinationMode::iter() {
             match mode {
-                DestinationMode::SingleFile => assert!(validate_remote_path(mode, &path).is_ok()),
+                DestinationMode::SingleFile => assert!(validate_remote_path(&mode, path).is_ok()),
                 DestinationMode::MultipleFiles => {
-                    assert!(validate_remote_path(mode, &path).is_ok())
+                    assert!(validate_remote_path(&mode, path).is_ok())
                 }
                 DestinationMode::RecusiveDirectory => {
-                    assert!(validate_remote_path(mode, &path).is_ok())
+                    assert!(validate_remote_path(&mode, path).is_ok())
                 }
             }
         }
@@ -168,12 +167,12 @@ mod tests {
 
         for mode in DestinationMode::iter() {
             match mode {
-                DestinationMode::SingleFile => assert!(validate_remote_path(mode, &path).is_ok()),
+                DestinationMode::SingleFile => assert!(validate_remote_path(&mode, &path).is_ok()),
                 DestinationMode::MultipleFiles => {
-                    assert!(validate_remote_path(mode, &path).is_ok())
+                    assert!(validate_remote_path(&mode, &path).is_ok())
                 }
                 DestinationMode::RecusiveDirectory => {
-                    assert!(validate_remote_path(mode, &path).is_ok())
+                    assert!(validate_remote_path(&mode, &path).is_ok())
                 }
             }
         }
@@ -188,16 +187,16 @@ mod tests {
 
         for mode in DestinationMode::iter() {
             match mode {
-                DestinationMode::SingleFile => assert!(validate_remote_path(mode, &path).is_ok()),
+                DestinationMode::SingleFile => assert!(validate_remote_path(&mode, &path).is_ok()),
                 DestinationMode::MultipleFiles => {
                     assert!(
-                        validate_remote_path(mode, &path).is_err(),
+                        validate_remote_path(&mode, &path).is_err(),
                         "Error: {DIAG_IS_FILE_EXISTS}, {DIAG_HELP_MULTI_F_DEST_DIR_REQ}"
                     )
                 }
                 DestinationMode::RecusiveDirectory => {
                     assert!(
-                        validate_remote_path(mode, &path).is_err(),
+                        validate_remote_path(&mode, &path).is_err(),
                         "Error: {DIAG_IS_FILE_EXISTS}, {DIAG_HELP_DIR_DEST_DIR_REQ}"
                     )
                 }
@@ -214,16 +213,16 @@ mod tests {
         let path = dir.child("doesnt_exist.txt");
         for mode in DestinationMode::iter() {
             match mode {
-                DestinationMode::SingleFile => assert!(validate_remote_path(mode, &path).is_ok()),
+                DestinationMode::SingleFile => assert!(validate_remote_path(&mode, &path).is_ok()),
                 DestinationMode::MultipleFiles => {
                     assert!(
-                        validate_remote_path(mode, &path).is_err(),
+                        validate_remote_path(&mode, &path).is_err(),
                         "Error: {DIAG_IS_FILE_FORMAT}, {DIAG_HELP_MULTI_F_DEST_DIR_REQ}"
                     )
                 }
                 DestinationMode::RecusiveDirectory => {
                     assert!(
-                        validate_remote_path(mode, &path).is_err(),
+                        validate_remote_path(&mode, &path).is_err(),
                         "Error: {DIAG_IS_FILE_FORMAT}, {DIAG_HELP_DIR_DEST_DIR_REQ}"
                     )
                 }
@@ -233,30 +232,29 @@ mod tests {
     }
 
     #[test]
-    fn test_is_remote_path_valid_with_non_absolute_path() -> TestResult {
+    fn test_is_remote_path_valid_with_non_absolute_path() {
         let path = PathBuf::from(
             "dsj764j7654j96h6ybvjihsbd4747cbds77r44fdsf9e4b4h6f0qxlmusghd7ahndcjsahf2sad",
         ); // Sure hope no one has this file in current dir
         for mode in DestinationMode::iter() {
             match mode {
                 DestinationMode::SingleFile => assert!(
-                    validate_remote_path(mode, &path).is_err(),
+                    validate_remote_path(&mode, &path).is_err(),
                     "Err: Cannot resolve to absolute path"
                 ),
                 DestinationMode::MultipleFiles => {
                     assert!(
-                        validate_remote_path(mode, &path).is_err(),
+                        validate_remote_path(&mode, &path).is_err(),
                         "Err: Cannot resolve to absolute path"
                     )
                 }
                 DestinationMode::RecusiveDirectory => {
                     assert!(
-                        validate_remote_path(mode, &path).is_err(),
+                        validate_remote_path(&mode, &path).is_err(),
                         "Err: Cannot resolve to absolute path"
                     )
                 }
             }
         }
-        Ok(())
     }
 }
