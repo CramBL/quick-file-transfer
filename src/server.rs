@@ -40,11 +40,11 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
     let stop_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let ip: IpAddr = ip.parse()?;
     let initial_listener = TcpListener::bind((ip, *port))?;
-    run_server(initial_listener, listen_args, &stop_flag)
+    run_server(&initial_listener, listen_args, &stop_flag)
 }
 
 fn run_server(
-    initial_listener: TcpListener,
+    initial_listener: &TcpListener,
     args: &ListenArgs,
     stop_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
@@ -61,7 +61,7 @@ fn run_server(
                         let child_thread_handle = spawn_server_thread_on_new_port(
                             &mut socket,
                             args,
-                            &Arc::clone(&stop_flag),
+                            &Arc::clone(stop_flag),
                             &cmd,
                         )?;
                         thread_handles.push(child_thread_handle);
