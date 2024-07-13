@@ -10,7 +10,8 @@ use super::Compression;
 #[cfg(feature = "ssh")]
 pub struct SendSshArgs {
     /// Source files or directories
-    #[arg(required(true))]
+    #[arg(required(true),
+    value_hint = clap::ValueHint::AnyPath)]
     pub sources: Vec<String>,
 
     /// Destination file or directory

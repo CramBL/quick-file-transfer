@@ -13,17 +13,21 @@ use crate::{
     config::{
         self,
         compression::{Bzip2Args, Compression, GzipArgs, XzArgs},
-        transfer::{command::ServerCommand, util::TcpConnectMode},
+        transfer::{
+            command::{DestinationMode, ServerCommand, ServerResult},
+            util::TcpConnectMode,
+        },
     },
     mmap_reader::MemoryMappedReader,
     send::util::{
         file_with_bufreader, qft_connect_to_server, send_command, stdin_bufreader, tcp_bufwriter,
     },
-    util::{format_data_size, incremental_rw},
+    util::{format_data_size, incremental_rw, read_server_response},
     TCP_STREAM_BUFSIZE,
 };
 
 /// If poll is specified, poll the server with the specified interval, else exut on the first failure to establish a connection.
+#[allow(clippy::too_many_arguments)]
 pub fn run_client(
     ip: IpAddr,
     port: u16,
@@ -32,8 +36,38 @@ pub fn run_client(
     prealloc: bool,
     compression: Option<Compression>,
     connect_mode: TcpConnectMode,
+    remote_dest: Option<&Path>,
 ) -> anyhow::Result<()> {
     let mut initial_tcp_stream = qft_connect_to_server((ip, port), connect_mode)?;
+
+    // Validate remote path before start
+    if let Some(remote_dest) = remote_dest {
+        tracing::info!("Running client in remote mode targeting destination: {remote_dest:?}");
+        if input_files.is_empty() {
+            bail!("Error: no files to send");
+        }
+        let dest_mode: DestinationMode = if input_files.len() == 1 {
+            DestinationMode::SingleFile
+        } else {
+            DestinationMode::MultipleFiles
+        };
+
+        send_command(
+            &mut initial_tcp_stream,
+            &ServerCommand::IsDestinationValid(
+                dest_mode,
+                remote_dest.to_string_lossy().into_owned(),
+            ),
+        )?;
+
+        match read_server_response(&mut initial_tcp_stream)? {
+            ServerResult::Ok => log::trace!("Remote path is valid"),
+            ServerResult::Err(e) => {
+                tracing::error!("Remote report invalid path: {e}");
+                bail!(e)
+            }
+        }
+    }
 
     let cmd_free_port = ServerCommand::GetFreePort((None, None));
     send_command(&mut initial_tcp_stream, &cmd_free_port)?;
@@ -59,7 +93,8 @@ pub fn run_client(
         );
     } else {
         let mut fcount = input_files.len();
-        log::info!("Sending {fcount} files");
+        log::info!("Sending {fcount} file(s)");
+
         for f in input_files {
             let mut tcp_stream = qft_connect_to_server((ip, free_port), connect_mode)?;
 

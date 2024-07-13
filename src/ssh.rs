@@ -63,12 +63,7 @@ pub fn run_ssh(
 
     tracing::debug!("Using TCP port: {tcp_port}");
 
-    let remote_cmd = remote_cmd::remote_qft_command_str(
-        remote.dest().to_str().unwrap(),
-        tcp_port,
-        verbosity_to_args(cfg),
-        input_files.len() > 1,
-    );
+    let remote_cmd = remote_cmd::remote_qft_command_str(tcp_port, verbosity_to_args(cfg));
 
     tracing::info!("Sending remote qft command '{remote_cmd}'");
 
@@ -109,6 +104,7 @@ pub fn run_ssh(
                 prealloc,
                 *compression,
                 tcp_connect_mode,
+                Some(remote.dest()),
             )
         });
         tracing::trace!("Joining client thread");
@@ -117,7 +113,16 @@ pub fn run_ssh(
         server_h.join().expect("Failed joining server thread")
     });
 
-    log::debug!(
+    #[cfg(debug_assertions)]
+    {
+        tracing::trace!(
+            "\n=============================== REMOTE SERVER OUTPUT ===============================\n\n{}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^ END OF REMOTE SERVER OUTPUT ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n:",
+            String::from_utf8_lossy(&server_output?)
+        );
+    }
+
+    #[cfg(not(debug_assertions))]
+    log::trace!(
         "remote server output: {}",
         String::from_utf8_lossy(&server_output?)
     );

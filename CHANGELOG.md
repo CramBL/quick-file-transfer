@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Remote path validation for SSH (resolves [#7](https://github.com/CramBL/quick-file-transfer/issues/7))
+- Send multiple simultaneous files in `qft ssh` mode.
+
 ### Changed
 
+- `qft mdns discover` default timeout from `4s` -> `1s`
 - Remove obsolete `qft send ssh` subcommand in favor of `qft ssh`.
 - Remove obsolete `tcp-delay-ms` flag from `qft ssh`.
 - Meaningful error message when using `qft ssh` targeting a remote that does not have `qft` in path.

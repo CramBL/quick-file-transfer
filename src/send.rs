@@ -25,6 +25,7 @@ pub fn handle_send_cmd(send_args: &SendArgs, _cfg: &Config) -> Result<()> {
             send_args.prealloc(),
             compression,
             send_args.tcp_connect_mode(),
+            None,
         )?,
         #[cfg(feature = "mdns")]
         SendCommand::Mdns(SendMdnsArgs {
@@ -44,6 +45,7 @@ pub fn handle_send_cmd(send_args: &SendArgs, _cfg: &Config) -> Result<()> {
                         send_args.prealloc(),
                         compression,
                         send_args.tcp_connect_mode(),
+                        None,
                     )?;
                 }
             }

@@ -23,13 +23,12 @@ pub fn remote_find_free_port(
     exec.send_command(&get_free_port_cmd)?;
     let exit_status = exec.exit_status()?;
     let terminate_msg = exec.terminate_msg()?;
-    log::debug!("Exit status: {exit_status}");
     if !terminate_msg.is_empty() {
         log::debug!("Terminate message: {exit_status}");
     }
     let raw_out = exec.get_result()?;
-    log::trace!("Receivied raw output {raw_out:?}");
-    log::trace!(
+    tracing::info!("Receivied raw output {raw_out:?}");
+    log::info!(
         "Receivied output as lossy utf8:{}",
         String::from_utf8_lossy(&raw_out)
     );
