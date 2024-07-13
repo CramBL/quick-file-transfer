@@ -45,7 +45,7 @@ impl CompressionResult<Awaiting> {
 
     pub fn run(self, test_contents: &Vec<u8>) -> Result<CompressionResult<Finished>> {
         let mut bufread = new_bufreader(test_contents);
-        let res = match self.compression {
+        match self.compression {
             Compression::Bzip2(a) => black_box(test_compress_bzip2(
                 &mut bufread,
                 test_contents.len(),
@@ -62,11 +62,7 @@ impl CompressionResult<Awaiting> {
                 test_contents.len(),
                 a.compression_level,
             )),
-        };
-        if let Ok(ref res) = res {
-            log::info!("{}\n{}", res.compression_format(), res.summarize_as_table());
         }
-        res
     }
 }
 
@@ -379,8 +375,6 @@ pub fn print_results_as_table(
         fastest_decompr.cell_percentage_of_original(),
     ]);
 
-    let horizontal_seperator = "%".repeat(table.width().unwrap_or(70) as usize);
-    println!("{horizontal_seperator}\n{horizontal_seperator}\n",);
     println!("{table}");
     println!("\n==> Short summary");
     println!(

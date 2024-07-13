@@ -35,6 +35,21 @@ impl Compression {
             Compression::Xz(_) => CompressionVariant::Xz,
         }
     }
+
+    pub fn describe_str(&self) -> String {
+        match self {
+            Compression::Lz4 => self.variant_as_str().to_string(),
+            Compression::Bzip2(args) => {
+                format!("{self} lvl. {}", args.compression_level)
+            }
+            Compression::Gzip(args) => {
+                format!("{self} lvl. {}", args.compression_level)
+            }
+            Compression::Xz(args) => {
+                format!("{self} lvl. {}", args.compression_level)
+            }
+        }
+    }
 }
 
 /// This enum exists to be able to specify a variant without specifying arguments, such as with the --omit flag
