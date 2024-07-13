@@ -21,6 +21,11 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
         if components.first().is_some_and(|f| f.starts_with('~')) || components.is_empty() {
             // Attempt to obtain the home directory
             let home_dir = if cfg!(windows) {
+                tracing::trace!(
+                    "Resolving home on windows, $HOME={}, $USERPROFILE={}",
+                    env::var("HOME").unwrap_or_default(),
+                    env::var("USERPROFILE").unwrap_or_default()
+                );
                 // Favor $HOME even on windows
                 match env::var("HOME") {
                     Ok(h) => Ok(h),
