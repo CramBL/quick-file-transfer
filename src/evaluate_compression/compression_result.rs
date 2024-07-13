@@ -375,8 +375,6 @@ pub fn print_results_as_table(
         fastest_decompr.cell_percentage_of_original(),
     ]);
 
-    let horizontal_seperator = "%".repeat(table.width().unwrap_or(70) as usize);
-    println!("{horizontal_seperator}\n{horizontal_seperator}\n",);
     println!("{table}");
     println!("\n==> Short summary");
     println!(
