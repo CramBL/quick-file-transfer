@@ -63,12 +63,7 @@ pub fn run_ssh(
 
     tracing::debug!("Using TCP port: {tcp_port}");
 
-    let remote_cmd = remote_cmd::remote_qft_command_str(
-        remote.dest().to_str().unwrap(),
-        tcp_port,
-        verbosity_to_args(cfg),
-        input_files.len() > 1,
-    );
+    let remote_cmd = remote_cmd::remote_qft_command_str(tcp_port, verbosity_to_args(cfg));
 
     tracing::info!("Sending remote qft command '{remote_cmd}'");
 
