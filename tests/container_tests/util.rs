@@ -90,17 +90,19 @@ pub struct TestContainer {
 
 impl TestContainer {
     pub fn setup(args: &str, include_ssh_keys: bool) -> Self {
-        // Using the test container requires setting RUST_TEST_THREADS=1
-        let tt = std::env::var_os("RUST_TEST_THREADS");
-        assert!(
-            tt.is_some(),
-            "Running tests using the test container requires setting RUST_TEST_THREADS=1"
-        );
-        assert_eq!(
-            tt.unwrap(),
-            "1",
-            "Running tests sing the test container requires setting RUST_TEST_THREADS=1"
-        );
+        // Using the test container requires setting RUST_TEST_THREADS=1 or NEXTEST_TEST_THREADS=1 if using nex test
+        if std::env::var_os("NEXTEST").is_some() {
+            let tt = std::env::var_os("NEXTEST_TEST_THREADS");
+            assert!(tt.is_some(), "It appears you are using nex test to run the container tests but didn't set NEXTEST_TEST_THREADS=1");
+            assert_eq!(tt.unwrap(), "1", "It appears you are using nex test to run the container tests, You need to set NEXTEST_TEST_THREADS=1");
+        } else if let Some(tt) = std::env::var_os("RUST_TEST_THREADS") {
+            assert_eq!(
+                tt, "1",
+                "Running tests ussing the test container requires setting RUST_TEST_THREADS=1"
+            )
+        } else {
+            panic!("Running tests using the test container requires setting RUST_TEST_THREADS=1 or NEXTEST_TEST_THREADS=1 if using nextest");
+        }
 
         let stdout_stderr = setup_test_container("just", &["d-run-with", args], include_ssh_keys);
 
