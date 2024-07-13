@@ -20,13 +20,15 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
         // (specifying ~ or an empty string is valid and should resolve to the users home dir)
         if components.first().is_some_and(|f| f.starts_with('~')) || components.is_empty() {
             // Attempt to obtain the home directory
-            let home_dir = env::var("HOME").or_else(|_| {
-                env::var("USERPROFILE").map_err(|_| {
-                    anyhow::format_err!(
-                        "Unable to find the HOME or USERPROFILE environment variable"
-                    )
-                })
-            })?;
+            let home_dir = if cfg!(windows) {
+                // Favor $HOME even on windows
+                match env::var("HOME") {
+                    Ok(h) => Ok(h),
+                    Err(_) => env::var("USERPROFILE"),
+                }
+            } else {
+                env::var("HOME")
+            }?;
 
             // Reconstruct the path without the tilde
             let mut resolved_path = PathBuf::from(home_dir);
@@ -111,6 +113,7 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn test_resolve_scp_path_with_tilde_windows() -> TestResult {
+        // e.g. github actions resolve to "C:\\Users\\runneradmin\\test_dir"
         let user_profile = env::var("USERPROFILE")?;
         let path = PathBuf::from("\\test_dir");
         let expected_path = PathBuf::from(&user_profile).join("test_dir");
