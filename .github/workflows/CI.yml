@@ -74,6 +74,10 @@ jobs:
       # Only print rust version until the day more info is needed
       run: rustc --version
 
+    - uses: taiki-e/install-action@nextest
+    - name: Default test
+      run: cargo nextest run --failure-output=immediate-final
+
     # Build all feature combinations
     - uses: taiki-e/install-action@cargo-hack
     - name: Build
