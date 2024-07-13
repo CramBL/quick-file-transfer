@@ -7,26 +7,24 @@ use anyhow::bail;
 
 use crate::config::transfer::command::DestinationMode;
 
-/// Resolves a path that might start with a '~'
+/// Resolves a path that might start with a '~' or is the empty string
 pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
-    if remote_path.starts_with("~") {
+    // Check if we need to resolve the home directory
+    // (specifying ~ or an empty string is valid and should resolve to the users home dir)
+    if remote_path.starts_with("~") || remote_path.as_os_str().is_empty() {
         // Split the path to get the tilde component and the rest of the path
         let components: Vec<&str> = remote_path
             .iter()
             .map(|os_str| os_str.to_str().unwrap())
             .collect();
 
-        // Check if we need to resolve the home directory
-        // (specifying ~ or an empty string is valid and should resolve to the users home dir)
-        if components.first().is_some_and(|f| f.starts_with('~')) || components.is_empty() {
-            // Reconstruct the path without the tilde
-            let mut resolved_path = PathBuf::from(resolve_home()?);
-            for component in components.iter().skip(1) {
-                resolved_path.push(component);
-            }
-
-            return Ok(resolved_path);
+        // Reconstruct the path without the tilde
+        let mut resolved_path = PathBuf::from(resolve_home()?);
+        for component in components.iter().skip(1) {
+            resolved_path.push(component);
         }
+
+        return Ok(resolved_path);
     }
 
     // Return the original path if no tilde was found at the start
@@ -40,11 +38,6 @@ fn resolve_home() -> Result<String, env::VarError> {
 
 #[cfg(target_os = "windows")]
 fn resolve_home() -> Result<String, env::VarError> {
-    eprintln!(
-        "Resolving home on windows, $HOME={}, $USERPROFILE={}",
-        env::var("HOME").unwrap_or_default(),
-        env::var("USERPROFILE").unwrap_or_default()
-    );
     // Favor $HOME even on windows
     match env::var("HOME") {
         Ok(h) => Ok(h),
@@ -118,13 +111,34 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn test_resolve_scp_path_empty_str() -> TestResult {
+        let home_dir = env::var("HOME")?;
+        let path = PathBuf::from("");
+        let expected_path = PathBuf::from(&home_dir).join("");
+        assert_eq!(resolve_scp_path(&path)?, expected_path);
+        Ok(())
+    }
+
     #[cfg(target_os = "windows")]
     #[test]
     fn test_resolve_scp_path_with_tilde_windows() -> TestResult {
         // e.g. github actions resolve to "C:\\Users\\runneradmin\\test_dir"
         let user_profile = env::var("USERPROFILE")?;
-        let path = PathBuf::from("\\test_dir");
+        let path = PathBuf::from("~\\test_dir");
         let expected_path = PathBuf::from(&user_profile).join("test_dir");
+        assert_eq!(resolve_scp_path(&path)?, expected_path);
+        Ok(())
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_resolve_scp_path_with_empty_str() -> TestResult {
+        // e.g. github actions resolve to "C:\\Users\\runneradmin\\test_dir"
+        let user_profile = env::var("USERPROFILE")?;
+        let path = PathBuf::from("");
+        let expected_path = PathBuf::from(&user_profile).join("");
         assert_eq!(resolve_scp_path(&path)?, expected_path);
         Ok(())
     }
