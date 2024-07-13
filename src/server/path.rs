@@ -19,24 +19,8 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
         // Check if we need to resolve the home directory
         // (specifying ~ or an empty string is valid and should resolve to the users home dir)
         if components.first().is_some_and(|f| f.starts_with('~')) || components.is_empty() {
-            // Attempt to obtain the home directory
-            let home_dir = if cfg!(windows) {
-                eprintln!(
-                    "Resolving home on windows, $HOME={}, $USERPROFILE={}",
-                    env::var("HOME").unwrap_or_default(),
-                    env::var("USERPROFILE").unwrap_or_default()
-                );
-                // Favor $HOME even on windows
-                match env::var("HOME") {
-                    Ok(h) => Ok(h),
-                    Err(_) => env::var("USERPROFILE"),
-                }
-            } else {
-                env::var("HOME")
-            }?;
-
             // Reconstruct the path without the tilde
-            let mut resolved_path = PathBuf::from(home_dir);
+            let mut resolved_path = PathBuf::from(resolve_home()?);
             for component in components.iter().skip(1) {
                 resolved_path.push(component);
             }
@@ -47,6 +31,25 @@ pub fn resolve_scp_path(remote_path: &Path) -> anyhow::Result<PathBuf> {
 
     // Return the original path if no tilde was found at the start
     Ok(remote_path.into())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn resolve_home() -> Result<String, env::VarError> {
+    env::var("HOME")
+}
+
+#[cfg(target_os = "windows")]
+fn resolve_home() -> Result<String, env::VarError> {
+    eprintln!(
+        "Resolving home on windows, $HOME={}, $USERPROFILE={}",
+        env::var("HOME").unwrap_or_default(),
+        env::var("USERPROFILE").unwrap_or_default()
+    );
+    // Favor $HOME even on windows
+    match env::var("HOME") {
+        Ok(h) => Ok(h),
+        Err(_) => env::var("USERPROFILE"),
+    }
 }
 
 /// Validate that a remote path is valid for the host the server runs on.
