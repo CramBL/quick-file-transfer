@@ -27,8 +27,8 @@ pub fn remote_find_free_port(
         log::debug!("Terminate message: {exit_status}");
     }
     let raw_out = exec.get_result()?;
-    tracing::info!("Receivied raw output {raw_out:?}");
-    log::info!(
+    tracing::debug!("Receivied raw output {raw_out:?}");
+    tracing::info!(
         "Receivied output as lossy utf8:{}",
         String::from_utf8_lossy(&raw_out)
     );

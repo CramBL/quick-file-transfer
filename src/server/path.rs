@@ -61,14 +61,17 @@ pub fn validate_remote_path(mode: &DestinationMode, remote_path: &Path) -> anyho
             if resolved_path.parent().is_some_and(|p| p.exists()) {
                 Ok(resolved_path)
             } else {
-                bail!("'{}' doesn't exist", remote_path.to_string_lossy())
+                bail!(
+                    "'{}' invalid path, parent directory has to be an existent directory",
+                    remote_path.to_string_lossy()
+                )
             }
         }
         DestinationMode::MultipleFiles => {
             if resolved_path.is_dir() {
                 Ok(resolved_path)
             } else {
-                bail!("transferring multiple files requires a destination directory")
+                bail!("transferring multiple files requires an existent destination directory")
             }
         }
         DestinationMode::RecusiveDirectory => {
