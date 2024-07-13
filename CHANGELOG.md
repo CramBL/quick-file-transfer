@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Remote path validation for SSH (resolves [#7](https://github.com/CramBL/quick-file-transfer/issues/7))
+- Send multiple simultaneous files in `qft ssh` mode.
+
 ### Changed
 
 - Remove obsolete `qft send ssh` subcommand in favor of `qft ssh`.
