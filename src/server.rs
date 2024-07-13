@@ -12,7 +12,10 @@ use std::{
 
 use crate::{
     config::{
-        transfer::{command::ServerCommand, listen::ListenArgs},
+        transfer::{
+            command::{ServerCommand, ServerResult},
+            listen::ListenArgs,
+        },
         Config,
     },
     util::{
@@ -31,53 +34,99 @@ pub fn listen(_cfg: &Config, listen_args: &ListenArgs) -> Result<()> {
         output: _,
         decompression: _,
         output_dir: _,
+        remote: _,
     } = listen_args;
 
     let stop_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
-    let port = port.unwrap();
     let ip: IpAddr = ip.parse()?;
-    let initial_listener = TcpListener::bind((ip, port))?;
+    let initial_listener = TcpListener::bind((ip, *port))?;
+    run_server(&initial_listener, listen_args, &stop_flag)
+}
 
-    let mut handles = vec![];
-
+fn run_server(
+    initial_listener: &TcpListener,
+    args: &ListenArgs,
+    stop_flag: &Arc<AtomicBool>,
+) -> anyhow::Result<()> {
+    let mut thread_handles = vec![];
     match initial_listener.accept() {
         Ok((mut socket, addr)) => {
-            log::debug!("Client accepted at: {addr:?}");
+            tracing::info!("Client accepted at: {addr:?}");
             server_handshake(&mut socket)?;
             let mut cmd_buf: [u8; 256] = [0; 256];
             loop {
                 if let Some(cmd) = read_server_cmd(&mut socket, &mut cmd_buf)? {
-                    log::trace!("Received command: {cmd:?}");
+                    tracing::trace!("Received command: {cmd:?}");
                     if matches!(cmd, ServerCommand::GetFreePort(_)) {
                         let child_thread_handle = spawn_server_thread_on_new_port(
                             &mut socket,
-                            listen_args,
-                            &Arc::clone(&stop_flag),
+                            args,
+                            &Arc::clone(stop_flag),
                             &cmd,
                         )?;
-                        handles.push(child_thread_handle);
+                        thread_handles.push(child_thread_handle);
+                    } else if matches!(cmd, ServerCommand::EndOfTransfer) {
+                        tracing::trace!("Received command: {cmd:?}, stopping all threads...");
+                        stop_flag.store(true, Ordering::Relaxed);
+                        match join_all_threads(thread_handles) {
+                            Ok(_) => {
+                                send_result(&mut socket, &ServerResult::Ok)?;
+                                return Ok(());
+                            }
+                            Err(th_errs) => {
+                                let err_res = ServerResult::err(th_errs.clone());
+                                send_result(&mut socket, &err_res)?;
+                                bail!(th_errs);
+                            }
+                        }
                     }
                 } else {
-                    log::info!("Main Client disconnected...");
+                    tracing::debug!("Main Client disconnected...");
                     break;
                 }
             }
         }
         Err(e) => bail!(e),
     }
-
-    stop_flag.store(true, Ordering::Relaxed);
-    join_all_threads(handles);
-
     Ok(())
 }
 
-fn join_all_threads(handles: Vec<JoinHandle<Result<(), anyhow::Error>>>) {
+/// Send a [ServerResult] to the client
+pub fn send_result(stream: &mut TcpStream, result: &ServerResult) -> anyhow::Result<()> {
+    tracing::trace!("Sending result: {result:?}");
+    let result_bytes = bincode::serialize(result)?;
+    debug_assert!(result_bytes.len() <= u8::MAX as usize);
+    let size = result_bytes.len() as u16;
+    let header = size.to_be_bytes();
+
+    // Send the header followed by the command
+    stream.write_all(&header)?;
+    stream.write_all(&result_bytes)?;
+    Ok(())
+}
+
+fn join_all_threads(handles: Vec<JoinHandle<anyhow::Result<()>>>) -> Result<(), String> {
+    let mut errors = String::new();
     for h in handles {
-        match h.join().expect("Failed to join thread") {
+        let mut h_name = h.thread().name().unwrap_or_default().to_owned();
+        match h.join().map_err(|e| format!("{e:?}")) {
             Ok(_) => (),
-            Err(e) => log::error!("Thread joined with error: {e}"),
+            Err(e) => {
+                tracing::error!("Thread {h_name} joined with error: {e}");
+                h_name.push_str(" failed: ");
+                if !errors.is_empty() {
+                    errors.push('\n');
+                }
+                errors.extend(h_name.drain(..));
+                errors.push_str(&e);
+            }
         }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        tracing::warn!("{errors}");
+        Err(errors)
     }
 }
 
@@ -106,7 +155,11 @@ fn handle_cmd(cmd: ServerCommand, cfg: &ListenArgs, socket: &mut TcpStream) -> a
             log::debug!("Received file list: {fname:?}");
             util::handle_receive_data(cfg, socket, fname, decompr)?;
         }
+        // TODO: Constrict these to only the main thread.
         ServerCommand::GetFreePort(_) => todo!(),
+        ServerCommand::EndOfTransfer => {
+            unreachable!("Child thread received end of transfer command")
+        }
     }
     Ok(())
 }
@@ -144,11 +197,8 @@ fn run_server_thread(
                 handle_client_socket(cfg, &mut socket)?;
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                log::trace!("Would block");
-                if cfg!(linux) {
-                    log::trace!("Would block - yielding thread");
-                    std::thread::park_timeout(Duration::from_millis(100));
-                }
+                log::trace!("Would block - yielding thread");
+                std::thread::park_timeout(Duration::from_millis(10));
             }
             Err(e) => {
                 log::error!("{e}");
@@ -188,6 +238,8 @@ fn spawn_server_thread_on_new_port(
         .local_addr()
         .expect("Unable to get local address for TCP listener")
         .port();
+    tracing::trace!("Bound to free port: {free_port}");
+
     let free_port_be_bytes = free_port.to_be_bytes();
     debug_assert_eq!(free_port_be_bytes.len(), 2);
     socket.write_all(&free_port_be_bytes)?;

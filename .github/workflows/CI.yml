@@ -74,6 +74,10 @@ jobs:
       # Only print rust version until the day more info is needed
       run: rustc --version
 
+    - uses: taiki-e/install-action@nextest
+    - name: Default test
+      run: cargo nextest run --failure-output=immediate-final
+
     # Build all feature combinations
     - uses: taiki-e/install-action@cargo-hack
     - name: Build
@@ -81,7 +85,7 @@ jobs:
 
     # Test all feature combinations
     - name: Run Native Tests
-      run: cargo hack test --feature-powerset
+      run: cargo hack nextest run --feature-powerset --failure-output=immediate-final
 
     # Run very involved tests targetting a docker container
     # includes e.g.
@@ -93,7 +97,9 @@ jobs:
       run: |
         mkdir -p ~/.ssh
         ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
-        just d-test "--verbose -- --ignored --nocapture"
+        just mkdir-container-tmp
+        just d-setup-for-transfer-tests
+        cargo nextest run --run-ignored all container_tests --no-capture --cargo-verbose
 
     - name: Inspect Test container on failure
       if: ${{ matrix.os == 'ubuntu-latest' && failure() }}

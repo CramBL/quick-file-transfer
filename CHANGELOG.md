@@ -5,6 +5,7 @@
 ### Changed
 
 - Remove obsolete `qft send ssh` subcommand in favor of `qft ssh`.
+- Remove obsolete `tcp-delay-ms` flag from `qft ssh`.
 - Meaningful error message when using `qft ssh` targeting a remote that does not have `qft` in path.
 
 ### Fix

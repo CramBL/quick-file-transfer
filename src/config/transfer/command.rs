@@ -10,6 +10,7 @@ pub enum ServerCommand {
     GetFreePort((Option<u16>, Option<u16>)),
     Prealloc(u64, String),
     ReceiveData(u32, String, Option<CompressionVariant>),
+    EndOfTransfer,
 }
 
 impl ServerCommand {
@@ -41,7 +42,7 @@ impl ServerResult {
         Self::Err(err_msg.into())
     }
 
-    /// Takes an array of bytes describing the header size and returns how size of the incoming command in bytes
+    /// Takes an array of bytes describing the header size and returns the size of the incoming command in bytes
     pub fn size_from_bytes(raw_header: [u8; Self::HEADER_SIZE]) -> usize {
         u16::from_be_bytes(raw_header) as usize
     }

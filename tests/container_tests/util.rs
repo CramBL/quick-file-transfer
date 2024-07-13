@@ -90,17 +90,24 @@ pub struct TestContainer {
 
 impl TestContainer {
     pub fn setup(args: &str, include_ssh_keys: bool) -> Self {
-        // Using the test container requires setting RUST_TEST_THREADS=1
-        let tt = std::env::var_os("RUST_TEST_THREADS");
-        assert!(
-            tt.is_some(),
-            "Running tests using the test container requires setting RUST_TEST_THREADS=1"
-        );
-        assert_eq!(
-            tt.unwrap(),
-            "1",
-            "Running tests sing the test container requires setting RUST_TEST_THREADS=1"
-        );
+        use std::env;
+        // Using the test container requires setting RUST_TEST_THREADS=1 or NEXTEST_TEST_THREADS=1 if using nex test
+        if env::var_os("NEXTEST").is_some() {
+            let nex_test_exec_mode = env::var("NEXTEST_EXECUTION_MODE")
+                .expect("Environment variable NEXTEST_EXECUTION_MODE not set");
+            assert_eq!(nex_test_exec_mode,
+                "process-per-test",
+                "Expected 'NEXTEST_EXECUTION_MODE=process-per-test' but 'NEXTEST_EXECUTION_MODE={nex_test_exec_mode}', \
+                make sure container tests are run in single threaded mode, \
+                either by specifying 'NEXTEST_TEST_THREADS=1' or adding the '--no-capture' flag to 'nextest run ...'");
+        } else if let Some(tt) = env::var_os("RUST_TEST_THREADS") {
+            assert_eq!(
+                tt, "1",
+                "Running tests ussing the test container requires setting RUST_TEST_THREADS=1"
+            )
+        } else {
+            panic!("Running tests using the test container requires setting RUST_TEST_THREADS=1 or NEXTEST_TEST_THREADS=1 if using nextest");
+        }
 
         let stdout_stderr = setup_test_container("just", &["d-run-with", args], include_ssh_keys);
 

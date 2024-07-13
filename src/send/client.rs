@@ -7,6 +7,8 @@ use std::{
     time::Duration,
 };
 
+use anyhow::bail;
+
 use crate::{
     config::{
         self,
@@ -94,7 +96,36 @@ pub fn run_client(
         }
     }
 
+    send_command(&mut initial_tcp_stream, &ServerCommand::EndOfTransfer)?;
+    query_server_result(&mut initial_tcp_stream)?;
+
     Ok(())
+}
+
+pub fn query_server_result(initial_tcp_stream: &mut TcpStream) -> anyhow::Result<()> {
+    use config::transfer::command::ServerResult;
+    let mut header_buf = [0; ServerResult::HEADER_SIZE];
+    // Read the header to determine the size of the incoming command/data
+    if let Err(e) = initial_tcp_stream.read_exact(&mut header_buf) {
+        log::warn!("{}: {e}, retrying in 100 ms ...", e.kind());
+        std::thread::sleep(Duration::from_millis(100));
+        initial_tcp_stream.read_exact(&mut header_buf)?;
+    }
+    let inc_cmd_len = ServerResult::size_from_bytes(header_buf);
+
+    let mut resp_buf = vec![0; inc_cmd_len];
+
+    // Read the actual command/data based on the size
+    if let Err(e) = initial_tcp_stream.read_exact(&mut resp_buf[..inc_cmd_len]) {
+        anyhow::bail!("Error reading command into buffer: {e}");
+    }
+    let resp: ServerResult = bincode::deserialize(&resp_buf[..inc_cmd_len])?;
+    log::info!("Server response: {resp:?}");
+
+    match resp {
+        ServerResult::Ok => Ok(()),
+        ServerResult::Err(err_str) => bail!("Server responded with an error: {err_str}"),
+    }
 }
 
 fn transfer_data(

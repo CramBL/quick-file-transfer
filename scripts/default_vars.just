@@ -19,5 +19,31 @@ check := if path_exists(join(cargo_binaries, "cargo-lcheck")) == "true" { "lchec
 clippy := if path_exists(join(cargo_binaries, "cargo-lclippy")) == "true" { "lclippy" } else { "clippy" }
 run := if path_exists(join(cargo_binaries, "cargo-lrun")) == "true" { "lrun" } else { "run" }
 build := if path_exists(join(cargo_binaries, "cargo-lbuild")) == "true" { "lbuild" } else { "build" }
-test := if path_exists(join(cargo_binaries, "cargo-ltest")) == "true" { "ltest" } else { "test" }
 doc := if path_exists(join(cargo_binaries, "cargo-ldoc")) == "true" { "ldoc" } else { "doc" }
+USING_NEX_TEST := if path_exists(join(cargo_binaries, "cargo-nextest")) == "true" { "true" } else { "false" }
+USING_LTEST := if path_exists(join(cargo_binaries, "cargo-ltest")) == "true" { "true" } else { "false" }
+test := if USING_NEX_TEST == "true" {
+	"nextest run"
+} else if USING_LTEST == "true" {
+	"ltest"
+} else {
+	"test"
+}
+# Needs to be specified before '--', i.e. cargo nextest run --run-ignored all -- ...
+nex_include_ignored_tests := if USING_NEX_TEST == "true" {
+	"--run-ignored all"
+} else {
+	""
+}
+# Needs to be specified after '--', i.e. cargo test -- --ignored
+include_ignored := if USING_NEX_TEST == "false" {
+	"--ignored"
+} else {
+	""
+}
+
+TEST_THREADS := if USING_NEX_TEST == "true" {
+	"NEXTEST_TEST_THREADS"
+} else {
+	"RUST_TEST_THREADS"
+}
