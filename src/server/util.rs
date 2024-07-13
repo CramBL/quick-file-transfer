@@ -1,16 +1,25 @@
 use std::{
     fs::{self, File},
-    io::{self, BufReader, BufWriter, StdoutLock},
-    net::TcpStream,
+    io::{self, BufReader, BufWriter, StdoutLock, Write},
+    net::{TcpListener, TcpStream},
     path::Path,
+    sync::{atomic::AtomicBool, Arc},
+    thread::JoinHandle,
 };
 
 use flate2::read::GzDecoder;
 use lz4_flex::frame::FrameDecoder;
 
 use crate::{
-    config::{compression::CompressionVariant, transfer::listen::ListenArgs},
-    util::{format_data_size, incremental_rw},
+    config::{
+        compression::CompressionVariant,
+        transfer::{
+            command::{ServerCommand, ServerResult},
+            listen::ListenArgs,
+        },
+    },
+    server::child::run_child,
+    util::{bind_listen_to_free_port_in_range, format_data_size, incremental_rw},
     BUFFERED_RW_BUFSIZE, TCP_STREAM_BUFSIZE,
 };
 
@@ -133,4 +142,89 @@ pub fn handle_receive_data(
     }
 
     Ok(len)
+}
+
+/// Send a [ServerResult] to the client
+pub fn send_result(stream: &mut TcpStream, result: &ServerResult) -> anyhow::Result<()> {
+    tracing::trace!("Sending result: {result:?}");
+    let result_bytes = bincode::serialize(result)?;
+    debug_assert!(result_bytes.len() <= u8::MAX as usize);
+    let size = result_bytes.len() as u16;
+    let header = size.to_be_bytes();
+
+    // Send the header followed by the command
+    stream.write_all(&header)?;
+    stream.write_all(&result_bytes)?;
+    Ok(())
+}
+
+pub fn join_all_threads(handles: Vec<JoinHandle<anyhow::Result<()>>>) -> Result<(), String> {
+    let mut errors = String::new();
+    for h in handles {
+        let mut h_name = h.thread().name().unwrap_or_default().to_owned();
+        match h.join().map_err(|e| format!("{e:?}")) {
+            Ok(_) => (),
+            Err(e) => {
+                tracing::error!("Thread {h_name} joined with error: {e}");
+                h_name.push_str(" failed: ");
+                if !errors.is_empty() {
+                    errors.push('\n');
+                }
+                errors.extend(h_name.drain(..));
+                errors.push_str(&e);
+            }
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        tracing::warn!("{errors}");
+        Err(errors)
+    }
+}
+
+pub fn spawn_child_on_new_port(
+    socket: &mut TcpStream,
+    cfg: &ListenArgs,
+    stop_flag: &Arc<AtomicBool>,
+    server_cmd_get_free_port: &ServerCommand,
+) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
+    let (start_port_range, end_port_range) = match server_cmd_get_free_port {
+        ServerCommand::GetFreePort((start_port_range, end_port_range)) => {
+            (start_port_range, end_port_range)
+        }
+        _ => unreachable!(),
+    };
+    let start = start_port_range.unwrap_or(49152);
+    let end = end_port_range.unwrap_or(61000);
+    let thread_listener: TcpListener = match bind_listen_to_free_port_in_range(&cfg.ip, start, end)
+    {
+        Some(listener) => listener,
+        None => {
+            log::error!("Unable to find free port in range {start}-{end}, attempting to bind to any free port");
+            TcpListener::bind((cfg.ip.as_str(), 0))?
+        }
+    };
+    let free_port = thread_listener
+        .local_addr()
+        .expect("Unable to get local address for TCP listener")
+        .port();
+    tracing::trace!("Bound to free port: {free_port}");
+
+    let free_port_be_bytes = free_port.to_be_bytes();
+    debug_assert_eq!(free_port_be_bytes.len(), 2);
+    socket.write_all(&free_port_be_bytes)?;
+    socket.flush()?;
+    let thread_builder = std::thread::Builder::new().name(format!("ThreadOn#{free_port}"));
+    let handle: JoinHandle<anyhow::Result<()>> = thread_builder
+        .spawn({
+            let cfg = cfg.clone();
+            let local_stop_flag = Arc::clone(stop_flag);
+            move || {
+                thread_listener.set_nonblocking(true)?;
+                run_child(&thread_listener, &cfg, &local_stop_flag)
+            }
+        })
+        .expect("Failed spawning thread");
+    Ok(handle)
 }
