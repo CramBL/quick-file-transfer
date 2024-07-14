@@ -109,3 +109,9 @@ ci-lint: \
     (lint "--verbose --all --all-targets -- -D warnings --no-deps") \
     (format "-- --check --verbose") \
     (doc "--verbose --no-deps")
+
+[group("Doc")]
+book:
+    cd crates/generate-book && cargo run
+    mdbook build book
+
