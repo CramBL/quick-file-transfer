@@ -114,4 +114,3 @@ ci-lint: \
 book:
     cd crates/generate-book && cargo run
     mdbook build book
-
