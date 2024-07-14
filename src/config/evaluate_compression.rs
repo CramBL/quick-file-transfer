@@ -5,7 +5,7 @@ use super::{compression::CompressionVariant, util::*};
 #[derive(Debug, Args, Clone)]
 #[command(flatten_help = true)]
 pub struct EvaluateCompressionArgs {
-    #[arg(short('i'), long)]
+    #[arg(short('i'), long, value_name("FILE"))]
     pub input_file: PathBuf,
 
     /// List of compression formats to omit from evaluation

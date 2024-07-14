@@ -55,6 +55,7 @@ Commands:
   mdns                  Use mDNS utilities
   evaluate-compression  Evaluate which compression works best for file content
   get-free-port         Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port
+  ssh                   SCP-like - Send to a target that might not have qft actively listening, authenticating over SSH and transferring over TCP
   help                  Print this message or the help of the given subcommand(s)
 
 Options:
@@ -103,19 +104,19 @@ Evaluate which compression works best for file content
 Usage: qft evaluate-compression [OPTIONS] --input-file <INPUT_FILE>
 
 Options:
+Evaluate which compression works best for file content
+
+Usage: qft evaluate-compression [OPTIONS] --input-file <INPUT_FILE>
+
+Options:
   -i, --input-file <INPUT_FILE>
       --omit [<OMIT>...]                List of compression formats to omit from evaluation [possible values: bzip2, gzip, lz4, xz]
       --omit-levels [<OMIT_LEVELS>...]  List of compression levels to omit from evaluation
+  -j, --threads <jobs>                  The number of threads to use to evaluate compression (1 = sequential), the default is calculated from the available CPUs on the host [default: 14]
   -v, --verbose...                      Pass many times for more log output
-  -q, --quiet                           Silence all output [env: QFT_QUIET=]
+  -q, --quiet                           Silence all log output, this will lead to better performance [env: QFT_QUIET=]
       --color=<WHEN>                    [default: auto] [possible values: auto, always, never]
-  -h, --help                            Print help (see more with '--help')
-```
-
-Evaluate compression of `Cargo.lock`. Omit `gzip` and most compression levels to make this example brief.
-
-```shell
-qft evaluate-compression --input-file Cargo.lock --omit gzip --omit-levels 0 2 3 4 5 6 7 8
+  -h, --help                            Print help (see more with '--help')                  Print help (see more with '--help')
 ```
 
 #### Demo
@@ -124,7 +125,13 @@ qft evaluate-compression --input-file Cargo.lock --omit gzip --omit-levels 0 2 3
     <img src=www/evaluate_compression_demo.gif alt="evaluate-compression demo">
 </div>
 
-#### Example result
+#### Example with output
+
+Evaluate compression of `Cargo.lock`. Omit `gzip` and most compression levels to make this example brief.
+
+```shell
+qft evaluate-compression --input-file Cargo.lock --omit gzip --omit-levels 0 2 3 4 5 6 7 8
+```
 
 ```shell
 ╭────────────────────┬───────────────────┬───────────────────────┬─────────────────────────╮
