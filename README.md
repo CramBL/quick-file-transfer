@@ -37,11 +37,13 @@ If you are worried about a man-in-the-middle, you can simply check your data on 
 
 ## Features
 
-* Send files via TCP by specifying either IP or mDNS/DNS-SD hostname
+* Send files via TCP by specifying either IP or hostname (includes mDNS/DNS-SD)
 * Evaluate [supported compression formats](#supported-compression-formats) on your input data
 * Discover, resolve, and/or register mDNS/DNS-SD services
 * SCP like transfers `qft ssh FILES... <user>@<host>:<path>`. Where auth occurs via SSH but transfer is bare bone TCP.
 * Shell completions for `bash`, `elvish`, `fish`, `powershell`, and `zsh`.
+
+> All features are enabled by default, to disable features see the [installing](#installing) section.
 
 ## Usage
 
@@ -121,9 +123,10 @@ Options:
 
 #### Demo
 
-<div align=center>
-    <img src=www/evaluate_compression_demo.gif alt="evaluate-compression demo">
+<div align="center">
+    <img src="https://raw.githubusercontent.com/CramBL/quick-file-transfer/fb2402c6936a98082e1f6260f72dc1b579fbc025/www/evaluate_compression_demo.gif" alt="evaluate-compression demo">
 </div>
+
 
 #### Example with output
 
@@ -236,7 +239,7 @@ qft mdns resolve foo-name[.local.] --short-circuit
 </ul>
 
 
-## Install
+## Installing
 
 Build from source (preferred if you have the Rust toolchain installed).
 
@@ -244,10 +247,29 @@ Build from source (preferred if you have the Rust toolchain installed).
 cargo install quick-file-transfer
 ```
 
-#### Prebuilt binaries
+### Prebuilt binaries
 
 ```shell
 curl --proto '=https' --tlsv1.2 -sSf https://crambl.github.io/quick-file-transfer/install.sh | bash -s -- --to <DEST>
+```
+
+### Removing features
+
+There's currently 3 features:
+- mdns
+- ssh
+- evaluate-compression
+
+To install from source and disable them all, run:
+
+```shell
+cargo install quick-file-transfer --no-default-features
+```
+
+To enable the `ssh` and `mdns` features run:
+
+```shell
+cargo install quick-file-transfer --no-default-features --features ssh,mdns
 ```
 
 ## Comparison/Benchmarks
