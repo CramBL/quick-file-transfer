@@ -55,6 +55,7 @@ Commands:
   mdns                  Use mDNS utilities
   evaluate-compression  Evaluate which compression works best for file content
   get-free-port         Get a free port from the host OS. Optionally specify on which IP or a port range to scan for a free port
+  ssh                   SCP-like - Send to a target that might not have qft actively listening, authenticating over SSH and transferring over TCP
   help                  Print this message or the help of the given subcommand(s)
 
 Options:
@@ -103,14 +104,28 @@ Evaluate which compression works best for file content
 Usage: qft evaluate-compression [OPTIONS] --input-file <INPUT_FILE>
 
 Options:
+Evaluate which compression works best for file content
+
+Usage: qft evaluate-compression [OPTIONS] --input-file <INPUT_FILE>
+
+Options:
   -i, --input-file <INPUT_FILE>
       --omit [<OMIT>...]                List of compression formats to omit from evaluation [possible values: bzip2, gzip, lz4, xz]
       --omit-levels [<OMIT_LEVELS>...]  List of compression levels to omit from evaluation
+  -j, --threads <jobs>                  The number of threads to use to evaluate compression (1 = sequential), the default is calculated from the available CPUs on the host [default: 14]
   -v, --verbose...                      Pass many times for more log output
-  -q, --quiet                           Silence all output [env: QFT_QUIET=]
+  -q, --quiet                           Silence all log output, this will lead to better performance [env: QFT_QUIET=]
       --color=<WHEN>                    [default: auto] [possible values: auto, always, never]
-  -h, --help                            Print help (see more with '--help')
+  -h, --help                            Print help (see more with '--help')                  Print help (see more with '--help')
 ```
+
+#### Demo
+
+<div align=center>
+    <img src=www/evaluate_compression_demo.gif alt="evaluate-compression demo">
+</div>
+
+#### Example with output
 
 Evaluate compression of `Cargo.lock`. Omit `gzip` and most compression levels to make this example brief.
 
@@ -118,74 +133,7 @@ Evaluate compression of `Cargo.lock`. Omit `gzip` and most compression levels to
 qft evaluate-compression --input-file Cargo.lock --omit gzip --omit-levels 0 2 3 4 5 6 7 8
 ```
 
-Example output:
-
 ```shell
-INFO Omitting:   Gzip
-INFO Evaluating: Bzip2 Lz4 Xz
-INFO Omitting compression levels (where applicable): 0 2 3 4 5 6 7 8
-INFO Buffered reading 34338 B contents in 15.728µs
-INFO Lz4
-╭────────────────────┬─────────────────────╮
-│ Compression Ratio  ┆        2.42:1       │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Encode/decode time ┆   83.29µs/32.53µs   │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compressed Size    ┆ 13.83 KiB [14163 B] │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ % of Original      ┆        41.25%       │
-╰────────────────────┴─────────────────────╯
-INFO Bzip2
-╭────────────────────┬───────────────────╮
-│ Compression level  ┆         1         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compression Ratio  ┆       4.56:1      │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Encode/decode time ┆  2.36ms/686.34µs  │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compressed Size    ┆ 7.36 KiB [7533 B] │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ % of Original      ┆       21.94%      │
-╰────────────────────┴───────────────────╯
-INFO Bzip2
-╭────────────────────┬───────────────────╮
-│ Compression level  ┆         9         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compression Ratio  ┆       4.56:1      │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Encode/decode time ┆  2.73ms/771.13µs  │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compressed Size    ┆ 7.36 KiB [7533 B] │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ % of Original      ┆       21.94%      │
-╰────────────────────┴───────────────────╯
-INFO Xz
-╭────────────────────┬───────────────────╮
-│ Compression level  ┆         1         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compression Ratio  ┆       3.73:1      │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Encode/decode time ┆  2.34ms/522.16µs  │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compressed Size    ┆ 9.00 KiB [9216 B] │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ % of Original      ┆       26.84%      │
-╰────────────────────┴───────────────────╯
-INFO Xz
-╭────────────────────┬───────────────────╮
-│ Compression level  ┆         9         │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compression Ratio  ┆       4.30:1      │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Encode/decode time ┆  9.04ms/523.23µs  │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ Compressed Size    ┆ 7.80 KiB [7984 B] │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ % of Original      ┆       23.25%      │
-╰────────────────────┴───────────────────╯
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 ╭────────────────────┬───────────────────┬───────────────────────┬─────────────────────────╮
 │                    ┆ Best Ratio        ┆ Best Compression Time ┆ Best Decompression Time │
 ╞════════════════════╪═══════════════════╪═══════════════════════╪═════════════════════════╡

@@ -1272,6 +1272,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "comfy-table",
+ "console",
  "fancy-regex",
  "flate2",
  "indicatif",
