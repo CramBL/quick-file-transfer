@@ -19,9 +19,6 @@ pub struct EvaluateCompressionArgs {
     /// The number of threads to use to evaluate compression (1 = sequential), the default is calculated from the available CPUs on the host.
     #[arg(short('j'), long("threads"), value_name("jobs"), default_value_t = default_parallelism())]
     pub threads: usize,
-
-    #[arg(short, long, default_value = "multi")]
-    pub progress_bar_mode: ProgressBarMode,
 }
 
 fn default_parallelism() -> usize {
