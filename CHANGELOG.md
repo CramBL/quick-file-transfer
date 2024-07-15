@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.10.1 - 2024-07-15
+
+### Fix
+
+- [#37](https://github.com/CramBL/quick-file-transfer/issues/37) Root (`/`) not recognized as a valid path.
+
 ## 0.10.0 - 2024-07-14
 
 ### Added
