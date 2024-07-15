@@ -14,7 +14,7 @@
   <a href=https://github.com/CramBL/quick-file-transfer/actions>
     <img src=https://github.com/CramBL/quick-file-transfer/actions/workflows/CI.yml/badge.svg alt="build status">
   </a>
-  <a href=https://github.com/CramBL/just/releases>
+  <a href=https://github.com/CramBL/quick-file-transfer/releases>
     <img src=https://img.shields.io/github/downloads/CramBL/quick-file-transfer/total.svg alt=downloads>
   </a>
 </div>
