@@ -45,11 +45,22 @@ fn resolve_home() -> Result<String, env::VarError> {
     }
 }
 
+/// Returns true if path is root
+///
+/// A path is root if it has a root and has no parent
+pub fn is_root<P: AsRef<Path>>(path: P) -> bool {
+    let path = path.as_ref();
+    path.parent().is_none() && path.has_root()
+}
+
 /// Validate that a remote path is valid for the host the server runs on.
 pub fn validate_remote_path(mode: &DestinationMode, remote_path: &Path) -> anyhow::Result<PathBuf> {
     tracing::trace!("Validationg path: {remote_path:?} in {mode}");
     let resolved_path = resolve_scp_path(remote_path)?;
     tracing::trace!("Resolved {remote_path:?} -> {resolved_path:?}");
+    if is_root(&resolved_path) {
+        return Ok(resolved_path);
+    }
     if !resolved_path.is_absolute() {
         bail!(
             "Cannot resolve '{}' to an absolute path",
@@ -283,6 +294,23 @@ mod tests {
                         validate_remote_path(&mode, &path).is_err(),
                         "Err: Cannot resolve to absolute path"
                     )
+                }
+            }
+        }
+    }
+
+    /// https://github.com/CramBL/quick-file-transfer/issues/37
+    #[test]
+    fn test_validate_remote_path_with_root_issue37() {
+        let path = PathBuf::from("/");
+        for mode in DestinationMode::iter() {
+            match mode {
+                DestinationMode::SingleFile => assert!(validate_remote_path(&mode, &path).is_ok()),
+                DestinationMode::MultipleFiles => {
+                    assert!(validate_remote_path(&mode, &path).is_ok())
+                }
+                DestinationMode::RecusiveDirectory => {
+                    assert!(validate_remote_path(&mode, &path).is_ok())
                 }
             }
         }
