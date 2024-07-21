@@ -30,6 +30,7 @@ pub fn run_client(
     ip: IpAddr,
     port: u16,
     use_mmap: bool,
+    use_io_uring: bool,
     input_files: &[PathBuf],
     prealloc: bool,
     compression: Option<Compression>,
@@ -82,8 +83,14 @@ pub fn run_client(
         let cmd_receive_data =
             ServerCommand::ReceiveData(0, "stdin".to_string(), compression.map(|c| c.variant()));
         send_command(&mut tcp_stream, &cmd_receive_data)?;
-        let transferred_len =
-            transfer_data((ip, port), &mut tcp_stream, compression, None, use_mmap)?;
+        let transferred_len = transfer_data(
+            (ip, port),
+            &mut tcp_stream,
+            compression,
+            None,
+            use_mmap,
+            use_io_uring,
+        )?;
         log::info!(
             "Sent {} [{transferred_len} B]",
             format_data_size(transferred_len)
@@ -117,8 +124,14 @@ pub fn run_client(
                 ServerCommand::ReceiveData(fcount as u32, fname, compression.map(|c| c.variant()));
             send_command(&mut tcp_stream, &cmd_receive_data)?;
 
-            let transferred_len =
-                transfer_data((ip, port), &mut tcp_stream, compression, Some(f), use_mmap)?;
+            let transferred_len = transfer_data(
+                (ip, port),
+                &mut tcp_stream,
+                compression,
+                Some(f),
+                use_mmap,
+                use_io_uring,
+            )?;
             tcp_stream.flush()?;
 
             log::info!(
@@ -167,13 +180,24 @@ fn transfer_data(
     compression: Option<Compression>,
     file: Option<&Path>,
     use_mmap: bool,
+    use_io_uring: bool,
 ) -> anyhow::Result<u64> {
     log::debug!("Sending to: {ip}:{port}");
+
+    #[cfg(target_os = "linux")]
+    if use_io_uring && file.is_some() {
+        tracing::info!("Using io_uring");
+        let transferred_bytes = crate::io_uring::incremental_rw_io_uring_batch_alt2::<
+            TCP_STREAM_BUFSIZE,
+            32,
+        >(tcp_stream, file.unwrap())?;
+        return Ok(transferred_bytes);
+    }
 
     let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
 
     if use_mmap && file.is_some() {
-        log::debug!("Using mmap");
+        log::info!("Using mmap");
         let mmap = MemoryMapWrapper::new(file.unwrap())?;
         let target_read = mmap.flen();
 
@@ -183,8 +207,8 @@ fn transfer_data(
                 let chunks = mmap.borrow_full().chunks(TCP_STREAM_BUFSIZE);
                 for chunk in chunks {
                     let mut chunk_written = 0;
-                    let chunk_len = chunk.len();
-                    while chunk_written != chunk_len {
+                    let target_chunk_writes = chunk.len();
+                    while chunk_written != target_chunk_writes {
                         let bytes_written = buf_tcp_stream.write(chunk)?;
                         if bytes_written == 0 {
                             bail!("Wrote 0 bytes to socket, server disconnected?");

@@ -37,6 +37,10 @@ pub struct Config {
     #[arg(short, long, action = ArgAction::SetTrue, conflicts_with("verbose"), global = true, env = "QFT_QUIET")]
     pub quiet: bool,
 
+    /// Use io_uring
+    #[arg(long("io-uring"), action = ArgAction::SetTrue, global(true), env = "QFT_IO_URING")]
+    pub io_uring: bool,
+
     #[arg(
         long,
         require_equals = true,
