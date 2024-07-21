@@ -15,8 +15,6 @@ pub mod config;
 #[cfg(feature = "evaluate-compression")]
 pub mod evaluate_compression;
 pub mod get_free_port;
-#[cfg(target_os = "linux")]
-pub mod io_uring;
 #[cfg(feature = "mdns")]
 pub mod mdns;
 pub mod mmap_reader;
