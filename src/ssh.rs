@@ -100,6 +100,7 @@ pub fn run_ssh(
                 remote.ip(),
                 tcp_port,
                 use_mmap,
+                cfg.io_uring,
                 input_files,
                 prealloc,
                 *compression,

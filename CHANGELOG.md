@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Remove support for transferring via stdin and receiving to stdout
+- Improve the code path taken when the `--mmap`-option is set
+
 ## 0.10.1 - 2024-07-15
 
 ### Fix

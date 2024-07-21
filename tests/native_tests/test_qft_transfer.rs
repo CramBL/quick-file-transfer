@@ -16,7 +16,6 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
     let port = get_free_port(IP).unwrap();
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
-        false,
         ["ip", IP, "--port", port.as_str(), "-vv"],
     );
 
@@ -44,48 +43,10 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
 }
 
 #[test]
-pub fn test_stdout_transfer_no_compression_simple() -> TestResult {
-    let dir = TempDir::new()?;
-    let file_to_transfer = dir.child("f1.txt");
-
-    const TRANSFERED_CONTENTS: &str = "contents";
-    fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
-
-    let port = get_free_port(IP).unwrap();
-
-    let client_thread = spawn_client_thread(
-        file_to_transfer.path(),
-        false,
-        ["ip", IP, "--port", port.as_str(), "-vv"],
-    );
-
-    let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
-
-    let (server_out, client_out) = join_server_and_client_get_outputs(
-        ServerHandle(server_thread?),
-        ClientHandle(client_thread?),
-    )?;
-    if server_out.failed() || client_out.failed() {
-        server_out.display_diagnostics();
-        client_out.display_diagnostics();
-    }
-    if cfg!(linux) {
-        assert_no_errors_or_warn(server_out.stderr())?;
-        assert_no_errors_or_warn(client_out.stderr())?;
-    } else {
-        let ignore_retrying_warn = r"retrying in";
-        assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
-        assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
-    }
-    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
-
-    Ok(())
-}
-
-#[test]
 pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
+    let file_to_recv = dir.child("received_f1.txt");
     const TRANSFERED_CONTENTS: &str = "contents";
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
@@ -93,11 +54,13 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
 
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
-        false,
         ["ip", "--mmap", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
+    let server_thread = spawn_server_thread(
+        Some(&file_to_recv),
+        ["--ip", IP, "--port", port.as_str(), "-vv"],
+    );
 
     let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
@@ -117,7 +80,7 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
         assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
     }
 
-    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
+    pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_recv)?);
 
     Ok(())
 }
@@ -126,6 +89,7 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
 pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
     let dir = TempDir::new()?;
     let file_to_transfer = dir.child("f1.txt");
+    let file_to_recv = dir.child("received_f1.txt");
     const TRANSFERED_CONTENTS: &str = "contents";
     fs::write(&file_to_transfer, TRANSFERED_CONTENTS)?;
 
@@ -133,11 +97,13 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
 
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
-        true,
         ["ip", IP, "--port", port.as_str(), "-vv"],
     );
 
-    let server_thread = spawn_server_thread(None, ["--ip", IP, "--port", port.as_str(), "-vv"]);
+    let server_thread = spawn_server_thread(
+        Some(&file_to_recv),
+        ["--ip", IP, "--port", port.as_str(), "-vv"],
+    );
 
     let (server_out, client_out) = join_server_and_client_get_outputs(
         ServerHandle(server_thread?),
@@ -156,7 +122,7 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
         assert_no_errors_or_warn_with_ignore(server_out.stderr(), ignore_retrying_warn)?;
         assert_no_errors_or_warn_with_ignore(client_out.stderr(), ignore_retrying_warn)?;
     }
-    pretty_assert_str_eq!(TRANSFERED_CONTENTS, server_out.stdout());
+    pretty_assert_str_eq!(TRANSFERED_CONTENTS, fs::read_to_string(file_to_recv)?);
 
     assert!(server_out.success() && client_out.success());
 
@@ -175,7 +141,6 @@ pub fn test_file_transfer_no_compression_with_no_prealloc() -> TestResult {
     let port = get_free_port(IP).unwrap();
     let client_thread = spawn_client_thread(
         file_to_transfer.path(),
-        false,
         ["ip", "--no-prealloc", IP, "--port", port.as_str(), "-vv"],
     );
 

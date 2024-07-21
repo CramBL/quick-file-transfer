@@ -23,7 +23,7 @@ SSH_OPTIONS_LAX := "\
 
 # Build the Docker image (requires the build artifact from the builder container)
 [group("Docker"), no-exit-message]
-d-build: d-builder-build d-builder-compile
+d-build ARGS="": d-builder-build (d-builder-compile ARGS)
     docker build --file ./docker/Dockerfile \
         --build-arg USER_ID=$(id -u) \
         -t {{CONTAINER_TAG}} .
@@ -106,15 +106,15 @@ d-is-exited:
 
 # Sets up a clean container for testing data transfer, including adding a debug binary to /usr/bin
 [group("Docker"), no-exit-message]
-d-setup-for-transfer-tests: \
+d-setup-for-transfer-tests ARGS="": \
 	d-stop \
-	d-build
+	(d-build ARGS)
 
 # Sets up a clean container for testing ssh util, including adding a debug binary to /usr/bin
 [group("Docker"), no-exit-message]
-d-setup-for-ssh-tests: \
+d-setup-for-ssh-tests ARGS="": \
 	d-stop \
-	d-build \
+	(d-build ARGS) \
 	d-run \
 	d-setup-ssh-login \
 	d-clean-tmp

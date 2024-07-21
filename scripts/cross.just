@@ -1,7 +1,9 @@
 ARMV7_MUSL_DEBUG_BIN := "target/armv7-unknown-linux-musleabihf/debug/qft"
 x86_64_LINUX_MUSL_DEBUG_BIN := "target/x86_64-unknown-linux-musl/debug/qft"
 
-
+[group("Cross Compile"), no-exit-message]
+build-armv6-musl *ARGS:
+	cargo {{build}} --target=arm-unknown-linux-musleabihf {{ARGS}}
 
 [group("Cross Compile"), no-exit-message]
 build-armv7-musl *ARGS:

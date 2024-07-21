@@ -64,10 +64,14 @@ pub fn format_data_size(size_bytes: u64) -> String {
     }
 }
 
-pub fn incremental_rw<const BUFSIZE: usize>(
-    stream_writer: &mut dyn io::Write,
-    reader: &mut dyn io::Read,
-) -> Result<u64> {
+pub fn incremental_rw<const BUFSIZE: usize, W, R>(
+    stream_writer: &mut W,
+    reader: &mut R,
+) -> Result<u64>
+where
+    W: io::Write,
+    R: io::Read,
+{
     let mut buf = [0; BUFSIZE];
     let mut total_read = 0;
     loop {
