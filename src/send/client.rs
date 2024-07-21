@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, Read, Write},
+    io::{Read, Write},
     net::{IpAddr, TcpStream},
     path::{Path, PathBuf},
     thread,
@@ -18,10 +18,8 @@ use crate::{
             util::TcpConnectMode,
         },
     },
-    mmap_reader::MemoryMappedReader,
-    send::util::{
-        file_with_bufreader, qft_connect_to_server, send_command, stdin_bufreader, tcp_bufwriter,
-    },
+    mmap_reader::MemoryMapWrapper,
+    send::util::{file_with_bufreader, qft_connect_to_server, send_command, tcp_bufwriter},
     util::{format_data_size, incremental_rw, read_server_response},
     TCP_STREAM_BUFSIZE,
 };
@@ -174,26 +172,73 @@ fn transfer_data(
 
     let mut buf_tcp_stream = tcp_bufwriter(tcp_stream);
 
-    // On-stack dynamic dispatch
-    let (mut stdin_read, mut file_read, mut mmap_read);
-    let bufreader: &mut dyn io::Read = match file {
-        Some(p) if use_mmap => {
-            log::debug!("Opening file in memory map mode");
-            mmap_read = MemoryMappedReader::new(p)?;
-            &mut mmap_read
-        }
-        Some(p) => {
-            log::debug!("Opening file in buffered reading mode");
-            file_read = file_with_bufreader(p)?;
-            &mut file_read
-        }
-        None => {
-            log::debug!("Reading from stdin");
-            stdin_read = stdin_bufreader();
-            &mut stdin_read
-        }
-    };
+    if use_mmap && file.is_some() {
+        log::debug!("Using mmap");
+        let mmap = MemoryMapWrapper::new(file.unwrap())?;
+        let target_read = mmap.flen();
 
+        let transferred_bytes = match compression {
+            None => {
+                let mut total_written = 0;
+                let chunks = mmap.borrow_full().chunks(TCP_STREAM_BUFSIZE);
+                for chunk in chunks {
+                    let mut chunk_written = 0;
+                    let chunk_len = chunk.len();
+                    while chunk_written != chunk_len {
+                        let bytes_written = buf_tcp_stream.write(chunk)?;
+                        if bytes_written == 0 {
+                            bail!("Wrote 0 bytes to socket, server disconnected?");
+                        }
+                        chunk_written += bytes_written;
+                    }
+                    total_written += chunk_written;
+                }
+
+                total_written.try_into()?
+            }
+            Some(c) => match c {
+                config::compression::Compression::Bzip2(Bzip2Args { compression_level }) => {
+                    let mut encoder = bzip2::read::BzEncoder::new(
+                        mmap.borrow_full(),
+                        bzip2::Compression::new(compression_level.into()),
+                    );
+                    incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut buf_tcp_stream, &mut encoder)?
+                }
+                config::compression::Compression::Lz4 => {
+                    let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut buf_tcp_stream);
+                    let mut total_read = 0;
+                    while total_read < target_read {
+                        let remaining = target_read - total_read;
+                        let chunk_size = remaining.min(TCP_STREAM_BUFSIZE);
+                        let chunk = mmap.borrow_slice(total_read..total_read + chunk_size)?;
+                        let written_bytes = lz4_writer.write(chunk)?;
+                        total_read += written_bytes;
+                    }
+                    lz4_writer.flush()?; // Needed to ensure the entire content is written
+                    total_read as u64
+                }
+                config::compression::Compression::Gzip(GzipArgs { compression_level }) => {
+                    let mut encoder = flate2::read::GzEncoder::new(
+                        mmap.borrow_full(),
+                        flate2::Compression::new(compression_level.into()),
+                    );
+                    incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut buf_tcp_stream, &mut encoder)?
+                }
+                config::compression::Compression::Xz(XzArgs { compression_level }) => {
+                    let mut compressor =
+                        xz2::read::XzEncoder::new(mmap.borrow_full(), compression_level.into());
+                    incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(
+                        &mut buf_tcp_stream,
+                        &mut compressor,
+                    )?
+                }
+            },
+        };
+        return Ok(transferred_bytes);
+    }
+
+    // On-stack dynamic dispatch
+    let mut bufreader = file_with_bufreader(file.unwrap())?;
     if let Some(compression) = compression {
         log::debug!("Compression mode: {compression}");
     };
@@ -205,11 +250,12 @@ fn transfer_data(
                     bufreader,
                     bzip2::Compression::new(compression_level.into()),
                 );
-                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
+                incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut buf_tcp_stream, &mut encoder)?
             }
             config::compression::Compression::Lz4 => {
                 let mut lz4_writer = lz4_flex::frame::FrameEncoder::new(&mut buf_tcp_stream);
-                let len = incremental_rw::<TCP_STREAM_BUFSIZE>(&mut lz4_writer, bufreader)?;
+                let len: u64 =
+                    incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut lz4_writer, &mut bufreader)?;
                 lz4_writer.flush()?; // Needed to ensure the entire content is written
                 len
             }
@@ -218,14 +264,14 @@ fn transfer_data(
                     bufreader,
                     flate2::Compression::new(compression_level.into()),
                 );
-                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut encoder)?
+                incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut buf_tcp_stream, &mut encoder)?
             }
             config::compression::Compression::Xz(XzArgs { compression_level }) => {
                 let mut compressor = xz2::read::XzEncoder::new(bufreader, compression_level.into());
-                incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, &mut compressor)?
+                incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut buf_tcp_stream, &mut compressor)?
             }
         },
-        None => incremental_rw::<TCP_STREAM_BUFSIZE>(&mut buf_tcp_stream, bufreader)?,
+        None => incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut buf_tcp_stream, &mut bufreader)?,
     };
 
     Ok(transferred_bytes)
