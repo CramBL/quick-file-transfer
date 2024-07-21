@@ -29,7 +29,7 @@ Transfer files as **quickly**, **safely**, and **painlessly** as possible on a l
 
 This readme is also available as a [book](https://crambl.github.io/quick-file-transfer/man/).
 
-`qft` optimizes for a scenario where embedded systems regularly transfer large files across a local network, such as a continuous integration pipeline where firmware (e.g. Rauc) can take significant time to transfer with tools such as `rsync`, `scp`, or `netcat`.
+`qft` optimizes for a scenario where embedded systems regularly transfer large files across a local network, such as a continuous integration pipeline where firmware (e.g. Rauc) can take significant time to transfer with tools such as `rsync`, `scp`, or `netcat` (FYI: Don't rauc upgrade this way, instead use [delta](https://rauc.readthedocs.io/en/latest/advanced.html#rauc-casync-support) or [adaptive upgrades](https://rauc.readthedocs.io/en/latest/advanced.html#adaptive-updates)).
 
 To accomplish this, `qft` acts as a server/client that transfers data over TCP. It is very similar to how `netcat` can be used to transfer files, but `qft` focuses solely on transferring files, and comes with a variety of customization options such as [compression/decompression](#supported-compression-formats), memory mapping, preallocation options and more. TCP is chosen for reliable data transfer, and no authentication or encryption is layered on top to reduce the overhead, addressing remote targets by mDNS is also supported.
 
