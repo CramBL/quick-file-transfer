@@ -82,24 +82,20 @@ pub fn handle_receive_data(
     decompression: Option<CompressionVariant>,
     root_dest: Option<&Path>,
 ) -> anyhow::Result<u64> {
-    // On-stack dynamic dispatch
-    let (mut stdout_write, mut file_write);
-
-    let bufwriter: &mut dyn io::Write = match (
+    let mut bufwriter = match (
         listen_args.output.as_deref(),
         listen_args.output_dir.as_deref(),
         root_dest,
     ) {
         (_, _, Some(root_dest)) => {
-            file_write = if root_dest.is_file() {
+            if root_dest.is_file() {
                 tracing::info!("Initiation bufwriter targeting {root_dest:?}");
                 file_with_bufwriter(root_dest)?
             } else {
                 let full_path = root_dest.join(fname);
                 tracing::info!("Initiation bufwriter targeting {full_path:?}");
                 file_with_bufwriter(&full_path)?
-            };
-            &mut file_write
+            }
         }
         (None, Some(d), _) => {
             if !d.is_dir() && d.exists() {
@@ -109,16 +105,11 @@ pub fn handle_receive_data(
                 fs::create_dir(d)?;
             }
             let new_fpath = d.join(fname);
-            file_write = file_with_bufwriter(&new_fpath)?;
-            &mut file_write
+            file_with_bufwriter(&new_fpath)?
         }
-        (Some(f), None, _) => {
-            file_write = file_with_bufwriter(f)?;
-            &mut file_write
-        }
+        (Some(f), None, _) => file_with_bufwriter(f)?,
         (None, None, _) => {
-            stdout_write = stdout_bufwriter();
-            &mut stdout_write
+            unreachable!()
         }
         (Some(_), Some(_), _) => {
             unreachable!("Specifying both an output name and an output directory is invalid")
@@ -131,22 +122,22 @@ pub fn handle_receive_data(
         Some(compr) => match compr {
             CompressionVariant::Bzip2 => {
                 let mut tcp_decoder = bzip2::read::BzDecoder::new(buf_tcp_reader);
-                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+                incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut bufwriter, &mut tcp_decoder)?
             }
             CompressionVariant::Gzip => {
                 let mut tcp_decoder = GzDecoder::new(buf_tcp_reader);
-                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+                incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut bufwriter, &mut tcp_decoder)?
             }
             CompressionVariant::Lz4 => {
                 let mut tcp_decoder = FrameDecoder::new(buf_tcp_reader);
-                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+                incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut bufwriter, &mut tcp_decoder)?
             }
             CompressionVariant::Xz => {
                 let mut tcp_decoder = xz2::read::XzDecoder::new(buf_tcp_reader);
-                incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut tcp_decoder)?
+                incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut bufwriter, &mut tcp_decoder)?
             }
         },
-        None => incremental_rw::<TCP_STREAM_BUFSIZE>(bufwriter, &mut buf_tcp_reader)?,
+        None => incremental_rw::<TCP_STREAM_BUFSIZE, _, _>(&mut bufwriter, &mut buf_tcp_reader)?,
     };
     if len < 1023 {
         log::info!("Received: {len} B");
