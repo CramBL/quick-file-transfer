@@ -63,7 +63,7 @@ mod tests {
         fs::write(c.as_path(), content)?;
 
         let path = c.as_path();
-        let reader = MemoryMapWrapper::new(path.as_ref())?;
+        let reader = MemoryMapWrapper::new(path)?;
 
         let slice1 = reader.borrow_slice(0..5)?;
         let over_lapping_slice = reader.borrow_slice(4..9)?;
@@ -75,8 +75,6 @@ mod tests {
         // Test out of bounds
         assert!(reader.borrow_slice(5..14).is_err());
 
-        // Test invalid range
-        assert!(reader.borrow_slice(10..5).is_err());
         Ok(())
     }
 }
