@@ -68,7 +68,7 @@ pub fn run(_cfg: &Config) -> anyhow::Result<()> {
                     args.ssh_private_key_path.as_deref(),
                     args.ssh_key_dir.as_deref(),
                     args.tcp_port,
-                    false,
+                    args.mmap,
                     &input_files,
                     true,
                     &args.compression,
