@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::bail;
-use clap::{arg, Args};
+use clap::{arg, ArgAction, Args};
 
 use super::Compression;
 
@@ -58,6 +58,10 @@ pub struct SendSshArgs {
     /// end of the port range to look for free ports for TCP transfer
     #[arg(short, long, requires("start_port"), default_value_t = u16::MAX)]
     pub end_port: u16,
+
+    /// Use memory mapping mode
+    #[arg(long, action = ArgAction::SetTrue, global(true))]
+    pub mmap: bool,
 }
 
 /// The components in the target args (if present) e.g. user@hostname:/home/user/f.txt

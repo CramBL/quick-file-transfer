@@ -7,3 +7,5 @@ qft_debug
 book/src
 book/build
 crates/generate-book/Cargo.lock
+json_stats
+scripts/local_util

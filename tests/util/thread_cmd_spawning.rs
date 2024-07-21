@@ -15,7 +15,6 @@ use std::{
 /// instead of passing the path of the file to the binary
 pub fn spawn_client_thread<I, S>(
     file_for_transfer: &Path,
-    stdin_pipe_file: bool,
     args: I,
 ) -> Result<JoinHandle<Result<Output>>>
 where
@@ -28,7 +27,6 @@ where
         None,
         args,
         Some(Duration::from_millis(200)),
-        stdin_pipe_file,
         false,
     )
 }
@@ -43,7 +41,7 @@ where
     I: IntoIterator<Item = S> + Send + 'static + Debug,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
-    spawn_thread_qft_file_transfer("qft server", None, receive_file, args, None, false, true)
+    spawn_thread_qft_file_transfer("qft server", None, receive_file, args, None, true)
 }
 
 /// Generic spawn a thread to execute the binary in the server/client file-transfer mode.
@@ -54,18 +52,27 @@ pub fn spawn_thread_qft_file_transfer<I, S>(
     output_file: Option<&Path>,
     args: I,
     sleep: Option<Duration>,
-    stdin_pipe_file: bool,
     is_server: bool,
 ) -> Result<JoinHandle<Result<Output>>>
 where
     I: IntoIterator<Item = S> + Send + 'static + Debug,
     S: ToOwned + AsRef<std::ffi::OsStr>,
 {
+    assert!(input_file.is_none() || output_file.is_none());
+
     let sender_thread = std::thread::Builder::new().name(thread_name.to_string());
     let handle = sender_thread
         .spawn({
-            let input_fpath: Option<String> = input_file.map(|f| f.to_str().unwrap().to_owned());
-            let output_fpath: Option<String> = output_file.map(|f| f.to_str().unwrap().to_owned());
+            let file_args: Option<(String, String)> = match (input_file, output_file) {
+                (None, Some(out_file)) => {
+                    Some(("--output".into(), out_file.to_str().unwrap().to_owned()))
+                }
+                (Some(in_file), None) => {
+                    Some(("--file".into(), in_file.to_str().unwrap().to_owned()))
+                }
+                (Some(_), Some(_)) => unreachable!(),
+                (None, None) => None,
+            };
             move || {
                 let mut cmd = Command::cargo_bin(BIN_NAME)?;
                 // Ugly hack to make sure the --file arg is in the right position. CLI needs a refactor after SSH utils are somewhat done.
@@ -75,15 +82,10 @@ where
                     cmd.arg("send");
                 }
                 cmd.args(args);
-                if let Some(in_fpath) = input_fpath {
-                    if stdin_pipe_file {
-                        cmd.pipe_stdin(PathBuf::from(&in_fpath))?;
-                    } else {
-                        cmd.args(["--file", &in_fpath]);
-                    }
-                }
-                if let Some(out_fpath) = output_fpath {
-                    cmd.args(["--output", &out_fpath]);
+
+                // It can None if using the --output-dir flag
+                if let Some((file_opt, file_path)) = file_args {
+                    cmd.args([file_opt, file_path]);
                 }
 
                 cmd.timeout(Duration::from_secs(5));
