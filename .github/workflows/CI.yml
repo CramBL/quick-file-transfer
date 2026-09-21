@@ -2,14 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
   JUST_VERBOSE: 1
-  RUSTFLAGS: "--deny warnings" # Fail on all warnings
+  RUSTFLAGS: "-D warnings"
+  RUSTDOCFLAGS: "-D warnings"
 
 defaults:
   run:
@@ -18,16 +26,27 @@ defaults:
 jobs:
   Checks:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_VERBOSE: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: extractions/setup-just@v2
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+        with:
+          just-version: "1.58.0"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install Rust tooling
+        uses: taiki-e/install-action@v2
+        with:
+          tool: |
+            cargo-hack@0.6.45
+            cargo-audit@0.22.2
+            shellcheck@0.11.0
       - name: Print Tool versions
         run: just env
       - name: run pre-commit
         run: |
-          pip install pre-commit
+          python -m pip install pre-commit==4.6.2
           pre-commit run --all-files
       - name: Check
         run: cargo check
@@ -47,9 +66,6 @@ jobs:
       - name: Clippy feature combinations
         run: cargo hack clippy --feature-powerset --no-dev-deps
 
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install shellcheck
-
       - name: Check Install Script
         run: shellcheck www/install.sh
 
@@ -61,54 +77,62 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: Swatinem/rust-cache@v2
-    - uses: extractions/setup-just@v2
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+      - uses: extractions/setup-just@v4
+        with:
+          just-version: "1.58.0"
+      - name: Install Rust tooling
+        uses: taiki-e/install-action@v2
+        with:
+          tool: |
+            cargo-nextest@0.9.145
+            cargo-hack@0.6.45
+            cargo-audit@0.22.2
 
-    - name: Print Tool versions (unix)
-      if: ${{ matrix.os != 'windows-latest' }}
-      run: just env
+      - name: Print Tool versions (unix)
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: just env
 
-    - name: Print Tool versions (windows)
-      if: ${{ matrix.os == 'windows-latest' }}
-      # Only print rust version until the day more info is needed
-      run: rustc --version
+      - uses: taiki-e/install-action@nextest
+      - name: Default test
+        run: cargo nextest run --failure-output=immediate-final
 
-    - uses: taiki-e/install-action@nextest
-    - name: Default test
-      run: cargo nextest run --failure-output=immediate-final
+      # Build all feature combinations
+      - uses: taiki-e/install-action@cargo-hack
+      - name: Build
+        run: cargo hack build --feature-powerset --verbose
 
-    # Build all feature combinations
-    - uses: taiki-e/install-action@cargo-hack
-    - name: Build
-      run: cargo hack build --feature-powerset --verbose
+      # Test all feature combinations
+      - name: Run Native Tests
+        run: cargo hack nextest run --feature-powerset --failure-output=immediate-final
 
-    # Test all feature combinations
-    - name: Run Native Tests
-      run: cargo hack nextest run --feature-powerset --failure-output=immediate-final
+      # Run very involved tests targetting a docker container
+      # includes e.g.
+      #    * Discovering and resolving an mDNS service broadcasting from within the container
+      #    * SSH authenticating into the container, spinning up qft through ssh,
+      #         querying for a free TCP port and finally completing a transfer via TCP.
+      - name: Run Container Tests
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+          just mkdir-container-tmp
+          just d-setup-for-transfer-tests
+          cargo nextest run \
+            --run-ignored all container_tests \
+            --no-capture \
+            --cargo-verbose
 
-    # Run very involved tests targetting a docker container
-    # includes e.g.
-    #    * Discovering and resolving an mDNS service broadcasting from within the container
-    #    * SSH authenticating into the container, spinning up qft through ssh,
-    #         querying for a free TCP port and finally completing a transfer via TCP.
-    - name: Run Container Tests
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
-        just mkdir-container-tmp
-        just d-setup-for-transfer-tests
-        cargo nextest run --run-ignored all container_tests --no-capture --cargo-verbose
+      - name: Inspect Test container on failure
+        if: ${{ matrix.os == 'ubuntu-latest' && failure() }}
+        run: docker inspect alpine-qft-ssh
 
-    - name: Inspect Test container on failure
-      if: ${{ matrix.os == 'ubuntu-latest' && failure() }}
-      run: docker inspect alpine-qft-ssh
-
-    - name: Test install.sh
-      run: |
-        bash www/install.sh --to /tmp --tag 0.2.0
-        /tmp/qft --version
+      - name: Test install.sh
+        run: |
+          bash www/install.sh --to /tmp --tag 0.2.0
+          /tmp/qft --version
 
   Docs:
     runs-on: ubuntu-latest
@@ -116,23 +140,28 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-    - name: Install `mdbook` & `mdbook-linkcheck`
-      run: cargo install mdbook mdbook-linkcheck
+      - name: Install documentation tooling
+        uses: taiki-e/install-action@v2
+        with:
+          tool: |
+            mdbook@0.5.4
+            mdbook-linkcheck2@0.12.2
 
-    - name: Build book - Generate chapters
-      working-directory: crates/generate-book
-      run: cargo run
+      - name: Build book - Generate chapters
+        working-directory: crates/generate-book
+        run: cargo run
 
-    - name: Build book - build site
-      run: mdbook build book
+      - name: Build book - build site
+        run: mdbook build book
 
-    - name: Deploy Pages
-      uses: peaceiris/actions-gh-pages@v4
-      if: github.ref == 'refs/heads/master'
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        publish_branch: gh-pages
-        publish_dir: www
+      - name: Deploy Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          publish_branch: gh-pages
+          publish_dir: www

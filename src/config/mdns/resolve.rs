@@ -11,4 +11,7 @@ pub struct MdnsResolveArgs {
     /// Exit as soon as the first IP of the specified hostname has been resolved
     #[arg(short, long, action = ArgAction::SetTrue)]
     pub short_circuit: bool,
+    /// Output only the first IPv4 address
+    #[arg(long, action = ArgAction::SetTrue)]
+    pub ip4: bool,
 }

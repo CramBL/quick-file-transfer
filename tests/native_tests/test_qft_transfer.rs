@@ -29,7 +29,7 @@ pub fn test_file_transfer_no_compression_simple() -> TestResult {
         ClientHandle(client_thread?),
     )?;
 
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -71,7 +71,7 @@ pub fn test_stdout_transfer_no_compression_mmap() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -114,7 +114,7 @@ pub fn test_stdin_stdout_transfer_no_compression() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -158,7 +158,7 @@ pub fn test_file_transfer_no_compression_with_no_prealloc() -> TestResult {
         client_out.display_diagnostics();
     }
 
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -221,7 +221,7 @@ pub fn test_file_transfer_bzip2_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -283,7 +283,7 @@ pub fn test_file_transfer_gzip_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -345,7 +345,7 @@ pub fn test_file_transfer_lz4_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -407,7 +407,7 @@ pub fn test_file_transfer_xz_default_with_no_prealloc() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -461,7 +461,7 @@ pub fn test_file_transfer_bzip2_compr_level_1() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -518,7 +518,7 @@ pub fn test_file_transfer_gzip_compr_level_1() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -576,7 +576,7 @@ pub fn test_file_transfer_xz_compr_level_1() -> TestResult {
         server_out.display_diagnostics();
         client_out.display_diagnostics();
     }
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(server_out.stderr())?;
         assert_no_errors_or_warn(client_out.stderr())?;
     } else {
@@ -644,7 +644,7 @@ pub fn test_file_transfer_output_dir_single_file() -> TestResult {
         stderr: server_stderr,
     } = join_thread_and_get_output_if_success(server_thread)?;
 
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(&server_stderr)?;
         assert_no_errors_or_warn(&client_stderr)?;
     } else {
@@ -734,7 +734,7 @@ pub fn test_file_transfer_output_dir_multiple_files() -> TestResult {
     eprintln!("=== COMMAND STDOUT ===\n{_client_stdout}\n^^^COMMAND STDOUT^^^\n");
     eprintln!("=== COMMAND STDERR ===\n{client_stderr}\n^^^COMMAND STDERR^^^\n");
 
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         assert_no_errors_or_warn(&server_stderr)?;
         assert_no_errors_or_warn(&client_stderr)?;
     } else {

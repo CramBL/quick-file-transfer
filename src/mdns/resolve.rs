@@ -10,6 +10,7 @@ pub fn resolve_hostname_print_stdout(
     hostname: &str,
     timeout_ms: u64,
     short_circuit: bool,
+    ip4: bool,
 ) -> Result<()> {
     log::info!("Resolving address for {hostname}");
     if let Some(resolved_info) = resolve_mdns_hostname(
@@ -17,7 +18,13 @@ pub fn resolve_hostname_print_stdout(
         timeout_ms,
         short_circuit,
     )? {
-        println!("{resolved_info}");
+        if ip4 {
+            if let Some(ip) = resolved_info.any_ipv4() {
+                println!("{ip}");
+            }
+        } else {
+            println!("{resolved_info}");
+        }
     } else {
         log::error!("Failed resolving {hostname}");
     }
@@ -25,7 +32,7 @@ pub fn resolve_hostname_print_stdout(
     Ok(())
 }
 
-/// Resolve mDNS/DNS-SD hostname to [MdnsServiceInfo] which includes a set of IPs of the given hostname.
+/// Resolve mDNS/DNS-SD hostname to `MdnsServiceInfo` which includes a set of IPs of the given hostname.
 ///
 /// # Arguments
 /// - `hostname` the mDNS/DNS-SD hostname to resolve
@@ -56,7 +63,7 @@ pub fn resolve_mdns_hostname(
                         } else {
                             hostname = Some(s);
                         }
-                        ip_set.extend(recv_ip_set);
+                        ip_set.extend(recv_ip_set.iter().map(|ip| ip.to_ip_addr()));
                         if short_circuit {
                             util::mdns_daemon_shutdown(&mdns);
                             while let Ok(more_events) = receiver.recv() {

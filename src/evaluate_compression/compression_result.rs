@@ -245,8 +245,8 @@ impl CompressionResult<Finished> {
     pub fn cell_encode_decode_time(&self) -> Cell {
         Cell::new(format!(
             "{}/{}",
-            &self.compression_time(),
-            &self.decompression_time()
+            self.compression_time(),
+            self.decompression_time()
         ))
     }
 }
@@ -379,7 +379,7 @@ pub fn print_results_as_table(
     println!("\n==> Short summary");
     println!(
                 "Best Compression Ratio:   {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", best_ratio.compression_type()),
+                best_ratio.compression_type(),
                 best_ratio.compression_time.unwrap(),
                 best_ratio.decompression_time.unwrap(),
                 best_ratio.compression_ratio.unwrap(),
@@ -387,7 +387,7 @@ pub fn print_results_as_table(
             );
     println!(
                 "Best Compression Time:    {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", fastest_compr.compression_type()),
+                fastest_compr.compression_type(),
                 fastest_compr.compression_time.unwrap(),
                 fastest_compr.decompression_time.unwrap(),
                 fastest_compr.compression_ratio.unwrap(),
@@ -395,7 +395,7 @@ pub fn print_results_as_table(
             );
     println!(
                 "Best Decompression Time:  {:<8} Compression/Decompression: {:>10.2?}/{:>10.2?} {:>6.2}:1 ({:>4.2}% of original)",
-                format!("{}", fastest_decompr.compression_type()),
+                fastest_decompr.compression_type(),
                 fastest_decompr.compression_time.unwrap(),
                 fastest_decompr.decompression_time.unwrap(),
                 fastest_decompr.compression_ratio.unwrap(),

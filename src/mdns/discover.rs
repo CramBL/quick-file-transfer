@@ -43,9 +43,14 @@ pub fn discover_service_type(
                                 .iter_mut()
                                 .find(|s| s.hostname() == info.get_hostname())
                             {
-                                service_info.add_ips(info.get_addresses());
+                                let ips = info
+                                    .get_addresses()
+                                    .iter()
+                                    .map(|ip| ip.to_ip_addr())
+                                    .collect();
+                                service_info.add_ips(&ips);
                             } else {
-                                discovered_services.push(info.into());
+                                discovered_services.push((*info).into());
                             }
                         }
                         other_event => {

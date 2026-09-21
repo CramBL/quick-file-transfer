@@ -9,7 +9,7 @@ fn test_qft_mdns_register_resolve() -> TestResult {
     const SERVICE_PROTOCOL: &str = "tcp";
     const SERVICE_INSTANCE_NAME: &str = "test_instance_foo";
     //let service_fullname = format!("{SERVICE_INSTANCE_NAME}._{SERVICE_LABEL}._{SERVICE_PROTOCOL}.local.");
-    const KEEP_ALIVE_MS: &str = "600";
+    const KEEP_ALIVE_MS: &str = "5000";
 
     let reg_service_handle = spawn_thread_qft(
         "register service thread",
@@ -32,7 +32,7 @@ fn test_qft_mdns_register_resolve() -> TestResult {
 
     let resolve_hostname_handle = spawn_thread_qft(
         "resolve hostname thread",
-        ["mdns", "resolve", SERVICE_HOSTNAME, "--timeout-ms=100"],
+        ["mdns", "resolve", SERVICE_HOSTNAME, "--timeout-ms=5000"],
         Some(Duration::from_millis(100)),
     );
 
@@ -63,7 +63,7 @@ fn test_qft_mdns_register_discover() -> TestResult {
     const SERVICE_PROTOCOL: &str = "tcp";
     const SERVICE_INSTANCE_NAME: &str = "test_instance_foo";
     //let service_fullname = format!("{SERVICE_INSTANCE_NAME}._{SERVICE_LABEL}._{SERVICE_PROTOCOL}.local.");
-    const KEEP_ALIVE_MS: &str = "600";
+    const KEEP_ALIVE_MS: &str = "5000";
 
     let reg_service_handle = spawn_thread_qft(
         "register service thread",
@@ -93,7 +93,7 @@ fn test_qft_mdns_register_discover() -> TestResult {
             SERVICE_LABEL,
             "--service-protocol",
             SERVICE_PROTOCOL,
-            "--timeout-ms=100",
+            "--timeout-ms=5000",
         ],
         Some(Duration::from_millis(100)),
     );

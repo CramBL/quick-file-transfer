@@ -19,7 +19,12 @@ pub mod mdns;
 pub mod misc;
 
 #[derive(Debug, Parser)]
-#[command(name = "Quick File Transfer", version, styles = misc::cli_styles())]
+#[command(
+    name = "Quick File Transfer",
+    version,
+    styles = misc::cli_styles(),
+    infer_subcommands = true
+)]
 #[command(bin_name = BIN_NAME)]
 pub struct Config {
     /// Accepted subcommands, e.g. `listen`

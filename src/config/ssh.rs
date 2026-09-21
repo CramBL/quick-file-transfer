@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::bail;
-use clap::{arg, ArgAction, Args};
+use clap::{ArgAction, Args};
 
 use super::Compression;
 

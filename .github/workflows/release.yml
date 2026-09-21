@@ -4,7 +4,11 @@ name: Release
 
 on:
   push:
-    tags: ['*']
+    tags: ["*"]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 defaults:
   run:
@@ -14,8 +18,14 @@ jobs:
   release-guard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: extractions/setup-just@v2
+      - uses: actions/checkout@v7
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Set up just
+        uses: extractions/setup-just@v4
+        with:
+          just-version: "1.58.0"
       - name: Check version
         run: just --verbose check-version
 
@@ -33,85 +43,91 @@ jobs:
           - aarch64-pc-windows-msvc
           - x86_64-unknown-linux-musl
         include:
-        - target: aarch64-apple-darwin
-          os: macos-latest
-          target_rustflags: ''
-        - target: aarch64-unknown-linux-musl
-          os: ubuntu-latest
-          target_rustflags: '--codegen linker=aarch64-linux-gnu-gcc'
-        - target: arm-unknown-linux-musleabihf
-          os: ubuntu-latest
-          target_rustflags: '--codegen linker=arm-linux-gnueabihf-gcc'
-        - target: armv7-unknown-linux-musleabihf
-          os: ubuntu-latest
-          target_rustflags: '--codegen linker=arm-linux-gnueabihf-gcc'
-        - target: x86_64-apple-darwin
-          os: macos-latest
-          target_rustflags: ''
-        - target: x86_64-pc-windows-msvc
-          os: windows-latest
-        - target: aarch64-pc-windows-msvc
-          os: windows-latest
-          target_rustflags: ''
-        - target: x86_64-unknown-linux-musl
-          os: ubuntu-latest
-          target_rustflags: ''
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            target_rustflags: ""
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            target_rustflags: "--codegen linker=aarch64-linux-gnu-gcc"
+          - target: arm-unknown-linux-musleabihf
+            os: ubuntu-latest
+            target_rustflags: "--codegen linker=arm-linux-gnueabihf-gcc"
+          - target: armv7-unknown-linux-musleabihf
+            os: ubuntu-latest
+            target_rustflags: "--codegen linker=arm-linux-gnueabihf-gcc"
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            target_rustflags: ""
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            target_rustflags: ""
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            target_rustflags: ""
 
     runs-on: ${{matrix.os}}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-    - name: Install musl-gcc
-      if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
-      run: sudo apt-get update && sudo apt-get install musl-tools && musl-gcc --version
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          rustflags: ""
 
-    - name: Install AArch64 Toolchain
-      if: ${{ matrix.target == 'aarch64-unknown-linux-musl' }}
-      run: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu libc6-dev-i386
+      - name: Install musl-gcc
+        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+        run: sudo apt-get update && sudo apt-get install --yes musl-tools && musl-gcc --version
 
-    - name: Install ARM Toolchain
-      if: ${{ matrix.target == 'arm-unknown-linux-musleabihf' || matrix.target == 'armv7-unknown-linux-musleabihf' }}
-      run: sudo apt-get update && sudo apt-get install gcc-arm-linux-gnueabihf
+      - name: Install AArch64 Toolchain
+        if: ${{ matrix.target == 'aarch64-unknown-linux-musl' }}
+        run: sudo apt-get update && sudo apt-get install --yes gcc-aarch64-linux-gnu libc6-dev-i386
 
-    - name: Install AArch64 Toolchain (Windows)
-      if: ${{ matrix.target == 'aarch64-pc-windows-msvc' }}
-      run: rustup target add aarch64-pc-windows-msvc
+      - name: Install ARM Toolchain
+        if: ${{ matrix.target == 'arm-unknown-linux-musleabihf' || matrix.target == 'armv7-unknown-linux-musleabihf' }}
+        run: sudo apt-get update && sudo apt-get install --yes gcc-arm-linux-gnueabihf
 
-    - name: Package
-      id: package
-      env:
-        TARGET: ${{ matrix.target }}
-        REF: ${{ github.ref }}
-        OS: ${{ matrix.os }}
-        TARGET_RUSTFLAGS: ${{ matrix.target_rustflags }}
-      shell: bash
-      run: ./scripts/package.bash
+      - name: Install AArch64 Toolchain (Windows)
+        if: ${{ matrix.target == 'aarch64-pc-windows-msvc' }}
+        run: rustup target add aarch64-pc-windows-msvc
 
-    - name: Publish Archive
-      uses: softprops/action-gh-release@v2.0.5
-      if: ${{ startsWith(github.ref, 'refs/tags/') }}
-      with:
-        draft: false
-        files: ${{ steps.package.outputs.archive }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Package
+        id: package
+        env:
+          TARGET: ${{ matrix.target }}
+          REF: ${{ github.ref }}
+          OS: ${{ matrix.os }}
+          TARGET_RUSTFLAGS: ${{ matrix.target_rustflags }}
+        shell: bash
+        run: ./scripts/package.bash
 
-    - name: Publish Changelog
-      uses: softprops/action-gh-release@v2.0.5
-      if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.target == 'x86_64-unknown-linux-musl' }}
-      with:
-        draft: false
-        files: CHANGELOG.md
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Archive
+        uses: softprops/action-gh-release@v2.0.5
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        with:
+          draft: false
+          files: ${{ steps.package.outputs.archive }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Changelog
+        uses: softprops/action-gh-release@v2.0.5
+        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.target == 'x86_64-unknown-linux-musl' }}
+        with:
+          draft: false
+          files: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-crates-io:
-        needs: release-guard
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-            - name: Publish
-              run: cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}
+    needs: release-guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Publish
+        run: cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}

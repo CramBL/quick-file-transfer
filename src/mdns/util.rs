@@ -1,4 +1,4 @@
-use mdns_sd::{DaemonStatus, ServiceDaemon, ServiceInfo};
+use mdns_sd::{DaemonStatus, ResolvedService, ServiceDaemon, ServiceInfo};
 use std::{borrow::Cow, collections::HashSet, fmt, net::IpAddr};
 
 use crate::config::misc::IpVersion;
@@ -88,6 +88,17 @@ impl From<ServiceInfo> for MdnsServiceInfo {
             type_name: Some(value.get_type().to_owned()),
             full_name: Some(value.get_fullname().to_owned()),
             ips: value.get_addresses().to_owned(),
+        }
+    }
+}
+
+impl From<ResolvedService> for MdnsServiceInfo {
+    fn from(value: ResolvedService) -> Self {
+        Self {
+            hostname: value.host,
+            type_name: Some(value.ty_domain),
+            full_name: Some(value.fullname),
+            ips: value.addresses.iter().map(|ip| ip.to_ip_addr()).collect(),
         }
     }
 }

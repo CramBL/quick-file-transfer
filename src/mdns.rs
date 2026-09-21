@@ -22,7 +22,8 @@ pub fn handle_mdns_command(cmd: &MdnsCommand) -> Result<()> {
             hostname,
             timeout_ms,
             short_circuit,
-        }) => resolve::resolve_hostname_print_stdout(hostname, *timeout_ms, *short_circuit),
+            ip4,
+        }) => resolve::resolve_hostname_print_stdout(hostname, *timeout_ms, *short_circuit, *ip4),
         MdnsCommand::Register(MdnsRegisterArgs {
             hostname,
             instance_name,
